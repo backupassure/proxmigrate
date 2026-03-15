@@ -3,9 +3,11 @@ from pathlib import Path
 
 import markdown
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import authenticate
 from django.contrib.auth import login
 from django.contrib.auth import logout
+from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import redirect
@@ -84,3 +86,34 @@ def help_view(request, slug):
         html_content = "<p>No help available for this page yet.</p>"
 
     return HttpResponse(html_content)
+
+
+@login_required
+def change_password_view(request):
+    """Force-password-change page shown after first login with the default password."""
+    error = None
+    if request.method == "POST":
+        new_password = request.POST.get("new_password", "")
+        confirm_password = request.POST.get("confirm_password", "")
+
+        if len(new_password) < 8:
+            error = "Password must be at least 8 characters."
+        elif new_password != confirm_password:
+            error = "Passwords do not match."
+        elif new_password == "Password!":
+            error = "Please choose a password different from the default."
+        else:
+            request.user.set_password(new_password)
+            request.user.save()
+            # Clear the force-change flag
+            try:
+                request.user.profile.must_change_password = False
+                request.user.profile.save()
+            except Exception:
+                pass
+            # Keep the user logged in with the new password
+            update_session_auth_hash(request, request.user)
+            messages.success(request, "Password updated successfully.")
+            return redirect("/")
+
+    return render(request, "core/change_password.html", {"error": error})

@@ -70,6 +70,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "apps.core.middleware.ForcePasswordChangeMiddleware",
     "apps.core.middleware.WizardRedirectMiddleware",
 ]
 
@@ -199,6 +200,14 @@ LOGIN_REDIRECT_URL = "/"
 # ---------------------------------------------------------------------------
 
 HELP_DIR = BASE_DIR / "help"
+
+# ---------------------------------------------------------------------------
+# CSRF / Security
+# ---------------------------------------------------------------------------
+
+# Trust all HTTPS origins — this is a self-hosted tool where the admin controls
+# the server; wildcard is appropriate here.
+CSRF_TRUSTED_ORIGINS = ["https://*", "http://127.0.0.1:*", "http://localhost:*"]
 
 # ---------------------------------------------------------------------------
 # Deployment

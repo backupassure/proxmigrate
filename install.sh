@@ -373,6 +373,9 @@ echo "==> Creating admin user..."
 echo ""
 
 # Allow non-interactive install via environment variables
+DEFAULT_ADMIN_PASS="Password!"
+FORCE_CHANGE=false
+
 if [[ -n "${PROXMIGRATE_ADMIN_USER:-}" && -n "${PROXMIGRATE_ADMIN_PASS:-}" ]]; then
     ADMIN_USER="${PROXMIGRATE_ADMIN_USER}"
     ADMIN_PASS="${PROXMIGRATE_ADMIN_PASS}"
@@ -381,21 +384,26 @@ else
     read -rp "    Admin username [admin]: " ADMIN_USER
     ADMIN_USER="${ADMIN_USER:-admin}"
 
-    while true; do
-        read -rsp "    Admin password: " ADMIN_PASS
-        echo ""
-        if [[ -z "${ADMIN_PASS}" ]]; then
-            echo "    Password cannot be empty. Please try again."
-        else
+    echo "    Leave password blank to use default '${DEFAULT_ADMIN_PASS}' with forced change on first login."
+    read -rsp "    Admin password: " ADMIN_PASS
+    echo ""
+    if [[ -z "${ADMIN_PASS}" ]]; then
+        ADMIN_PASS="${DEFAULT_ADMIN_PASS}"
+        FORCE_CHANGE=true
+        echo "    Using default password — user will be required to change it on first login."
+    else
+        while true; do
             read -rsp "    Confirm password: " ADMIN_PASS2
             echo ""
             if [[ "${ADMIN_PASS}" == "${ADMIN_PASS2}" ]]; then
                 break
             else
                 echo "    Passwords do not match. Please try again."
+                read -rsp "    Admin password: " ADMIN_PASS
+                echo ""
             fi
-        fi
-    done
+        done
+    fi
 fi
 
 ADMIN_EMAIL="${ADMIN_USER}@localhost"
@@ -409,6 +417,14 @@ sudo -u "${APP_USER}" \
     --noinput \
     --settings=proxmigrate.settings.production \
     2>/dev/null || echo "    (Superuser '${ADMIN_USER}' may already exist — skipping.)"
+
+if [[ "${FORCE_CHANGE}" == "true" ]]; then
+    sudo -u "${APP_USER}" \
+        DJANGO_SETTINGS_MODULE=proxmigrate.settings.production \
+        "${PYTHON}" "${APP_HOME}/manage.py" set_must_change_password "${ADMIN_USER}" \
+        --settings=proxmigrate.settings.production \
+        2>/dev/null || true
+fi
 
 # ---------------------------------------------------------------------------
 # Enable and start services

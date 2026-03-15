@@ -14,6 +14,7 @@ EXEMPT_PREFIXES = (
     "/admin/",
     "/help/",
     "/api/",
+    "/change-password/",
 )
 
 
@@ -48,3 +49,26 @@ class WizardRedirectMiddleware:
             logger.warning("WizardRedirectMiddleware: could not check wizard state: %s", exc)
             # Fail open — do not redirect if we cannot determine state
             return True
+
+
+class ForcePasswordChangeMiddleware:
+    """Redirect users who have must_change_password=True to the change-password page."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.user.is_authenticated and not self._is_exempt(request.path):
+            try:
+                if request.user.profile.must_change_password:
+                    return redirect("/change-password/")
+            except Exception:
+                pass  # Profile not yet created — allow through
+
+        return self.get_response(request)
+
+    def _is_exempt(self, path):
+        for prefix in EXEMPT_PREFIXES:
+            if path.startswith(prefix):
+                return True
+        return False
