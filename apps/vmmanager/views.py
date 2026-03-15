@@ -1,4 +1,5 @@
 import logging
+import re
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
@@ -9,57 +10,158 @@ from apps.wizard.models import ProxmoxConfig
 logger = logging.getLogger(__name__)
 
 
-def _parse_vm_config(raw_config):
-    """Parse a raw Proxmox VM config dict into structured sections for the template."""
-    sections = {
-        "general": {
-            "name": raw_config.get("name", ""),
-            "description": raw_config.get("description", ""),
-            "ostype": raw_config.get("ostype", ""),
-            "onboot": raw_config.get("onboot", 0),
-            "protection": raw_config.get("protection", 0),
-        },
-        "firmware": {
-            "bios": raw_config.get("bios", "seabios"),
-            "efidisk0": raw_config.get("efidisk0", ""),
-            "tpmstate0": raw_config.get("tpmstate0", ""),
-        },
-        "cpu": {
-            "sockets": raw_config.get("sockets", 1),
-            "cores": raw_config.get("cores", 1),
-            "cpu": raw_config.get("cpu", ""),
-            "numa": raw_config.get("numa", 0),
-        },
-        "memory": {
-            "memory": raw_config.get("memory", ""),
-            "balloon": raw_config.get("balloon", ""),
-        },
-        "disks": {},
-        "network": {},
-        "display": {
-            "vga": raw_config.get("vga", ""),
-        },
-        "agent": {
-            "agent": raw_config.get("agent", ""),
-            "tablet": raw_config.get("tablet", 0),
-        },
-        "raw": raw_config,
+def _uptime_human(seconds):
+    seconds = int(seconds or 0)
+    d, rem = divmod(seconds, 86400)
+    h, rem = divmod(rem, 3600)
+    m, _ = divmod(rem, 60)
+    if d:
+        return f"{d}d {h}h {m}m"
+    if h:
+        return f"{h}h {m}m"
+    return f"{m}m"
+
+
+def _bytes_human(b):
+    """Convert bytes to human-readable string."""
+    b = int(b or 0)
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if b < 1024:
+            return f"{b:.1f} {unit}"
+        b /= 1024
+    return f"{b:.1f} PB"
+
+
+def _parse_disk(interface, raw_value):
+    """Parse a Proxmox disk string into a dict.
+
+    Examples:
+      local-lvm:vm-100-disk-0,size=32G,ssd=1,discard=on
+      none
+    """
+    if not raw_value or raw_value == "none":
+        return None
+    parts = raw_value.split(",")
+    location = parts[0]  # e.g. "local-lvm:vm-100-disk-0"
+    options = {k: v for p in parts[1:] if "=" in p for k, v in [p.split("=", 1)]}
+
+    storage = location.split(":")[0] if ":" in location else location
+    volume = location.split(":")[1] if ":" in location else ""
+
+    # Detect format from volume name
+    fmt = "raw"
+    if volume.endswith(".qcow2"):
+        fmt = "qcow2"
+    elif volume.endswith(".vmdk"):
+        fmt = "vmdk"
+    elif "disk" in volume:
+        fmt = "raw"
+
+    size = options.get("size", "—")
+    extra = ", ".join(f"{k}={v}" for k, v in options.items() if k != "size")
+
+    return {
+        "interface": interface,
+        "storage": storage,
+        "volume": volume,
+        "size": size,
+        "format": fmt,
+        "options": extra or "—",
     }
 
-    # Extract all disk entries (scsi*, sata*, ide*, virtio*, unused*)
-    disk_prefixes = ("scsi", "sata", "ide", "virtio", "unused", "efidisk", "tpmstate")
-    for key, value in raw_config.items():
+
+def _parse_nic(interface, raw_value):
+    """Parse a Proxmox network string into a dict.
+
+    Example: virtio=AA:BB:CC:DD:EE:FF,bridge=vmbr0,firewall=1,tag=10
+    """
+    if not raw_value:
+        return None
+    parts = raw_value.split(",")
+    opts = {}
+    model = "unknown"
+    mac = "—"
+    for part in parts:
+        if "=" in part:
+            k, v = part.split("=", 1)
+            # virtio=MAC or e1000=MAC etc.
+            if k in ("virtio", "e1000", "e1000e", "rtl8139", "vmxnet3", "ne2k_pci"):
+                model = k
+                mac = v
+            else:
+                opts[k] = v
+    return {
+        "interface": interface,
+        "model": model,
+        "mac": mac,
+        "bridge": opts.get("bridge", "—"),
+        "vlan": opts.get("tag", ""),
+        "firewall": opts.get("firewall", "0") == "1",
+    }
+
+
+def _build_vm(raw_config, vm_status, node, vmid):
+    """Build a flat vm dict for the template from raw Proxmox config + status."""
+    sockets = int(raw_config.get("sockets", 1))
+    cores = int(raw_config.get("cores", 1))
+
+    disks = []
+    disk_prefixes = ("scsi", "sata", "ide", "virtio", "unused")
+    for key in sorted(raw_config.keys()):
         for prefix in disk_prefixes:
-            if key.startswith(prefix) and key not in ("efidisk0", "tpmstate0"):
-                sections["disks"][key] = value
+            if key.startswith(prefix):
+                parsed = _parse_disk(key, raw_config[key])
+                if parsed:
+                    disks.append(parsed)
                 break
 
-    # Extract all network entries (net*)
-    for key, value in raw_config.items():
+    networks = []
+    for key in sorted(raw_config.keys()):
         if key.startswith("net"):
-            sections["network"][key] = value
+            parsed = _parse_nic(key, raw_config[key])
+            if parsed:
+                networks.append(parsed)
 
-    return sections
+    cpu_fraction = float(vm_status.get("cpu") or 0)
+    mem_used = int(vm_status.get("mem") or 0)
+
+    return {
+        # Identity
+        "vmid": vmid,
+        "name": vm_status.get("name") or raw_config.get("name", str(vmid)),
+        "node": node,
+        "status": vm_status.get("status", "unknown"),
+        # Runtime stats
+        "cpu_pct": round(cpu_fraction * 100, 1),
+        "mem_human": _bytes_human(mem_used),
+        "uptime": vm_status.get("uptime", 0),
+        "uptime_human": _uptime_human(vm_status.get("uptime", 0)),
+        # General
+        "description": raw_config.get("description", ""),
+        "ostype": raw_config.get("ostype", ""),
+        "onboot": bool(raw_config.get("onboot", 0)),
+        "protection": bool(raw_config.get("protection", 0)),
+        "boot": raw_config.get("boot", ""),
+        # Firmware
+        "bios": raw_config.get("bios", "seabios"),
+        "efidisk0": raw_config.get("efidisk0", ""),
+        "tpmstate0": raw_config.get("tpmstate0", ""),
+        # CPU
+        "cpu": raw_config.get("cpu", ""),
+        "sockets": sockets,
+        "cores": cores,
+        "vcpus": sockets * cores,
+        "numa": bool(raw_config.get("numa", 0)),
+        # Memory
+        "memory": raw_config.get("memory", ""),
+        "balloon": raw_config.get("balloon", ""),
+        # Disks & NICs
+        "disks": disks,
+        "networks": networks,
+        # Display / agent
+        "vga": raw_config.get("vga", ""),
+        "agent": raw_config.get("agent", ""),
+    }
 
 
 @login_required
@@ -68,14 +170,13 @@ def vm_detail(request, vmid):
     config = ProxmoxConfig.get_config()
     node = config.default_node
     error = None
-    parsed_config = {}
-    vm_status = {}
+    vm = {"vmid": vmid, "name": str(vmid), "status": "unknown", "disks": [], "networks": []}
 
     try:
         api = config.get_api_client()
         raw_config = api.get_vm_config(node, vmid)
         vm_status = api.get_vm_status(node, vmid)
-        parsed_config = _parse_vm_config(raw_config)
+        vm = _build_vm(raw_config, vm_status, node, vmid)
     except ProxmoxAPIError as exc:
         error = f"Could not load VM {vmid}: {exc.message}"
         logger.error("vm_detail vmid=%d: %s", vmid, exc)
@@ -85,8 +186,7 @@ def vm_detail(request, vmid):
         "vmmanager/detail.html",
         {
             "vmid": vmid,
-            "vm_config": parsed_config,
-            "vm_status": vm_status,
+            "vm": vm,
             "error": error,
             "help_slug": "vm-detail",
         },
