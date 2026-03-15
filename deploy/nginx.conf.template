@@ -43,4 +43,7 @@ server {
         # Support large chunked uploads
         proxy_request_buffering off;
     }
+
+    # VM console WebSocket proxy — target written by ProxMigrate after wizard completes
+    include /opt/proxmigrate/deploy/proxmox_ws.conf;
 }
