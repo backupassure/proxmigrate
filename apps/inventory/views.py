@@ -5,7 +5,6 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
 
-from apps.proxmox.api import ProxmoxAPI
 from apps.proxmox.api import ProxmoxAPIError
 from apps.wizard.models import ProxmoxConfig
 
@@ -14,28 +13,45 @@ logger = logging.getLogger(__name__)
 VALID_ACTIONS = {"start", "stop", "shutdown", "reboot"}
 
 
+def _uptime_human(seconds):
+    """Convert seconds to a human-readable uptime string."""
+    if not seconds:
+        return ""
+    seconds = int(seconds)
+    d, rem = divmod(seconds, 86400)
+    h, rem = divmod(rem, 3600)
+    m, _ = divmod(rem, 60)
+    if d:
+        return f"{d}d {h}h {m}m"
+    if h:
+        return f"{h}h {m}m"
+    return f"{m}m"
+
+
 @login_required
 def list_vms(request):
-    """Show the VM inventory dashboard by querying the Proxmox API live."""
+    """Show the VM inventory by querying the Proxmox API live."""
     config = ProxmoxConfig.get_config()
-    vm_list = []
+    vms = []
     error = None
+    node_name = ""
+    search_query = request.GET.get("q", "").strip()
 
-    if config.pk and config.is_configured:
+    if config and config.is_configured:
         try:
             api = config.get_api_client()
-            node = config.default_node
-            vms = api.get_vms(node)
+            node_name = config.default_node
+            raw_vms = api.get_vms(node_name)
 
-            for vm in vms:
-                vmid = vm.get("vmid")
-                try:
-                    status = api.get_vm_status(node, vmid)
-                    vm["status_detail"] = status
-                except ProxmoxAPIError as exc:
-                    logger.warning("Could not get status for vmid %s: %s", vmid, exc)
-                    vm["status_detail"] = {}
-                vm_list.append(vm)
+            for vm in raw_vms:
+                # Proxmox list endpoint already includes status, cpu, cpus, maxmem, uptime
+                vm["node"] = node_name
+                vm["cpu_pct"] = round((vm.get("cpu") or 0) * 100, 1)
+                vm["uptime_human"] = _uptime_human(vm.get("uptime", 0))
+                vms.append(vm)
+
+            # Sort: running first, then by vmid
+            vms.sort(key=lambda v: (v.get("status") != "running", v.get("vmid", 0)))
 
         except ProxmoxAPIError as exc:
             error = f"Could not load VM inventory: {exc.message}"
@@ -43,13 +59,29 @@ def list_vms(request):
     else:
         error = "Proxmox is not yet configured. Please complete the setup wizard."
 
+    # Apply search filter
+    if search_query and vms:
+        q = search_query.lower()
+        vms = [v for v in vms if q in str(v.get("name", "")).lower() or q in str(v.get("vmid", ""))]
+
+    total_count = len(vms)
+    running_count = sum(1 for v in vms if v.get("status") == "running")
+    stopped_count = sum(1 for v in vms if v.get("status") == "stopped")
+    paused_count = sum(1 for v in vms if v.get("status") == "paused")
+
     return render(
         request,
         "inventory/list.html",
         {
-            "vm_list": vm_list,
+            "vms": vms,
             "config": config,
             "error": error,
+            "node_name": node_name,
+            "search_query": search_query,
+            "total_count": total_count,
+            "running_count": running_count,
+            "stopped_count": stopped_count,
+            "paused_count": paused_count,
             "help_slug": "inventory",
         },
     )
