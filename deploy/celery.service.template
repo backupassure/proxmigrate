@@ -1,0 +1,24 @@
+[Unit]
+Description=ProxMigrate Celery worker
+After=network.target redis.target
+
+[Service]
+Type=forking
+User=proxmigrate
+Group=proxmigrate
+WorkingDirectory=/opt/proxmigrate
+EnvironmentFile=/opt/proxmigrate/.env
+ExecStart=/opt/proxmigrate/venv/bin/celery \
+    -A proxmigrate worker \
+    -l info \
+    --concurrency=4 \
+    --logfile=/var/log/proxmigrate/celery.log \
+    --pidfile=/run/proxmigrate/celery.pid \
+    --detach
+ExecStop=/opt/proxmigrate/venv/bin/celery \
+    -A proxmigrate control shutdown
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

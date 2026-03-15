@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% block title %}{{ vm.name }} — VM Details — ProxMigrate{% endblock %}
+{% block page_title %}{{ vm.name }}{% endblock %}
+{% block help_slug %}vm-detail{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'inventory' %}" class="button is-light is-small">
+    <span class="icon is-small"><i class="fas fa-arrow-left"></i></span>
+    <span>Back to Inventory</span>
+  </a>
+  &nbsp;
+  {# Power action buttons based on status #}
+  {% if vm.status == 'running' %}
+    <button class="button is-warning is-small"
+            hx-post="/inventory/{{ vm.vmid }}/action/shutdown/"
+            hx-confirm="Gracefully shut down {{ vm.name }}?"
+            hx-target="#vm-status-banner"
+            hx-swap="outerHTML">
+      <span class="icon is-small"><i class="fas fa-power-off"></i></span>
+      <span>Shutdown</span>
+    </button>
+    <button class="button is-danger is-small"
+            hx-post="/inventory/{{ vm.vmid }}/action/stop/"
+            hx-confirm="Force stop {{ vm.name }}? Unsaved data may be lost."
+            hx-target="#vm-status-banner"
+            hx-swap="outerHTML">
+      <span class="icon is-small"><i class="fas fa-stop"></i></span>
+      <span>Force Stop</span>
+    </button>
+    <button class="button is-info is-small"
+            hx-post="/inventory/{{ vm.vmid }}/action/reboot/"
+            hx-confirm="Reboot {{ vm.name }}?"
+            hx-target="#vm-status-banner"
+            hx-swap="outerHTML">
+      <span class="icon is-small"><i class="fas fa-redo"></i></span>
+      <span>Reboot</span>
+    </button>
+  {% elif vm.status == 'stopped' %}
+    <button class="button is-success is-small"
+            hx-post="/inventory/{{ vm.vmid }}/action/start/"
+            hx-target="#vm-status-banner"
+            hx-swap="outerHTML">
+      <span class="icon is-small"><i class="fas fa-play"></i></span>
+      <span>Start</span>
+    </button>
+  {% elif vm.status == 'paused' %}
+    <button class="button is-warning is-small"
+            hx-post="/inventory/{{ vm.vmid }}/action/resume/"
+            hx-target="#vm-status-banner"
+            hx-swap="outerHTML">
+      <span class="icon is-small"><i class="fas fa-play"></i></span>
+      <span>Resume</span>
+    </button>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+{# ===== Status Banner ===== #}
+<div id="vm-status-banner" style="margin-bottom:1.5rem;border-radius:10px;overflow:hidden;border:1px solid #e8ecf0;background:#fff;">
+  <div style="padding:1.25rem 1.5rem;
+    {% if vm.status == 'running' %}background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-bottom:3px solid #48c78e;
+    {% elif vm.status == 'stopped' %}background:linear-gradient(135deg,#fff5f7,#ffe4e6);border-bottom:3px solid #f14668;
+    {% elif vm.status == 'paused' %}background:linear-gradient(135deg,#fffbeb,#fef9c3);border-bottom:3px solid #f59e0b;
+    {% else %}background:#f5f7fa;border-bottom:3px solid #b5b5b5;
+    {% endif %}
+    display:flex;align-items:center;gap:1.5rem;">
+
+    {# Status icon #}
+    <div style="font-size:2rem;
+      {% if vm.status == 'running' %}color:#48c78e;
+      {% elif vm.status == 'stopped' %}color:#f14668;
+      {% elif vm.status == 'paused' %}color:#f59e0b;
+      {% else %}color:#b5b5b5;{% endif %}">
+      {% if vm.status == 'running' %}<i class="fas fa-play-circle"></i>
+      {% elif vm.status == 'stopped' %}<i class="fas fa-stop-circle"></i>
+      {% elif vm.status == 'paused' %}<i class="fas fa-pause-circle"></i>
+      {% else %}<i class="fas fa-question-circle"></i>{% endif %}
+    </div>
+
+    <div>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <span style="font-size:1.1rem;font-weight:700;color:#1a1a2e;">{{ vm.name }}</span>
+        {% if vm.status == 'running' %}
+          <span class="status-badge vm-status-running">Running</span>
+        {% elif vm.status == 'stopped' %}
+          <span class="status-badge vm-status-stopped">Stopped</span>
+        {% elif vm.status == 'paused' %}
+          <span class="status-badge vm-status-paused">Paused</span>
+        {% else %}
+          <span class="status-badge vm-status-unknown">{{ vm.status }}</span>
+        {% endif %}
+      </div>
+      <div style="font-size:0.82rem;color:#7a7a7a;margin-top:0.3rem;">
+        VMID <strong>{{ vm.vmid }}</strong>
+        &bull; Node <strong>{{ vm.node }}</strong>
+        {% if vm.status == 'running' and vm.uptime_human %}
+          &bull; Uptime <strong>{{ vm.uptime_human }}</strong>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if vm.status == 'running' %}
+    <div style="margin-left:auto;display:flex;gap:2rem;">
+      <div style="text-align:center;">
+        <div style="font-size:1.25rem;font-weight:700;color:#1a1a2e;">{{ vm.cpu_pct|floatformat:1 }}%</div>
+        <div style="font-size:0.72rem;color:#7a7a7a;text-transform:uppercase;letter-spacing:0.5px;">CPU</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:1.25rem;font-weight:700;color:#1a1a2e;">{{ vm.mem_human|default:"—" }}</div>
+        <div style="font-size:0.72rem;color:#7a7a7a;text-transform:uppercase;letter-spacing:0.5px;">RAM Used</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{# ===== Config Cards Grid ===== #}
+<div class="columns is-multiline">
+
+  {# General #}
+  <div class="column is-6">
+    <div class="proxmigrate-card">
+      <div class="card-header"><i class="fas fa-info-circle" style="color:#3273dc;"></i> General</div>
+      <div class="card-body" style="padding:1rem 1.5rem;">
+        {% for label, value in general_info %}
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">{{ label }}</div>
+          <div class="cert-detail-value" style="font-family:inherit;font-size:0.875rem;">{{ value|default:"—" }}</div>
+        </div>
+        {% empty %}
+        <div class="cert-detail-row"><div class="cert-detail-label">VMID</div><div class="cert-detail-value">{{ vm.vmid }}</div></div>
+        <div class="cert-detail-row"><div class="cert-detail-label">Name</div><div class="cert-detail-value">{{ vm.name }}</div></div>
+        <div class="cert-detail-row"><div class="cert-detail-label">OS Type</div><div class="cert-detail-value">{{ vm.ostype|default:"—" }}</div></div>
+        <div class="cert-detail-row"><div class="cert-detail-label">Description</div><div class="cert-detail-value">{{ vm.description|default:"—" }}</div></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {# Firmware #}
+  <div class="column is-6">
+    <div class="proxmigrate-card">
+      <div class="card-header"><i class="fas fa-microchip" style="color:#7c3aed;"></i> Firmware &amp; Boot</div>
+      <div class="card-body" style="padding:1rem 1.5rem;">
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">BIOS</div>
+          <div class="cert-detail-value">{{ vm.bios|default:"SeaBIOS" }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">EFI Disk</div>
+          <div class="cert-detail-value">
+            {% if vm.efidisk0 %}<span style="color:#48c78e;">Yes</span>{% else %}<span style="color:#b5b5b5;">No</span>{% endif %}
+          </div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">TPM</div>
+          <div class="cert-detail-value">
+            {% if vm.tpmstate0 %}<span style="color:#48c78e;">TPM 2.0</span>{% else %}<span style="color:#b5b5b5;">None</span>{% endif %}
+          </div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Start on Boot</div>
+          <div class="cert-detail-value">
+            {% if vm.onboot %}<span style="color:#48c78e;">Yes</span>{% else %}No{% endif %}
+          </div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Boot Order</div>
+          <div class="cert-detail-value" style="font-family:monospace;font-size:0.8rem;">{{ vm.boot|default:"—" }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# CPU #}
+  <div class="column is-6">
+    <div class="proxmigrate-card">
+      <div class="card-header"><i class="fas fa-microchip" style="color:#48c78e;"></i> CPU</div>
+      <div class="card-body" style="padding:1rem 1.5rem;">
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">CPU Type</div>
+          <div class="cert-detail-value">{{ vm.cpu|default:"—" }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Sockets</div>
+          <div class="cert-detail-value">{{ vm.sockets|default:"1" }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Cores</div>
+          <div class="cert-detail-value">{{ vm.cores|default:"—" }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Total vCPUs</div>
+          <div class="cert-detail-value"><strong>{{ vm.vcpus|default:"—" }}</strong></div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">NUMA</div>
+          <div class="cert-detail-value">{% if vm.numa %}Enabled{% else %}Disabled{% endif %}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Memory #}
+  <div class="column is-6">
+    <div class="proxmigrate-card">
+      <div class="card-header"><i class="fas fa-memory" style="color:#f59e0b;"></i> Memory</div>
+      <div class="card-body" style="padding:1rem 1.5rem;">
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Allocated RAM</div>
+          <div class="cert-detail-value"><strong>{{ vm.memory|default:"—" }} MB</strong></div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Balloon Min</div>
+          <div class="cert-detail-value">{{ vm.balloon|default:"0" }} MB</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Ballooning</div>
+          <div class="cert-detail-value">{% if vm.balloon %}Enabled{% else %}Disabled{% endif %}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Disks #}
+  <div class="column is-12">
+    <div class="proxmigrate-card">
+      <div class="card-header"><i class="fas fa-hdd" style="color:#48c78e;"></i> Disks</div>
+      <div style="overflow-x:auto;">
+        {% if vm.disks %}
+        <table class="table is-fullwidth is-narrow" style="margin:0;font-size:0.875rem;">
+          <thead>
+            <tr style="background:#f5f7fa;">
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;padding:0.75rem 1.5rem;">Interface</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Storage</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Size</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Format</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Options</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for disk in vm.disks %}
+            <tr>
+              <td style="font-family:monospace;font-size:0.82rem;padding-left:1.5rem;font-weight:600;">{{ disk.interface }}</td>
+              <td>{{ disk.storage }}</td>
+              <td><strong>{{ disk.size }}</strong></td>
+              <td><span class="format-badge">{{ disk.format|upper }}</span></td>
+              <td style="font-size:0.78rem;color:#7a7a7a;">{{ disk.options|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <div style="padding:1.5rem;color:#7a7a7a;font-size:0.875rem;">No disk information available.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# Network Interfaces #}
+  <div class="column is-12">
+    <div class="proxmigrate-card">
+      <div class="card-header"><i class="fas fa-ethernet" style="color:#0369a1;"></i> Network Interfaces</div>
+      <div style="overflow-x:auto;">
+        {% if vm.networks %}
+        <table class="table is-fullwidth is-narrow" style="margin:0;font-size:0.875rem;">
+          <thead>
+            <tr style="background:#f5f7fa;">
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;padding:0.75rem 1.5rem;">Interface</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Model</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Bridge</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">MAC Address</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">VLAN</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for nic in vm.networks %}
+            <tr>
+              <td style="font-family:monospace;font-size:0.82rem;padding-left:1.5rem;font-weight:600;">{{ nic.interface }}</td>
+              <td>{{ nic.model }}</td>
+              <td>{{ nic.bridge }}</td>
+              <td style="font-family:monospace;font-size:0.8rem;">{{ nic.mac }}</td>
+              <td>{{ nic.vlan|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <div style="padding:1.5rem;color:#7a7a7a;font-size:0.875rem;">No network interface information available.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# Display #}
+  <div class="column is-6">
+    <div class="proxmigrate-card">
+      <div class="card-header"><i class="fas fa-desktop" style="color:#7a7a7a;"></i> Display</div>
+      <div class="card-body" style="padding:1rem 1.5rem;">
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">VGA Type</div>
+          <div class="cert-detail-value">{{ vm.vga|default:"std" }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Add CSRF token to HTMX POST requests
+  document.addEventListener('htmx:configRequest', function(evt) {
+    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
+    if (csrfToken) {
+      evt.detail.headers['X-CSRFToken'] = csrfToken[1];
+    }
+  });
+</script>
+{% endblock %}

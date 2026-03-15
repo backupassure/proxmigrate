@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+{% block title %}VM Inventory — ProxMigrate{% endblock %}
+{% block page_title %}VM Inventory{% endblock %}
+{% block help_slug %}inventory{% endblock %}
+
+{% block page_actions %}
+  <label class="checkbox" style="font-size:0.82rem;color:#7a7a7a;cursor:pointer;" title="Refresh table every 30 seconds">
+    <input type="checkbox" id="auto-refresh-toggle" style="margin-right:0.3rem;">
+    Auto-refresh
+  </label>
+  <button class="button is-light is-small"
+          hx-get="{% url 'inventory' %}"
+          hx-target="#vm-table-wrapper"
+          hx-select="#vm-table-wrapper"
+          hx-swap="outerHTML"
+          hx-indicator="#refresh-spinner">
+    <span id="refresh-spinner" class="htmx-indicator spinner" style="margin-right:0.3rem;"></span>
+    <span class="icon is-small"><i class="fas fa-sync-alt"></i></span>
+    <span>Refresh</span>
+  </button>
+{% endblock %}
+
+{% block content %}
+
+{# ===== Stats Row ===== #}
+<div class="columns is-multiline" style="margin-bottom:1.5rem;">
+  <div class="column is-3">
+    <div class="stat-card">
+      <div class="stat-card-icon is-blue"><i class="fas fa-server"></i></div>
+      <div>
+        <div class="stat-card-value">{{ total_count|default:0 }}</div>
+        <div class="stat-card-label">Total VMs</div>
+      </div>
+    </div>
+  </div>
+  <div class="column is-3">
+    <div class="stat-card">
+      <div class="stat-card-icon is-green"><i class="fas fa-play-circle"></i></div>
+      <div>
+        <div class="stat-card-value">{{ running_count|default:0 }}</div>
+        <div class="stat-card-label">Running</div>
+      </div>
+    </div>
+  </div>
+  <div class="column is-3">
+    <div class="stat-card">
+      <div class="stat-card-icon is-red"><i class="fas fa-stop-circle"></i></div>
+      <div>
+        <div class="stat-card-value">{{ stopped_count|default:0 }}</div>
+        <div class="stat-card-label">Stopped</div>
+      </div>
+    </div>
+  </div>
+  <div class="column is-3">
+    <div class="stat-card">
+      <div class="stat-card-icon is-purple"><i class="fas fa-pause-circle"></i></div>
+      <div>
+        <div class="stat-card-value">{{ paused_count|default:0 }}</div>
+        <div class="stat-card-label">Paused</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ===== VM Table ===== #}
+<div id="vm-table-wrapper" class="proxmigrate-card">
+  <div class="card-header">
+    <i class="fas fa-server" style="color:#3273dc;"></i> Virtual Machines
+    {% if node_name %}
+      <span style="font-weight:400;color:#7a7a7a;font-size:0.82rem;margin-left:0.5rem;">
+        on <strong>{{ node_name }}</strong>
+      </span>
+    {% endif %}
+    <div style="margin-left:auto;">
+      {% if search_query %}
+        <form method="get" style="display:inline-flex;gap:0.5rem;align-items:center;">
+          <div class="control has-icons-left" style="font-size:0.85rem;">
+            <input class="input is-small" type="text" name="q" value="{{ search_query }}" placeholder="Filter VMs...">
+            <span class="icon is-left is-small"><i class="fas fa-search"></i></span>
+          </div>
+          <button type="submit" class="button is-small is-light">Search</button>
+        </form>
+      {% else %}
+        <a href="?q=" class="button is-small is-light">
+          <span class="icon is-small"><i class="fas fa-search"></i></span>
+          <span>Filter</span>
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if vms %}
+    <div style="overflow-x:auto;">
+      <table class="table vm-table is-fullwidth" style="margin:0;">
+        <thead>
+          <tr>
+            <th>VMID</th>
+            <th>Name</th>
+            <th>Status</th>
+            <th>CPU</th>
+            <th>RAM</th>
+            <th>Uptime</th>
+            <th>Node</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for vm in vms %}
+          <tr id="vm-row-{{ vm.vmid }}">
+            <td class="vmid-col">{{ vm.vmid }}</td>
+            <td style="vertical-align:middle;">
+              <a href="{% url 'vm_detail' vm.vmid %}" style="font-weight:600;color:#1a1a2e;">
+                {{ vm.name }}
+              </a>
+            </td>
+            <td style="vertical-align:middle;">
+              {% if vm.status == 'running' %}
+                <span class="status-badge vm-status-running">Running</span>
+              {% elif vm.status == 'stopped' %}
+                <span class="status-badge vm-status-stopped">Stopped</span>
+              {% elif vm.status == 'paused' %}
+                <span class="status-badge vm-status-paused">Paused</span>
+              {% else %}
+                <span class="status-badge vm-status-unknown">{{ vm.status }}</span>
+              {% endif %}
+            </td>
+            <td style="vertical-align:middle;">
+              <span style="font-size:0.875rem;color:#4a4a4a;">
+                {% if vm.status == 'running' %}
+                  {{ vm.cpu_pct|floatformat:1 }}%
+                {% else %}
+                  {{ vm.cpus }} cores
+                {% endif %}
+              </span>
+            </td>
+            <td style="vertical-align:middle;">
+              <span style="font-size:0.875rem;color:#4a4a4a;">
+                {% if vm.maxmem %}{{ vm.maxmem|filesizeformat }}{% else %}—{% endif %}
+              </span>
+            </td>
+            <td style="vertical-align:middle;">
+              <span style="font-size:0.82rem;color:#7a7a7a;">
+                {% if vm.status == 'running' and vm.uptime %}
+                  {{ vm.uptime_human }}
+                {% else %}
+                  —
+                {% endif %}
+              </span>
+            </td>
+            <td style="vertical-align:middle;">
+              <span style="font-size:0.82rem;color:#7a7a7a;">{{ vm.node }}</span>
+            </td>
+            <td style="vertical-align:middle;">
+              <div class="vm-actions" style="justify-content:flex-end;">
+                {% if vm.status == 'running' %}
+                  <button class="button is-warning is-light is-small"
+                          hx-post="/inventory/{{ vm.vmid }}/action/shutdown/"
+                          hx-target="#vm-row-{{ vm.vmid }}"
+                          hx-swap="outerHTML"
+                          hx-confirm="Gracefully shut down {{ vm.name }}?"
+                          title="Shutdown">
+                    <i class="fas fa-power-off"></i>
+                  </button>
+                  <button class="button is-danger is-light is-small"
+                          hx-post="/inventory/{{ vm.vmid }}/action/stop/"
+                          hx-target="#vm-row-{{ vm.vmid }}"
+                          hx-swap="outerHTML"
+                          hx-confirm="Force stop {{ vm.name }}? Unsaved data may be lost."
+                          title="Stop">
+                    <i class="fas fa-stop"></i>
+                  </button>
+                  <button class="button is-info is-light is-small"
+                          hx-post="/inventory/{{ vm.vmid }}/action/reboot/"
+                          hx-target="#vm-row-{{ vm.vmid }}"
+                          hx-swap="outerHTML"
+                          hx-confirm="Reboot {{ vm.name }}?"
+                          title="Reboot">
+                    <i class="fas fa-redo"></i>
+                  </button>
+                {% elif vm.status == 'stopped' %}
+                  <button class="button is-success is-light is-small"
+                          hx-post="/inventory/{{ vm.vmid }}/action/start/"
+                          hx-target="#vm-row-{{ vm.vmid }}"
+                          hx-swap="outerHTML"
+                          title="Start">
+                    <span class="icon is-small"><i class="fas fa-play"></i></span>
+                    <span>Start</span>
+                  </button>
+                {% elif vm.status == 'paused' %}
+                  <button class="button is-warning is-light is-small"
+                          hx-post="/inventory/{{ vm.vmid }}/action/resume/"
+                          hx-target="#vm-row-{{ vm.vmid }}"
+                          hx-swap="outerHTML"
+                          title="Resume">
+                    <i class="fas fa-play"></i>
+                  </button>
+                {% endif %}
+                <a href="{% url 'vm_detail' vm.vmid %}" class="button is-light is-small" title="Details">
+                  <i class="fas fa-info-circle"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  {% else %}
+    {# Empty state #}
+    <div class="empty-state">
+      <div class="empty-state-icon"><i class="fas fa-server"></i></div>
+      <h3>No Virtual Machines Found</h3>
+      <p>
+        {% if search_query %}
+          No VMs matched your search. <a href="{% url 'inventory' %}">Clear filter</a>
+        {% else %}
+          Your Proxmox node doesn't have any VMs yet, or the API couldn't be reached.
+        {% endif %}
+      </p>
+      {% if not search_query %}
+        <a href="{% url 'importer_upload' %}" class="button is-primary">
+          <span class="icon"><i class="fas fa-upload"></i></span>
+          <span>Import a VM</span>
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Auto-refresh toggle
+  let autoRefreshInterval = null;
+  const toggle = document.getElementById('auto-refresh-toggle');
+
+  if (toggle) {
+    toggle.addEventListener('change', function() {
+      if (this.checked) {
+        autoRefreshInterval = setInterval(function() {
+          htmx.ajax('GET', '{% url "inventory" %}', {
+            target: '#vm-table-wrapper',
+            select: '#vm-table-wrapper',
+            swap: 'outerHTML'
+          });
+        }, 30000);
+      } else {
+        if (autoRefreshInterval) {
+          clearInterval(autoRefreshInterval);
+          autoRefreshInterval = null;
+        }
+      }
+    });
+  }
+
+  // Add CSRF token to HTMX POST requests
+  document.addEventListener('htmx:configRequest', function(evt) {
+    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
+    if (csrfToken) {
+      evt.detail.headers['X-CSRFToken'] = csrfToken[1];
+    }
+  });
+</script>
+{% endblock %}

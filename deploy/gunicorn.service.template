@@ -1,0 +1,24 @@
+[Unit]
+Description=ProxMigrate Gunicorn application server
+After=network.target
+
+[Service]
+Type=notify
+User=proxmigrate
+Group=proxmigrate
+WorkingDirectory=/opt/proxmigrate
+EnvironmentFile=/opt/proxmigrate/.env
+ExecStart=/opt/proxmigrate/venv/bin/gunicorn \
+    --workers 3 \
+    --bind unix:/run/proxmigrate/gunicorn.sock \
+    --timeout 3600 \
+    --log-level info \
+    --access-logfile /var/log/proxmigrate/gunicorn-access.log \
+    --error-logfile /var/log/proxmigrate/gunicorn-error.log \
+    proxmigrate.wsgi:application
+RuntimeDirectory=proxmigrate
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

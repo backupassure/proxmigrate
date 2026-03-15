@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block title %}Import VM — ProxMigrate{% endblock %}
+{% block page_title %}Import VM{% endblock %}
+{% block help_slug %}importer-upload{% endblock %}
+
+{% block content %}
+<div class="columns">
+
+  {# ===== LEFT: Upload area ===== #}
+  <div class="column is-8">
+    <div class="proxmigrate-card">
+      <div class="card-header">
+        <i class="fas fa-upload" style="color:#3273dc;"></i> Upload Disk Image
+      </div>
+      <div class="card-body">
+
+        {% if error %}
+          <div class="notification is-danger is-light" style="margin-bottom:1.5rem;font-size:0.875rem;">
+            <button class="delete" onclick="this.parentElement.remove()"></button>
+            <strong><i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i></strong>
+            {{ error }}
+          </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'importer_upload' %}" enctype="multipart/form-data" id="upload-form">
+          {% csrf_token %}
+
+          {# Drop zone #}
+          <div class="upload-dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+            <div class="upload-icon">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <p style="font-size:1.05rem;font-weight:600;color:#4a4a4a;margin-bottom:0.5rem;">
+              Drag &amp; drop your disk image here
+            </p>
+            <p style="color:#7a7a7a;font-size:0.875rem;margin-bottom:1.25rem;">
+              or <a style="color:#3273dc;text-decoration:underline;">click to browse</a>
+            </p>
+            <div>
+              <span class="format-badge">QCOW2</span>
+              <span class="format-badge">VMDK</span>
+              <span class="format-badge">VHD</span>
+              <span class="format-badge">VHDX</span>
+              <span class="format-badge">RAW</span>
+              <span class="format-badge">IMG</span>
+              <span class="format-badge">OVA</span>
+            </div>
+          </div>
+
+          {# Hidden file input #}
+          <input
+            type="file"
+            id="file-input"
+            name="disk_image"
+            accept=".qcow2,.vmdk,.vhd,.vhdx,.raw,.img,.ova"
+            style="display:none;"
+            onchange="handleFileSelect(this)"
+          >
+
+          {# File info + progress (shown after file selected) #}
+          <div id="file-info" style="display:none;margin-top:1.5rem;">
+            <div style="display:flex;align-items:center;gap:1rem;padding:1rem;background:#f5f7fa;border-radius:8px;border:1px solid #e8ecf0;margin-bottom:1rem;">
+              <div style="font-size:1.5rem;color:#3273dc;"><i class="fas fa-file-archive"></i></div>
+              <div style="flex:1;min-width:0;">
+                <div id="file-name" style="font-weight:600;color:#1a1a2e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                <div id="file-size" style="font-size:0.8rem;color:#7a7a7a;margin-top:0.1rem;"></div>
+              </div>
+              <button type="button" class="delete" onclick="clearFile()"></button>
+            </div>
+
+            {# Upload progress #}
+            <div id="upload-progress" style="display:none;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
+                <span style="font-size:0.82rem;color:#4a4a4a;font-weight:500;">Uploading...</span>
+                <span id="progress-pct" style="font-size:0.82rem;color:#3273dc;font-weight:600;">0%</span>
+              </div>
+              <progress id="upload-bar" class="progress is-primary" value="0" max="100" style="height:8px;"></progress>
+            </div>
+          </div>
+
+          {# Submit button #}
+          <div style="margin-top:1.5rem;">
+            <button
+              type="submit"
+              class="button is-primary is-medium is-fullwidth"
+              id="upload-btn"
+              style="font-weight:600;display:none;"
+            >
+              <span class="icon"><i class="fas fa-upload"></i></span>
+              <span>Upload &amp; Continue</span>
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {# ===== RIGHT: Info cards ===== #}
+  <div class="column is-4">
+
+    {# Supported formats #}
+    <div class="proxmigrate-card" style="margin-bottom:1rem;">
+      <div class="card-header">
+        <i class="fas fa-info-circle" style="color:#7a7a7a;"></i> Supported Formats
+      </div>
+      <div class="card-body" style="padding:1rem 1.5rem;">
+        <div style="display:flex;flex-direction:column;gap:0.6rem;">
+          {% for fmt in formats %}
+          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+            <span class="format-badge" style="flex-shrink:0;margin-top:0.1rem;">{{ fmt.ext }}</span>
+            <span style="font-size:0.82rem;color:#4a4a4a;">{{ fmt.description }}</span>
+          </div>
+          {% empty %}
+          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+            <span class="format-badge" style="flex-shrink:0;margin-top:0.1rem;">QCOW2</span>
+            <span style="font-size:0.82rem;color:#4a4a4a;">Native Proxmox format, no conversion needed</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+            <span class="format-badge" style="flex-shrink:0;margin-top:0.1rem;">VMDK</span>
+            <span style="font-size:0.82rem;color:#4a4a4a;">VMware Virtual Machine Disk, auto-converted</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+            <span class="format-badge" style="flex-shrink:0;margin-top:0.1rem;">VHD</span>
+            <span style="font-size:0.82rem;color:#4a4a4a;">Hyper-V Virtual Hard Disk (VPC format)</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+            <span class="format-badge" style="flex-shrink:0;margin-top:0.1rem;">VHDX</span>
+            <span style="font-size:0.82rem;color:#4a4a4a;">Hyper-V VHDX — modern format, larger VM support</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+            <span class="format-badge" style="flex-shrink:0;margin-top:0.1rem;">RAW</span>
+            <span style="font-size:0.82rem;color:#4a4a4a;">Raw disk image, converted to qcow2</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+            <span class="format-badge" style="flex-shrink:0;margin-top:0.1rem;">OVA</span>
+            <span style="font-size:0.82rem;color:#4a4a4a;">OVA archive — disk extracted and converted automatically</span>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="info-box" style="margin-top:1rem;">
+          <div class="info-box-icon" style="font-size:0.85rem;"><i class="fas fa-magic"></i></div>
+          <div style="font-size:0.8rem;">
+            All formats are automatically converted to <strong>qcow2</strong> using <code>qemu-img</code> before transfer to Proxmox.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# What happens next #}
+    <div class="proxmigrate-card">
+      <div class="card-header">
+        <i class="fas fa-list-ol" style="color:#7a7a7a;"></i> What Happens Next?
+      </div>
+      <div class="card-body" style="padding:1rem 1.5rem;">
+        <ol class="step-guide" style="padding:0;">
+          <li style="padding:0.6rem 0;border-bottom:1px solid #f5f7fa;">
+            <div class="step-guide-num" style="background:#3273dc;width:24px;height:24px;font-size:0.72rem;">1</div>
+            <div class="step-guide-text" style="font-size:0.83rem;">
+              <strong>Upload</strong> — Your disk image is uploaded to the ProxMigrate server.
+            </div>
+          </li>
+          <li style="padding:0.6rem 0;border-bottom:1px solid #f5f7fa;">
+            <div class="step-guide-num" style="background:#3273dc;width:24px;height:24px;font-size:0.72rem;">2</div>
+            <div class="step-guide-text" style="font-size:0.83rem;">
+              <strong>Configure</strong> — Set VM name, CPU, RAM, firmware, and network options.
+            </div>
+          </li>
+          <li style="padding:0.6rem 0;">
+            <div class="step-guide-num" style="background:#3273dc;width:24px;height:24px;font-size:0.72rem;">3</div>
+            <div class="step-guide-text" style="font-size:0.83rem;">
+              <strong>Deploy</strong> — ProxMigrate converts, transfers, and creates your VM on Proxmox automatically.
+            </div>
+          </li>
+        </ol>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-input');
+  const fileInfo  = document.getElementById('file-info');
+  const fileName  = document.getElementById('file-name');
+  const fileSize  = document.getElementById('file-size');
+  const uploadBtn = document.getElementById('upload-btn');
+
+  // Drag and drop
+  dropzone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+  });
+
+  dropzone.addEventListener('dragleave', e => {
+    dropzone.classList.remove('dragover');
+  });
+
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) {
+      fileInput.files = e.dataTransfer.files;
+      handleFileSelect(fileInput);
+    }
+  });
+
+  function handleFileSelect(input) {
+    if (!input.files.length) return;
+    const file = input.files[0];
+
+    fileName.textContent = file.name;
+    fileSize.textContent = formatBytes(file.size);
+    fileInfo.style.display = 'block';
+    uploadBtn.style.display = 'flex';
+
+    // Update drop zone to show selected state
+    dropzone.style.borderColor = '#3273dc';
+    dropzone.style.background  = '#eff6ff';
+  }
+
+  function clearFile() {
+    fileInput.value = '';
+    fileInfo.style.display = 'none';
+    uploadBtn.style.display = 'none';
+    dropzone.style.borderColor = '';
+    dropzone.style.background  = '';
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  // Upload progress via XHR
+  document.getElementById('upload-form').addEventListener('submit', function(e) {
+    if (!fileInput.files.length) return;
+
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const xhr = new XMLHttpRequest();
+    const progressDiv = document.getElementById('upload-progress');
+    const progressBar = document.getElementById('upload-bar');
+    const progressPct = document.getElementById('progress-pct');
+
+    progressDiv.style.display = 'block';
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<span class="spinner"></span>&nbsp; Uploading...';
+
+    xhr.upload.addEventListener('progress', function(evt) {
+      if (evt.lengthComputable) {
+        const pct = Math.round((evt.loaded / evt.total) * 100);
+        progressBar.value = pct;
+        progressPct.textContent = pct + '%';
+      }
+    });
+
+    xhr.addEventListener('load', function() {
+      if (xhr.status >= 200 && xhr.status < 400) {
+        // Server will redirect to configure page
+        window.location.href = xhr.responseURL || '{% url "importer_upload" %}';
+      } else {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<span class="icon"><i class="fas fa-upload"></i></span><span>Upload &amp; Continue</span>';
+        progressDiv.style.display = 'none';
+      }
+    });
+
+    xhr.open('POST', this.action);
+    xhr.send(formData);
+  });
+</script>
+{% endblock %}
