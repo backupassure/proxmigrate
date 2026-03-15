@@ -268,6 +268,12 @@
     }
   });
 
+  document.addEventListener('keydown', function(evt) {
+    if (evt.target && evt.target.id === 'vm-filter-input' && evt.key === 'Enter') {
+      evt.preventDefault();
+    }
+  });
+
   // Re-apply filter after HTMX swaps the table (poll refresh)
   document.addEventListener('htmx:afterSwap', function(evt) {
     if (evt.detail.target && evt.detail.target.id === 'vm-table-wrapper') {
