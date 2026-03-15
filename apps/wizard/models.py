@@ -132,3 +132,21 @@ class DiscoveredEnvironment(models.Model):
             return json.loads(self.existing_vmids_json)
         except (json.JSONDecodeError, TypeError):
             return []
+
+
+# ── Signal: update nginx WebSocket proxy whenever ProxmoxConfig is saved ──────
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+
+@receiver(post_save, sender=ProxmoxConfig)
+def _update_nginx_ws(sender, instance, **kwargs):
+    """Regenerate the nginx WebSocket proxy config when Proxmox host is configured."""
+    if not instance.host or not instance.is_configured:
+        return
+    try:
+        from apps.core.management.commands.update_nginx_ws import write_ws_conf, reload_nginx
+        write_ws_conf(instance.host, instance.api_port)
+        reload_nginx()
+    except Exception as exc:
+        logger.warning("Could not update nginx WS config: %s", exc)

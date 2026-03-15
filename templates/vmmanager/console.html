@@ -153,29 +153,6 @@
       <div class="status-spinner"></div>
       <div class="status-text" id="status-text">Connecting to console…</div>
 
-      <div class="cert-warning" id="cert-warning">
-        <h3>⚠ Certificate Not Trusted</h3>
-        <p>
-          Your browser is refusing the connection because it doesn't trust
-          the Proxmox server's SSL certificate. This is a one-time step.
-        </p>
-        <div class="steps">
-          <strong>Step 1.</strong> Open the Proxmox web UI in a new tab and accept the certificate:<br>
-          <a href="https://{{ vnc.proxmox_host }}:{{ vnc.proxmox_port }}"
-             target="_blank"
-             style="color:#48c78e;word-break:break-all;">
-            https://{{ vnc.proxmox_host }}:{{ vnc.proxmox_port }}
-          </a><br><br>
-          <strong>Step 2.</strong> Click "Advanced" → "Proceed" (or "Accept the Risk").<br><br>
-          <strong>Step 3.</strong> Return here and reload the console.
-        </div>
-        <button class="toolbar-btn" onclick="location.reload()" style="margin:0 auto;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-          </svg>
-          Reload Console
-        </button>
-      </div>
     {% endif %}
   </div>
 </div>
@@ -200,17 +177,20 @@
     });
   }
 
-  const wsUrl = `wss://${d.host}:${d.port}/api2/json/nodes/${d.node}/qemu/${d.vmid}/vncwebsocket` +
+  // WebSocket goes through nginx /vm-ws/ proxy — avoids browser Origin rejection
+  // nginx proxies server-to-server to Proxmox, no cross-origin issue
+  const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${wsProto}//${window.location.host}/vm-ws/nodes/${d.node}/qemu/${d.vmid}/vncwebsocket` +
                 `?port=${d.vnc_port}&vncticket=${encodeURIComponent(d.ticket)}`;
 
-  document.getElementById('status-text').textContent = 'Checking connection to Proxmox…';
+  document.getElementById('status-text').textContent = 'Checking connection…';
 
   const probe = await testWs(wsUrl);
   if (probe === 'error') {
-    document.getElementById('status-spinner')?.remove();
-    document.getElementById('status-text').style.display = 'none';
-    document.getElementById('cert-warning').style.display = 'block';
-    throw new Error('WebSocket probe failed — likely cert not trusted');
+    document.getElementById('status-text').textContent =
+      'Connection failed. nginx WebSocket proxy may not be configured yet — ' +
+      'try saving Proxmox settings again or contact your administrator.';
+    throw new Error('WebSocket probe failed');
   }
 
   document.getElementById('status-text').textContent = 'Loading console…';
