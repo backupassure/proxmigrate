@@ -11,148 +11,22 @@
       </div>
       <h2>Discovering Your Environment</h2>
     </div>
-    <p class="subtitle">ProxMigrate has queried your Proxmox cluster via API. Review the discovered resources below.</p>
+    <p class="subtitle">Querying your Proxmox cluster — this takes a few seconds.</p>
   </div>
 
-  <div class="wizard-card-body">
+  {# Results area — HTMX auto-loads discovery on page render #}
+  <div id="discovery-results"
+       hx-get="{% url 'wizard_step4_run' %}"
+       hx-trigger="load"
+       hx-swap="outerHTML">
 
-    {% if discovery_error %}
-      {# Discovery failed #}
-      <div class="notification is-danger is-light" style="margin-bottom:1.5rem;">
-        <strong><i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>Discovery failed</strong>
-        <p style="margin-top:0.4rem;">{{ discovery_error }}</p>
-      </div>
-      <div style="text-align:center;padding:1rem 0;">
-        <form method="post" action="{% url 'wizard_step4' %}">
-          {% csrf_token %}
-          <input type="hidden" name="retry" value="1">
-          <button type="submit" class="button is-warning is-medium" style="font-weight:600;">
-            <span class="icon"><i class="fas fa-redo"></i></span>
-            <span>Retry Discovery</span>
-          </button>
-        </form>
-      </div>
-
-    {% else %}
-      {# Discovery succeeded — show results #}
-
-      {# Cluster Nodes #}
-      <div class="discovery-section">
-        <div class="discovery-section-label">
-          <i class="fas fa-project-diagram" style="margin-right:0.4rem;"></i>
-          Cluster Nodes ({{ nodes|length }})
-        </div>
-        <div>
-          {% for node in nodes %}
-            <span class="discovery-chip">
-              <i class="fas fa-circle" style="font-size:0.4rem;vertical-align:middle;color:{% if node.status == 'online' %}#48c78e{% else %}#f14668{% endif %};margin-right:0.3rem;"></i>
-              {{ node.name }}
-              <span style="opacity:0.6;font-size:0.75rem;margin-left:0.3rem;">{{ node.status }}</span>
-            </span>
-          {% empty %}
-            <span style="color:#7a7a7a;font-size:0.875rem;">No nodes found</span>
-          {% endfor %}
-        </div>
-      </div>
-
-      {# Storage Pools #}
-      <div class="discovery-section">
-        <div class="discovery-section-label">
-          <i class="fas fa-database" style="margin-right:0.4rem;"></i>
-          Storage Pools ({{ storage_pools|length }})
-        </div>
-        <table class="table is-fullwidth is-narrow" style="font-size:0.875rem;border:1px solid #e8ecf0;border-radius:8px;overflow:hidden;">
-          <thead>
-            <tr style="background:#f5f7fa;">
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Name</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Type</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Available</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Shared</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for storage in storage_pools %}
-            <tr>
-              <td style="font-weight:600;">{{ storage.storage }}</td>
-              <td>
-                <span class="tag is-light" style="font-size:0.75rem;">{{ storage.type }}</span>
-              </td>
-              <td style="color:{% if storage.avail_gb > 50 %}#257953{% else %}#b45309{% endif %};">
-                {{ storage.avail_gb|floatformat:1 }} GB
-              </td>
-              <td>
-                {% if storage.shared %}
-                  <span style="color:#48c78e;"><i class="fas fa-check"></i></span>
-                {% else %}
-                  <span style="color:#b5b5b5;"><i class="fas fa-minus"></i></span>
-                {% endif %}
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="4" style="text-align:center;color:#7a7a7a;">No storage pools found</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      {# Network Bridges #}
-      <div class="discovery-section">
-        <div class="discovery-section-label">
-          <i class="fas fa-ethernet" style="margin-right:0.4rem;"></i>
-          Network Bridges
-        </div>
-        <div>
-          {% for bridge in network_bridges %}
-            <span class="discovery-chip">{{ bridge }}</span>
-          {% empty %}
-            <span style="color:#7a7a7a;font-size:0.875rem;">No bridges detected</span>
-          {% endfor %}
-        </div>
-      </div>
-
-      {# Host CPU Info #}
-      <div class="discovery-section">
-        <div class="discovery-section-label">
-          <i class="fas fa-microchip" style="margin-right:0.4rem;"></i>
-          Host CPU
-        </div>
-        <div style="font-size:0.875rem;color:#4a4a4a;">
-          <span style="font-weight:600;color:#1a1a2e;">{{ cpu_model|default:"Unknown" }}</span>
-          {% if cpu_cores %}
-            &mdash; {{ cpu_cores }} cores
-          {% endif %}
-        </div>
-      </div>
-
-      {# Existing VMID count info #}
-      {% if existing_vmids %}
-        <div class="info-box" style="margin-top:0.5rem;">
-          <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
-          <div>
-            Found <strong>{{ existing_vmids|length }} existing VMs</strong> on this cluster
-            (VMIDs: {{ existing_vmids|join:", " }}).
-            ProxMigrate will avoid these VMIDs when creating new VMs.
-          </div>
-        </div>
-      {% endif %}
-
-    {% endif %}
+    {# Spinner shown while HTMX request is in-flight #}
+    <div class="wizard-card-body" style="text-align:center;padding:3rem 2rem;">
+      <div class="spinner" style="width:2.5rem;height:2.5rem;border-width:4px;margin:0 auto 1.25rem;"></div>
+      <p style="color:#7a7a7a;font-size:0.95rem;">Connecting to Proxmox API and SSH&hellip;</p>
+      <p style="color:#b5b5b5;font-size:0.8rem;margin-top:0.4rem;">Scanning nodes, storage, and networks.</p>
+    </div>
   </div>
 
-  {% if not discovery_error %}
-  <div class="wizard-card-footer">
-    <a href="{% url 'wizard_step3' %}" class="button is-light" style="font-weight:500;">
-      <span class="icon"><i class="fas fa-arrow-left"></i></span>
-      <span>Back</span>
-    </a>
-    <a href="{% url 'wizard_step5' %}" class="button is-primary is-medium" style="font-weight:600;min-width:200px;">
-      <span class="icon"><i class="fas fa-thumbs-up"></i></span>
-      <span>Looks Good! Continue</span>
-      <span class="icon"><i class="fas fa-arrow-right"></i></span>
-    </a>
-  </div>
-  {% endif %}
 </div>
 {% endblock %}

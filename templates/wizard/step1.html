@@ -27,10 +27,7 @@
 
     <form method="post"
           action="{% url 'wizard_step1' %}"
-          hx-post="{% url 'wizard_step1' %}"
-          hx-target="#step1-form-area"
-          hx-swap="innerHTML"
-          hx-indicator="#step1-spinner">
+          id="step1-form">
 
       {% csrf_token %}
       <div class="wizard-card-body">
@@ -119,12 +116,12 @@
 
       <div class="wizard-card-footer">
         <div style="display:flex;align-items:center;gap:0.75rem;">
-          <span id="step1-spinner" class="htmx-indicator">
+          <span id="step1-spinner" style="display:none;">
             <span class="spinner"></span>
             <span style="font-size:0.85rem;color:#7a7a7a;margin-left:0.4rem;">Testing connectivity...</span>
           </span>
         </div>
-        <button type="submit" class="button is-primary is-medium" style="font-weight:600;min-width:200px;">
+        <button type="submit" class="button is-primary is-medium" style="font-weight:600;min-width:200px;" id="step1-btn">
           <span>Test &amp; Continue</span>
           <span class="icon"><i class="fas fa-arrow-right"></i></span>
         </button>
@@ -132,4 +129,13 @@
     </form>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.getElementById('step1-form').addEventListener('submit', function() {
+    document.getElementById('step1-spinner').style.display = 'flex';
+    document.getElementById('step1-btn').disabled = true;
+  });
+</script>
 {% endblock %}

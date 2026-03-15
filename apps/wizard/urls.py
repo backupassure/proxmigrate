@@ -9,6 +9,8 @@ urlpatterns = [
     path("step/2/", views.step2, name="wizard_step2"),
     path("step/3/", views.step3, name="wizard_step3"),
     path("step/4/", views.step4, name="wizard_step4"),
+    path("step/4/run/", views.step4_run, name="wizard_step4_run"),
     path("step/5/", views.step5, name="wizard_step5"),
+    path("step/5/browse/", views.step5_browse, name="wizard_step5_browse"),
     path("step/6/", views.step6, name="wizard_step6"),
 ]

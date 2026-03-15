@@ -11,7 +11,9 @@
       </div>
       <h2>Configure Defaults</h2>
     </div>
-    <p class="subtitle">Set the default values used when creating new VMs. You can change these later in Settings.</p>
+    <p class="subtitle">
+      These defaults pre-fill the VM creation form — you can override every value per-VM when you import.
+    </p>
   </div>
 
   <div class="wizard-card-body">
@@ -22,6 +24,19 @@
         {{ error }}
       </div>
     {% endif %}
+
+    {# Disk flow info box #}
+    <div class="info-box" style="margin-bottom:1.5rem;">
+      <div class="info-box-icon"><i class="fas fa-route"></i></div>
+      <div style="font-size:0.85rem;">
+        <strong>Disk import flow:</strong>
+        Browser upload &rarr; <strong>this server's disk</strong> (convert with qemu-img)
+        &rarr; SFTP &rarr; <strong>Proxmox temp dir</strong>
+        &rarr; <code>qm importdisk</code> &rarr; storage pool.
+        Disk space is used on <em>both</em> this server and Proxmox during import, then
+        cleaned up automatically.
+      </div>
+    </div>
 
     <form method="post" action="{% url 'wizard_step5' %}" id="step5-form">
       {% csrf_token %}
@@ -41,9 +56,12 @@
               <div class="select is-fullwidth">
                 <select name="default_node" id="id_default_node">
                   {% for node in nodes %}
-                    <option value="{{ node.name }}" {% if form.default_node.value == node.name %}selected{% endif %}>
-                      {{ node.name }}{% if node.status == 'online' %} (online){% endif %}
+                    <option value="{{ node.node }}"
+                      {% if form.default_node.value == node.node %}selected{% endif %}>
+                      {{ node.node }}{% if node.status == 'online' %} (online){% endif %}
                     </option>
+                  {% empty %}
+                    <option value="">No nodes found</option>
                   {% endfor %}
                 </select>
               </div>
@@ -57,10 +75,13 @@
             <div class="control">
               <div class="select is-fullwidth">
                 <select name="default_storage" id="id_default_storage">
-                  {% for storage in storage_pools %}
-                    <option value="{{ storage.storage }}" {% if form.default_storage.value == storage.storage %}selected{% endif %}>
-                      {{ storage.storage }} ({{ storage.type }}, {{ storage.avail_gb|floatformat:0 }} GB free)
+                  {% for s in storage_pools %}
+                    <option value="{{ s.storage }}"
+                      {% if form.default_storage.value == s.storage %}selected{% endif %}>
+                      {{ s.storage }} ({{ s.type }}{% if s.avail_gb %}, {{ s.avail_gb|floatformat:0 }} GB free{% endif %})
                     </option>
+                  {% empty %}
+                    <option value="">No storage found</option>
                   {% endfor %}
                 </select>
               </div>
@@ -75,9 +96,12 @@
               <div class="select is-fullwidth">
                 <select name="default_bridge" id="id_default_bridge">
                   {% for bridge in network_bridges %}
-                    <option value="{{ bridge }}" {% if form.default_bridge.value == bridge %}selected{% endif %}>
+                    <option value="{{ bridge }}"
+                      {% if form.default_bridge.value == bridge %}selected{% endif %}>
                       {{ bridge }}
                     </option>
+                  {% empty %}
+                    <option value="">No bridges found</option>
                   {% endfor %}
                 </select>
               </div>
@@ -85,20 +109,32 @@
             <p class="field-hint">New VM network interfaces will use this bridge.</p>
           </div>
 
-          {# Temp Directory #}
+          {# Proxmox Temp Directory #}
           <div class="field">
-            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">Upload Temp Directory</label>
-            <div class="control has-icons-left">
-              <input
-                class="input is-monospace"
-                type="text"
-                name="temp_dir"
-                value="{{ form.temp_dir.value|default:'/tmp/proxmigrate' }}"
-                placeholder="/tmp/proxmigrate"
-              >
-              <span class="icon is-left"><i class="fas fa-folder" style="color:#b5b5b5;"></i></span>
+            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">
+              Proxmox Temp Directory
+            </label>
+            <div class="control" style="display:flex;gap:0.5rem;">
+              <div class="control has-icons-left" style="flex:1;">
+                <input
+                  class="input is-monospace"
+                  type="text"
+                  name="proxmox_temp_dir"
+                  id="id_proxmox_temp_dir"
+                  value="{{ form.proxmox_temp_dir.value|default:'/var/tmp/proxmigrate/' }}"
+                  placeholder="/var/tmp/proxmigrate/"
+                >
+                <span class="icon is-left"><i class="fas fa-folder" style="color:#b5b5b5;"></i></span>
+              </div>
+              <button type="button" class="button" onclick="openDirBrowser()" title="Browse directories on Proxmox">
+                <span class="icon"><i class="fas fa-folder-open"></i></span>
+                <span>Browse</span>
+              </button>
             </div>
-            <p class="field-hint">Staging directory on this server for uploaded disk files before SFTP transfer.</p>
+            <p class="field-hint">
+              Directory <strong>on the Proxmox host</strong> — created automatically if it doesn't exist.
+              Files are SFTPed here, imported, then cleaned up.
+            </p>
           </div>
         </div>
 
@@ -123,8 +159,8 @@
               <div class="field" style="margin-bottom:1.25rem;">
                 <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">RAM (MB)</label>
                 <div class="control has-icons-left">
-                  <input class="input" type="number" name="default_memory"
-                    value="{{ form.default_memory.value|default:2048 }}" min="256" step="256">
+                  <input class="input" type="number" name="default_memory_mb"
+                    value="{{ form.default_memory_mb.value|default:2048 }}" min="256" step="256">
                   <span class="icon is-left"><i class="fas fa-memory" style="color:#b5b5b5;"></i></span>
                 </div>
               </div>
@@ -137,7 +173,6 @@
               VMID Pool Range
             </div>
 
-            {# Conflict warning #}
             {% if existing_vmids %}
               <div style="font-size:0.78rem;color:#7a7a7a;margin-bottom:0.75rem;">
                 <i class="fas fa-info-circle" style="color:#3273dc;margin-right:0.3rem;"></i>
@@ -152,8 +187,8 @@
                 <div class="field">
                   <label class="label" style="font-size:0.85rem;font-weight:600;color:#4a4a4a;">Pool Min</label>
                   <div class="control">
-                    <input class="input" type="number" name="vmid_pool_min"
-                      value="{{ form.vmid_pool_min.value|default:900 }}" min="100" max="999999999">
+                    <input class="input" type="number" name="vmid_min"
+                      value="{{ form.vmid_min.value|default:100 }}" min="100" max="999999999">
                   </div>
                 </div>
               </div>
@@ -161,15 +196,15 @@
                 <div class="field">
                   <label class="label" style="font-size:0.85rem;font-weight:600;color:#4a4a4a;">Pool Max</label>
                   <div class="control">
-                    <input class="input" type="number" name="vmid_pool_max"
-                      value="{{ form.vmid_pool_max.value|default:999 }}" min="100" max="999999999">
+                    <input class="input" type="number" name="vmid_max"
+                      value="{{ form.vmid_max.value|default:999 }}" min="100" max="999999999">
                   </div>
                 </div>
               </div>
             </div>
             <p class="field-hint" style="margin-top:0.25rem;">
-              ProxMigrate will auto-select VMIDs within this range when creating VMs.
-              Proxmox reserves 100–999 for system use; we recommend starting at 900 or higher if those are free.
+              ProxMigrate auto-selects VMIDs within this range. Proxmox reserves 100–999 by
+              convention; 900–999 or 1000+ is a safe starting range if those are free.
             </p>
           </div>
 
@@ -185,9 +220,60 @@
     </a>
     <button type="submit" form="step5-form" class="button is-success is-medium" style="font-weight:600;min-width:200px;">
       <span class="icon"><i class="fas fa-save"></i></span>
-      <span>Save &amp; Complete</span>
+      <span>Save &amp; Continue</span>
       <span class="icon"><i class="fas fa-arrow-right"></i></span>
     </button>
   </div>
 </div>
+{% endblock %}
+
+{# Directory browser modal #}
+{% block extra_scripts %}
+<div id="dir-browser-modal" style="display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center;">
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);" onclick="closeDirBrowser()"></div>
+  <div style="position:relative;background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.3);width:100%;max-width:520px;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0.875rem 1.25rem;background:#1a1a2e;color:#fff;">
+      <span style="font-weight:600;font-size:0.95rem;">
+        <i class="fas fa-folder-open" style="margin-right:0.5rem;color:#f59e0b;"></i>
+        Browse Proxmox Directories
+      </span>
+      <button type="button" onclick="closeDirBrowser()" style="background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;font-size:1.1rem;line-height:1;">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div id="dir-browser-body" style="min-height:160px;">
+      <div style="padding:2rem;text-align:center;color:#b5b5b5;">
+        <span class="spinner" style="display:inline-block;"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openDirBrowser() {
+    const modal = document.getElementById('dir-browser-modal');
+    modal.style.display = 'flex';
+    const currentPath = document.getElementById('id_proxmox_temp_dir').value.replace(/\/$/, '') || '/var/tmp';
+    document.getElementById('dir-browser-body').innerHTML =
+      '<div style="padding:2rem;text-align:center;color:#b5b5b5;"><span class="spinner" style="display:inline-block;"></span></div>';
+    htmx.ajax('GET', '{% url "wizard_step5_browse" %}?path=' + encodeURIComponent(currentPath), {
+      target: '#dir-browser-body',
+      swap: 'innerHTML'
+    });
+  }
+
+  function closeDirBrowser() {
+    document.getElementById('dir-browser-modal').style.display = 'none';
+  }
+
+  function selectDir(path) {
+    if (!path.endsWith('/')) path = path + '/';
+    document.getElementById('id_proxmox_temp_dir').value = path;
+    closeDirBrowser();
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeDirBrowser();
+  });
+</script>
 {% endblock %}

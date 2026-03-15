@@ -21,7 +21,7 @@
       <div class="summary-grid">
         <div class="summary-item">
           <div class="summary-item-label"><i class="fas fa-server" style="margin-right:0.3rem;"></i>Proxmox Host</div>
-          <div class="summary-item-value">{{ config.proxmox_host }}</div>
+          <div class="summary-item-value">{{ config.host }}:{{ config.api_port }}</div>
         </div>
         <div class="summary-item">
           <div class="summary-item-label"><i class="fas fa-project-diagram" style="margin-right:0.3rem;"></i>Default Node</div>
@@ -37,11 +37,11 @@
         </div>
         <div class="summary-item">
           <div class="summary-item-label"><i class="fas fa-key" style="margin-right:0.3rem;"></i>API Token</div>
-          <div class="summary-item-value" style="font-family:monospace;font-size:0.8rem;">{{ config.token_id }}</div>
+          <div class="summary-item-value" style="font-family:monospace;font-size:0.8rem;">{{ config.api_token_id }}</div>
         </div>
         <div class="summary-item">
           <div class="summary-item-label"><i class="fas fa-hashtag" style="margin-right:0.3rem;"></i>VMID Pool</div>
-          <div class="summary-item-value">{{ config.vmid_pool_min }} &ndash; {{ config.vmid_pool_max }}</div>
+          <div class="summary-item-value">{{ config.vmid_min }} &ndash; {{ config.vmid_max }}</div>
         </div>
       </div>
 

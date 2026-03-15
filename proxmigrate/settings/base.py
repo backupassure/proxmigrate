@@ -70,6 +70,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "apps.core.middleware.ForcePasswordChangeMiddleware",
     "apps.core.middleware.WizardRedirectMiddleware",
 ]
 
@@ -199,6 +200,15 @@ LOGIN_REDIRECT_URL = "/"
 # ---------------------------------------------------------------------------
 
 HELP_DIR = BASE_DIR / "help"
+
+# ---------------------------------------------------------------------------
+# CSRF / Security
+# ---------------------------------------------------------------------------
+
+# Tell Django it is behind an SSL-terminating reverse proxy (nginx).
+# Nginx sets X-Forwarded-Proto: https; without this, Django sees the gunicorn
+# connection as plain HTTP and its CSRF referer check fails.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # ---------------------------------------------------------------------------
 # Deployment

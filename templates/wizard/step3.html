@@ -88,17 +88,17 @@
             </label>
             <div class="control has-icons-left">
               <input
-                class="input is-monospace {% if form.token_id.errors %}is-danger{% endif %}"
+                class="input is-monospace {% if form.api_token_id.errors %}is-danger{% endif %}"
                 type="text"
-                name="token_id"
-                id="id_token_id"
-                value="{{ form.token_id.value|default:'root@pam!proxmigrate' }}"
+                name="api_token_id"
+                id="id_api_token_id"
+                value="{{ form.api_token_id.value|default:'root@pam!proxmigrate' }}"
                 placeholder="root@pam!proxmigrate"
                 required
               >
               <span class="icon is-left"><i class="fas fa-tag" style="color:#b5b5b5;"></i></span>
             </div>
-            {% for error in form.token_id.errors %}
+            {% for error in form.api_token_id.errors %}
               <p class="help is-danger">{{ error }}</p>
             {% endfor %}
             <p class="field-hint">Format: <code>user@realm!tokenid</code></p>
@@ -113,17 +113,17 @@
             </label>
             <div class="control has-icons-left">
               <input
-                class="input {% if form.token_secret.errors %}is-danger{% endif %}"
+                class="input {% if form.api_token_secret.errors %}is-danger{% endif %}"
                 type="password"
-                name="token_secret"
-                id="id_token_secret"
+                name="api_token_secret"
+                id="id_api_token_secret"
                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                 autocomplete="off"
                 required
               >
               <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
             </div>
-            {% for error in form.token_secret.errors %}
+            {% for error in form.api_token_secret.errors %}
               <p class="help is-danger">{{ error }}</p>
             {% endfor %}
           </div>
