@@ -9,6 +9,13 @@
     <span>Back to Inventory</span>
   </a>
   &nbsp;
+  {% if vm.status == 'running' %}
+  <a href="{% url 'vm_console' vmid %}" target="_blank" class="button is-dark is-small" title="Open VM console in new tab">
+    <span class="icon is-small"><i class="fas fa-terminal"></i></span>
+    <span>Console</span>
+  </a>
+  &nbsp;
+  {% endif %}
   {# Power action buttons based on status #}
   {% if vm.status == 'running' %}
     <button class="button is-warning is-small"

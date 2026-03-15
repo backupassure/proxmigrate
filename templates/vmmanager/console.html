@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Console — {{ vnc.vm_name|default:vmid }}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d0d0d;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top toolbar */
+    .console-toolbar {
+      background: #1a1a2e;
+      border-bottom: 1px solid #2a2a4a;
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-shrink: 0;
+      height: 44px;
+    }
+    .console-toolbar .vm-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .console-toolbar .vm-label .badge {
+      background: #48c78e;
+      color: #fff;
+      font-size: 0.7rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+    .console-toolbar .spacer { flex: 1; }
+    .toolbar-btn {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #d0d0d0;
+      font-size: 0.78rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .toolbar-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    .toolbar-btn.is-danger { border-color: rgba(241,70,104,0.4); color: #f14668; }
+    .toolbar-btn.is-danger:hover { background: rgba(241,70,104,0.15); }
+
+    /* noVNC canvas area */
+    #novnc-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #111;
+    }
+    #novnc-container canvas {
+      display: block;
+    }
+
+    /* Status overlay */
+    #status-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1rem;
+      background: #111;
+      z-index: 10;
+    }
+    .status-spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #48c78e;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status-text {
+      font-size: 0.9rem;
+      color: #9a9a9a;
+    }
+    .status-error {
+      color: #f14668;
+      font-size: 0.9rem;
+      max-width: 400px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="console-toolbar">
+  <div class="vm-label">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+    </svg>
+    {{ vnc.vm_name|default:vmid }}
+    <span class="badge">VMID {{ vmid }}</span>
+  </div>
+  <div class="spacer"></div>
+
+  {% if not error %}
+  <button class="toolbar-btn" id="btn-fullscreen" title="Fullscreen">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+    </svg>
+    Fullscreen
+  </button>
+  <button class="toolbar-btn" id="btn-ctrl-alt-del" title="Send Ctrl+Alt+Del">
+    Ctrl+Alt+Del
+  </button>
+  <button class="toolbar-btn" id="btn-clipboard" title="Paste clipboard text to VM">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+      <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+    </svg>
+    Clipboard
+  </button>
+  {% endif %}
+
+  <a class="toolbar-btn" href="{% url 'vm_detail' vmid %}">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Back to VM
+  </a>
+</div>
+
+<div id="novnc-container">
+  <div id="status-overlay">
+    {% if error %}
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f14668" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <div class="status-error">{{ error }}</div>
+      <a class="toolbar-btn" href="{% url 'vm_detail' vmid %}" style="margin-top:0.5rem;">Back to VM</a>
+    {% else %}
+      <div class="status-spinner"></div>
+      <div class="status-text" id="status-text">Connecting to console…</div>
+    {% endif %}
+  </div>
+</div>
+
+{% if not error %}
+{# Load noVNC from the Proxmox server — guaranteed to be there and version-matched #}
+<script id="console-data" type="application/json">
+  {"host": "{{ vnc.proxmox_host }}", "port": {{ vnc.proxmox_port }}, "node": "{{ vnc.node }}", "vmid": {{ vmid }}, "ticket": "{{ vnc.ticket }}", "vnc_port": {{ vnc.port }}}
+</script>
+<script type="module">
+  const d = JSON.parse(document.getElementById('console-data').textContent);
+  const PROXMOX_HOST = d.host;
+  const PROXMOX_PORT = d.port;
+  const NODE        = d.node;
+  const VMID        = d.vmid;
+  const VNC_TICKET  = d.ticket;
+  const VNC_PORT    = d.vnc_port;
+
+  // noVNC is bundled with every Proxmox installation
+  const rfbUrl = `https://${PROXMOX_HOST}:${PROXMOX_PORT}/novnc/core/rfb.js`;
+
+  const { default: RFB } = await import(rfbUrl).catch(() => {
+    document.getElementById('status-text').textContent =
+      'Could not load noVNC from Proxmox server. Check browser console.';
+    return { default: null };
+  });
+  if (!RFB) throw new Error('RFB not loaded');
+
+  const container = document.getElementById('novnc-container');
+  const wsUrl = `wss://${PROXMOX_HOST}:${PROXMOX_PORT}/api2/json/nodes/${NODE}/qemu/${VMID}/vncwebsocket` +
+                `?port=${VNC_PORT}&vncticket=${encodeURIComponent(VNC_TICKET)}`;
+
+  const rfb = new RFB(container, wsUrl, {
+    credentials: { password: VNC_TICKET },
+  });
+
+  rfb.scaleViewport = true;
+  rfb.resizeSession = true;
+
+  rfb.addEventListener('connect', () => {
+    document.getElementById('status-overlay').style.display = 'none';
+  });
+
+  rfb.addEventListener('disconnect', (e) => {
+    const overlay = document.getElementById('status-overlay');
+    overlay.innerHTML = `
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <div style="color:#f59e0b;font-size:0.9rem;">
+        Disconnected${e.detail.clean ? '' : ' (unexpectedly)'}.
+      </div>
+      <a href="/vm/${VMID}/console/" style="margin-top:0.5rem;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#d0d0d0;font-size:0.78rem;padding:0.3rem 0.75rem;border-radius:6px;text-decoration:none;">
+        Reconnect
+      </a>`;
+    overlay.style.display = 'flex';
+  });
+
+  // Toolbar buttons
+  document.getElementById('btn-ctrl-alt-del').addEventListener('click', () => {
+    rfb.sendCtrlAltDel();
+  });
+
+  document.getElementById('btn-fullscreen').addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      container.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  });
+
+  document.getElementById('btn-clipboard').addEventListener('click', async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      rfb.clipboardPasteFrom(text);
+    } catch {
+      alert('Clipboard access denied. Use Ctrl+V inside the console window.');
+    }
+  });
+</script>
+{% endif %}
+
+</body>
+</html>

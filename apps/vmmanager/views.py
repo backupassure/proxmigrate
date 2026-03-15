@@ -165,6 +165,36 @@ def _build_vm(raw_config, vm_status, node, vmid):
 
 
 @login_required
+def vm_console(request, vmid):
+    """Render a full-screen noVNC console for the VM."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    error = None
+    vnc = {}
+
+    try:
+        api = config.get_api_client()
+        # Get VM name for the window title
+        status = api.get_vm_status(node, vmid)
+        vm_name = status.get("name", str(vmid))
+        vnc = api.create_vnc_ticket(node, vmid)
+        vnc["vm_name"] = vm_name
+        vnc["node"] = node
+        vnc["vmid"] = vmid
+        vnc["proxmox_host"] = config.host
+        vnc["proxmox_port"] = config.api_port
+    except ProxmoxAPIError as exc:
+        error = f"Could not create console session: {exc.message}"
+        logger.error("vm_console vmid=%d: %s", vmid, exc)
+
+    return render(request, "vmmanager/console.html", {
+        "vmid": vmid,
+        "vnc": vnc,
+        "error": error,
+    })
+
+
+@login_required
 def vm_detail(request, vmid):
     """Show detailed configuration and status for a single VM."""
     config = ProxmoxConfig.get_config()

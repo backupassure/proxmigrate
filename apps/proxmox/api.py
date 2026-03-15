@@ -155,6 +155,10 @@ class ProxmoxAPI:
         """Reboot a VM. Returns task UPID dict."""
         return self._post(f"/nodes/{node}/qemu/{vmid}/status/reboot")
 
+    def create_vnc_ticket(self, node, vmid):
+        """Create a VNC proxy ticket for a VM. Returns dict with ticket and port."""
+        return self._post(f"/nodes/{node}/qemu/{vmid}/vncproxy", {"websocket": 1})
+
     def check_vmid_available(self, node, vmid):
         """Return True if the given VMID is not currently in use on the node."""
         try:
