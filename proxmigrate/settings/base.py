@@ -209,6 +209,11 @@ HELP_DIR = BASE_DIR / "help"
 # the server; wildcard is appropriate here.
 CSRF_TRUSTED_ORIGINS = ["https://*", "http://127.0.0.1:*", "http://localhost:*"]
 
+# Tell Django it is behind an SSL-terminating reverse proxy (nginx).
+# Nginx sets X-Forwarded-Proto: https; without this, Django sees the gunicorn
+# connection as plain HTTP and its CSRF origin check fails.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 # ---------------------------------------------------------------------------
 # Deployment
 # ---------------------------------------------------------------------------
