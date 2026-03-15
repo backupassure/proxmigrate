@@ -4,10 +4,6 @@
 {% block help_slug %}inventory{% endblock %}
 
 {% block page_actions %}
-  <label class="checkbox" style="font-size:0.82rem;color:#7a7a7a;cursor:pointer;" title="Refresh table every 30 seconds">
-    <input type="checkbox" id="auto-refresh-toggle" style="margin-right:0.3rem;">
-    Auto-refresh
-  </label>
   <button class="button is-light is-small"
           hx-get="{% url 'inventory' %}"
           hx-target="#vm-table-wrapper"
@@ -62,8 +58,13 @@
   </div>
 </div>
 
-{# ===== VM Table ===== #}
-<div id="vm-table-wrapper" class="proxmigrate-card">
+{# ===== VM Table — polls every 10s for live status ===== #}
+<div id="vm-table-wrapper" class="proxmigrate-card"
+     hx-get="{% url 'inventory' %}"
+     hx-trigger="every 10s"
+     hx-select="#vm-table-wrapper"
+     hx-swap="outerHTML"
+     hx-indicator="#refresh-spinner">
   <div class="card-header">
     <i class="fas fa-server" style="color:#3273dc;"></i> Virtual Machines
     {% if node_name %}
@@ -232,34 +233,13 @@
 
 {% block extra_scripts %}
 <script>
-  // Auto-refresh toggle
-  let autoRefreshInterval = null;
-  const toggle = document.getElementById('auto-refresh-toggle');
-
-  if (toggle) {
-    toggle.addEventListener('change', function() {
-      if (this.checked) {
-        autoRefreshInterval = setInterval(function() {
-          htmx.ajax('GET', '{% url "inventory" %}', {
-            target: '#vm-table-wrapper',
-            select: '#vm-table-wrapper',
-            swap: 'outerHTML'
-          });
-        }, 30000);
-      } else {
-        if (autoRefreshInterval) {
-          clearInterval(autoRefreshInterval);
-          autoRefreshInterval = null;
-        }
-      }
-    });
-  }
-
-  // Add CSRF token to HTMX POST requests
+  // Add CSRF token to all HTMX POST requests
   document.addEventListener('htmx:configRequest', function(evt) {
-    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
-    if (csrfToken) {
-      evt.detail.headers['X-CSRFToken'] = csrfToken[1];
+    if (evt.detail.verb !== 'get') {
+      const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
+      if (csrfToken) {
+        evt.detail.headers['X-CSRFToken'] = csrfToken[1];
+      }
     }
   });
 </script>
