@@ -1,0 +1,93 @@
+{# Single VM table row — returned by vm_action after start/stop/shutdown/reboot #}
+{% load humanize %}
+<tr id="vm-row-{{ vm.vmid }}">
+  <td class="vmid-col">{{ vm.vmid }}</td>
+  <td style="vertical-align:middle;">
+    <a href="{% url 'vm_detail' vm.vmid %}" style="font-weight:600;color:#1a1a2e;">
+      {{ vm.name }}
+    </a>
+  </td>
+  <td style="vertical-align:middle;">
+    {% if vm.status == 'running' %}
+      <span class="status-badge vm-status-running">Running</span>
+    {% elif vm.status == 'stopped' %}
+      <span class="status-badge vm-status-stopped">Stopped</span>
+    {% elif vm.status == 'paused' %}
+      <span class="status-badge vm-status-paused">Paused</span>
+    {% else %}
+      <span class="status-badge vm-status-unknown">{{ vm.status }}</span>
+    {% endif %}
+  </td>
+  <td style="vertical-align:middle;">
+    <span style="font-size:0.875rem;color:#4a4a4a;">
+      {% if vm.status == 'running' %}
+        {{ vm.cpu_pct }}%
+      {% else %}
+        {{ vm.cpus }} cores
+      {% endif %}
+    </span>
+  </td>
+  <td style="vertical-align:middle;">
+    <span style="font-size:0.875rem;color:#4a4a4a;">
+      {% if vm.maxmem %}{{ vm.maxmem|filesizeformat }}{% else %}—{% endif %}
+    </span>
+  </td>
+  <td style="vertical-align:middle;">
+    <span style="font-size:0.82rem;color:#7a7a7a;">
+      {% if vm.status == 'running' and vm.uptime %}{{ vm.uptime_human }}{% else %}—{% endif %}
+    </span>
+  </td>
+  <td style="vertical-align:middle;">
+    <span style="font-size:0.82rem;color:#7a7a7a;">{{ vm.node }}</span>
+  </td>
+  <td style="vertical-align:middle;">
+    <div class="vm-actions" style="justify-content:flex-end;">
+      {% if vm.status == 'running' %}
+        <button class="button is-warning is-light is-small"
+                hx-post="/inventory/{{ vm.vmid }}/action/shutdown/"
+                hx-target="#vm-row-{{ vm.vmid }}"
+                hx-swap="outerHTML"
+                hx-confirm="Gracefully shut down {{ vm.name }}?"
+                title="Shutdown">
+          <i class="fas fa-power-off"></i>
+        </button>
+        <button class="button is-danger is-light is-small"
+                hx-post="/inventory/{{ vm.vmid }}/action/stop/"
+                hx-target="#vm-row-{{ vm.vmid }}"
+                hx-swap="outerHTML"
+                hx-confirm="Force stop {{ vm.name }}? Unsaved data may be lost."
+                title="Force Stop">
+          <i class="fas fa-stop"></i>
+        </button>
+        <button class="button is-info is-light is-small"
+                hx-post="/inventory/{{ vm.vmid }}/action/reboot/"
+                hx-target="#vm-row-{{ vm.vmid }}"
+                hx-swap="outerHTML"
+                hx-confirm="Reboot {{ vm.name }}?"
+                title="Reboot">
+          <i class="fas fa-redo"></i>
+        </button>
+      {% elif vm.status == 'stopped' %}
+        <button class="button is-success is-light is-small"
+                hx-post="/inventory/{{ vm.vmid }}/action/start/"
+                hx-target="#vm-row-{{ vm.vmid }}"
+                hx-swap="outerHTML"
+                title="Start">
+          <span class="icon is-small"><i class="fas fa-play"></i></span>
+          <span>Start</span>
+        </button>
+      {% elif vm.status == 'paused' %}
+        <button class="button is-warning is-light is-small"
+                hx-post="/inventory/{{ vm.vmid }}/action/resume/"
+                hx-target="#vm-row-{{ vm.vmid }}"
+                hx-swap="outerHTML"
+                title="Resume">
+          <i class="fas fa-play"></i>
+        </button>
+      {% endif %}
+      <a href="{% url 'vm_detail' vm.vmid %}" class="button is-light is-small" title="Details">
+        <i class="fas fa-info-circle"></i>
+      </a>
+    </div>
+  </td>
+</tr>

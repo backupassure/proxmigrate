@@ -87,13 +87,18 @@ def list_vms(request):
     )
 
 
+ACTION_LABELS = {
+    "start": "Starting",
+    "stop": "Stopping",
+    "shutdown": "Shutting down",
+    "reboot": "Rebooting",
+}
+
+
 @login_required
 @require_POST
 def vm_action(request, vmid, action):
-    """Perform a start/stop/shutdown/reboot action on a VM.
-
-    Returns an HTMX partial updating just that VM's status row.
-    """
+    """Trigger a VM action and immediately return a pending row that self-polls."""
     if action not in VALID_ACTIONS:
         return render(
             request,
@@ -103,11 +108,13 @@ def vm_action(request, vmid, action):
 
     config = ProxmoxConfig.get_config()
     node = config.default_node
-    error = None
-    vm_status = {}
 
+    # Grab the VM name before the action for the pending row
+    vm_name = str(vmid)
     try:
         api = config.get_api_client()
+        info = api.get_vm_status(node, vmid)
+        vm_name = info.get("name", str(vmid))
 
         if action == "start":
             api.start_vm(node, vmid)
@@ -118,18 +125,43 @@ def vm_action(request, vmid, action):
         elif action == "reboot":
             api.reboot_vm(node, vmid)
 
-        # Re-fetch status for the partial
-        vm_status = api.get_vm_status(node, vmid)
-
     except ProxmoxAPIError as exc:
-        error = exc.message
         logger.warning("vm_action %s vmid %s: %s", action, vmid, exc)
+        return render(
+            request,
+            "inventory/partials/vm_row_error.html",
+            {"vmid": vmid, "error": exc.message},
+        )
 
+    # Return a pending row that polls /inventory/<vmid>/status/ every 4s
     return render(
         request,
-        "inventory/partials/vm_row.html",
-        {"vm": vm_status, "vmid": vmid, "error": error},
+        "inventory/partials/vm_row_pending.html",
+        {"vmid": vmid, "vm_name": vm_name, "action_label": ACTION_LABELS.get(action, "Working")},
     )
+
+
+@login_required
+def vm_row_status(request, vmid):
+    """Poll endpoint: return the current vm_row partial for a single VM."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+
+    try:
+        api = config.get_api_client()
+        vm = api.get_vm_status(node, vmid)
+        vm["node"] = node
+        vm["cpu_pct"] = round((vm.get("cpu") or 0) * 100, 1)
+        vm["uptime_human"] = _uptime_human(vm.get("uptime", 0))
+    except ProxmoxAPIError as exc:
+        logger.warning("vm_row_status vmid %s: %s", vmid, exc)
+        return render(
+            request,
+            "inventory/partials/vm_row_error.html",
+            {"vmid": vmid, "error": exc.message},
+        )
+
+    return render(request, "inventory/partials/vm_row.html", {"vm": vm})
 
 
 @login_required
