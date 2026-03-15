@@ -59,11 +59,6 @@ def list_vms(request):
     else:
         error = "Proxmox is not yet configured. Please complete the setup wizard."
 
-    # Apply search filter
-    if search_query and vms:
-        q = search_query.lower()
-        vms = [v for v in vms if q in str(v.get("name", "")).lower() or q in str(v.get("vmid", ""))]
-
     total_count = len(vms)
     running_count = sum(1 for v in vms if v.get("status") == "running")
     stopped_count = sum(1 for v in vms if v.get("status") == "stopped")
