@@ -225,10 +225,20 @@ def step3(request):
 
 @login_required
 def step4(request):
-    """Step 4: Discover nodes, storage, networks, and CPU info."""
+    """Step 4: Shell page — immediately shows spinner, HTMX triggers the real discovery."""
+    return render(request, "wizard/step4.html", {"step": 4})
+
+
+@login_required
+def step4_run(request):
+    """HTMX endpoint: runs discovery and returns the results partial."""
     config = _get_or_create_config()
     error = None
-    discovery = None
+    nodes = []
+    storage_pools = []
+    network_bridges = []
+    cpu_info = ""
+    existing_vmids = []
 
     try:
         api = config.get_api_client()
@@ -236,32 +246,43 @@ def step4(request):
 
         node_name = nodes[0]["node"] if nodes else config.default_node or "pve"
 
-        storage = api.get_storage(node_name)
-        networks = api.get_networks(node_name)
+        storage_raw = api.get_storage(node_name)
+        networks_raw = api.get_networks(node_name)
         vms = api.get_vms(node_name)
         existing_vmids = [int(vm["vmid"]) for vm in vms if "vmid" in vm]
 
-        # Get CPU info via SSH
-        cpu_info = ""
+        # Friendly storage list with GB available
+        for s in storage_raw:
+            avail = s.get("avail", 0) or 0
+            s["avail_gb"] = avail / 1024 / 1024 / 1024
+            s["shared"] = bool(s.get("shared", 0))
+            storage_pools.append(s)
+
+        # Only include bridge-type interfaces for network list
+        network_bridges = [
+            n["iface"] for n in networks_raw
+            if n.get("type") in ("bridge", "bond", "eth", "vlan") or n["iface"].startswith("vmbr")
+        ]
+        if not network_bridges:
+            network_bridges = [n["iface"] for n in networks_raw]
+
+        # CPU info via SSH
         try:
             with config.get_ssh_client() as ssh:
-                stdout, _stderr, _rc = ssh.run(
-                    ["grep", "model name", "/proc/cpuinfo"]
-                )
-                # Take first match
+                stdout, _stderr, _rc = ssh.run(["grep", "model name", "/proc/cpuinfo"])
                 for line in stdout.splitlines():
                     if "model name" in line:
                         cpu_info = line.split(":", 1)[-1].strip()
                         break
         except Exception as ssh_exc:
-            logger.warning("step4: SSH CPU info failed: %s", ssh_exc)
+            logger.warning("step4_run: SSH CPU info failed: %s", ssh_exc)
             cpu_info = "Unknown (SSH not available)"
 
         # Persist discovery results
         env, _created = DiscoveredEnvironment.objects.get_or_create(config=config)
         env.nodes_json = json.dumps(nodes)
-        env.storage_json = json.dumps(storage)
-        env.networks_json = json.dumps(networks)
+        env.storage_json = json.dumps(storage_raw)
+        env.networks_json = json.dumps(networks_raw)
         env.host_cpu_info = cpu_info[:500]
         env.existing_vmids_json = json.dumps(existing_vmids)
         env.save()
@@ -269,25 +290,24 @@ def step4(request):
         config.wizard_step = max(config.wizard_step, 5)
         config.save()
 
-        discovery = {
-            "nodes": nodes,
-            "storage": storage,
-            "networks": networks,
-            "cpu_info": cpu_info,
-            "existing_vmids": existing_vmids,
-        }
-
     except ProxmoxAPIError as exc:
-        error = f"Discovery failed: {exc.message}"
-        logger.error("step4 API error: %s", exc)
+        error = f"API error: {exc.message}"
+        logger.error("step4_run API error: %s", exc)
     except Exception as exc:
         error = f"Discovery failed: {exc}"
-        logger.error("step4 unexpected error: %s", exc, exc_info=True)
+        logger.error("step4_run unexpected error: %s", exc, exc_info=True)
 
     return render(
         request,
-        "wizard/step4.html",
-        {"discovery": discovery, "error": error, "step": 4},
+        "wizard/step4_results.html",
+        {
+            "error": error,
+            "nodes": nodes,
+            "storage_pools": storage_pools,
+            "network_bridges": network_bridges,
+            "cpu_info": cpu_info,
+            "existing_vmids": existing_vmids,
+        },
     )
 
 
