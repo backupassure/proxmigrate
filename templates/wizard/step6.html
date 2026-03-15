@@ -1,0 +1,118 @@
+{% extends "wizard/base_wizard.html" %}
+{% block title %}Setup Complete — ProxMigrate{% endblock %}
+{% block current_step_display %}6{% endblock %}
+
+{% block wizard_content %}
+<div class="wizard-card" style="max-width:600px;">
+  <div class="wizard-card-body" style="padding:2.5rem 2rem;">
+
+    {# Success icon #}
+    <div class="success-screen">
+      <div class="success-icon-circle">
+        <i class="fas fa-check"></i>
+      </div>
+
+      <h2 style="font-size:1.6rem;font-weight:800;color:#1a1a2e;margin-bottom:0.5rem;">Setup Complete!</h2>
+      <p style="color:#7a7a7a;font-size:0.95rem;margin-bottom:2rem;max-width:400px;margin-left:auto;margin-right:auto;line-height:1.6;">
+        ProxMigrate is connected to your Proxmox server and ready to import VMs. Here's a summary of your configuration.
+      </p>
+
+      {# Summary grid #}
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="summary-item-label"><i class="fas fa-server" style="margin-right:0.3rem;"></i>Proxmox Host</div>
+          <div class="summary-item-value">{{ config.proxmox_host }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-item-label"><i class="fas fa-project-diagram" style="margin-right:0.3rem;"></i>Default Node</div>
+          <div class="summary-item-value">{{ config.default_node }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-item-label"><i class="fas fa-database" style="margin-right:0.3rem;"></i>Default Storage</div>
+          <div class="summary-item-value">{{ config.default_storage }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-item-label"><i class="fas fa-ethernet" style="margin-right:0.3rem;"></i>Default Bridge</div>
+          <div class="summary-item-value">{{ config.default_bridge }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-item-label"><i class="fas fa-key" style="margin-right:0.3rem;"></i>API Token</div>
+          <div class="summary-item-value" style="font-family:monospace;font-size:0.8rem;">{{ config.token_id }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-item-label"><i class="fas fa-hashtag" style="margin-right:0.3rem;"></i>VMID Pool</div>
+          <div class="summary-item-value">{{ config.vmid_pool_min }} &ndash; {{ config.vmid_pool_max }}</div>
+        </div>
+      </div>
+
+      {# Success connection statuses #}
+      <div style="display:flex;gap:1.5rem;justify-content:center;margin:1.5rem 0;">
+        <div style="text-align:center;">
+          <span class="status-dot is-online"></span>
+          <span style="font-size:0.82rem;color:#257953;font-weight:600;">SSH Connected</span>
+        </div>
+        <div style="text-align:center;">
+          <span class="status-dot is-online"></span>
+          <span style="font-size:0.82rem;color:#257953;font-weight:600;">API Verified</span>
+        </div>
+        <div style="text-align:center;">
+          <span class="status-dot is-online"></span>
+          <span style="font-size:0.82rem;color:#257953;font-weight:600;">Key Installed</span>
+        </div>
+      </div>
+
+      {# CTA button #}
+      <a href="{% url 'dashboard' %}" class="button is-primary is-large" style="font-weight:700;min-width:260px;font-size:1rem;margin-top:0.5rem;">
+        <span class="icon"><i class="fas fa-tachometer-alt"></i></span>
+        <span>Go to Dashboard</span>
+        <span class="icon"><i class="fas fa-arrow-right"></i></span>
+      </a>
+
+      <p style="margin-top:1.25rem;font-size:0.8rem;color:#b5b5b5;">
+        You can change any of these settings later under
+        <a href="{% url 'auth_settings' %}" style="color:#7a7a7a;">Settings</a>.
+      </p>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Subtle confetti-like celebration using CSS animations
+  (function() {
+    const colors = ['#3273dc', '#48c78e', '#f59e0b', '#f14668', '#7c3aed'];
+    const container = document.body;
+    for (let i = 0; i < 30; i++) {
+      const dot = document.createElement('div');
+      const size = Math.random() * 8 + 4;
+      dot.style.cssText = `
+        position:fixed;
+        top:-20px;
+        left:${Math.random() * 100}vw;
+        width:${size}px;
+        height:${size}px;
+        border-radius:50%;
+        background:${colors[Math.floor(Math.random() * colors.length)]};
+        opacity:0.8;
+        animation:confettiFall ${Math.random() * 2 + 2}s ease-in forwards;
+        animation-delay:${Math.random() * 1}s;
+        z-index:9999;
+        pointer-events:none;
+      `;
+      container.appendChild(dot);
+      setTimeout(() => dot.remove(), 4000);
+    }
+  })();
+</script>
+<style>
+@keyframes confettiFall {
+  to {
+    top: 105vh;
+    transform: rotate(${Math.random() * 360}deg) translateX(${(Math.random() - 0.5) * 150}px);
+    opacity: 0;
+  }
+}
+</style>
+{% endblock %}

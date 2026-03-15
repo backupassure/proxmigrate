@@ -1,0 +1,23 @@
+[Unit]
+Description=ProxMigrate Celery worker
+After=network.target redis-server.service
+Requires=redis-server.service
+
+[Service]
+Type=simple
+User=proxmigrate
+Group=proxmigrate
+WorkingDirectory=/opt/proxmigrate
+EnvironmentFile=/opt/proxmigrate/.env
+ExecStart=/opt/proxmigrate/venv/bin/celery \
+    -A proxmigrate worker \
+    -l info \
+    --concurrency=4
+Restart=always
+RestartSec=10
+KillSignal=SIGTERM
+TimeoutStopSec=30
+RuntimeDirectory=proxmigrate
+
+[Install]
+WantedBy=multi-user.target

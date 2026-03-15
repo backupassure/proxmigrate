@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}User Management — ProxMigrate{% endblock %}
+{% block page_title %}User Management{% endblock %}
+{% block help_slug %}settings-auth-ldap{% endblock %}
+
+{% block page_actions %}
+  <button class="button is-primary is-small" onclick="document.getElementById('add-user-modal').classList.add('is-active')">
+    <span class="icon is-small"><i class="fas fa-plus"></i></span>
+    <span>Add Local User</span>
+  </button>
+{% endblock %}
+
+{% block content %}
+
+<div class="proxmigrate-card">
+  <div class="card-header">
+    <i class="fas fa-users" style="color:#3273dc;"></i> All Users
+    <span style="margin-left:0.5rem;font-size:0.8rem;color:#7a7a7a;font-weight:400;">({{ users|length }} total)</span>
+  </div>
+  <div style="overflow-x:auto;">
+    {% if users %}
+    <table class="table vm-table is-fullwidth" style="margin:0;">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Auth Source</th>
+          <th>Admin</th>
+          <th>Active</th>
+          <th>Last Login</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr id="user-row-{{ u.id }}">
+          <td style="vertical-align:middle;font-weight:600;color:#1a1a2e;">
+            <span class="icon" style="margin-right:0.3rem;color:#b5b5b5;"><i class="fas fa-user"></i></span>
+            {{ u.username }}
+            {% if u == request.user %}
+              <span class="tag is-light" style="font-size:0.65rem;margin-left:0.3rem;">You</span>
+            {% endif %}
+          </td>
+          <td style="vertical-align:middle;font-size:0.875rem;color:#4a4a4a;">{{ u.email|default:"—" }}</td>
+          <td style="vertical-align:middle;">
+            {% if u.profile.auth_source == 'ldap' %}
+              <span class="auth-badge auth-badge-ldap">LDAP</span>
+            {% elif u.profile.auth_source == 'entra' %}
+              <span class="auth-badge auth-badge-entra">Entra ID</span>
+            {% else %}
+              <span class="auth-badge auth-badge-local">Local</span>
+            {% endif %}
+          </td>
+          <td style="vertical-align:middle;text-align:center;">
+            <span id="admin-status-{{ u.id }}">
+              {% if u.is_superuser %}
+                <i class="fas fa-check-circle" style="color:#48c78e;" title="Admin"></i>
+              {% else %}
+                <i class="fas fa-minus-circle" style="color:#dbdbdb;" title="Not admin"></i>
+              {% endif %}
+            </span>
+            {% if u != request.user %}
+              <button class="button is-tiny is-ghost" style="font-size:0.7rem;padding:0 0.3rem;height:auto;"
+                      hx-post="/users/{{ u.id }}/toggle-admin/"
+                      hx-target="#user-row-{{ u.id }}"
+                      hx-swap="outerHTML"
+                      title="Toggle admin">
+                <i class="fas fa-exchange-alt" style="font-size:0.65rem;color:#b5b5b5;"></i>
+              </button>
+            {% endif %}
+          </td>
+          <td style="vertical-align:middle;text-align:center;">
+            {% if u.is_active %}
+              <span class="status-badge vm-status-running" style="font-size:0.65rem;">Active</span>
+            {% else %}
+              <span class="status-badge vm-status-stopped" style="font-size:0.65rem;">Inactive</span>
+            {% endif %}
+          </td>
+          <td style="vertical-align:middle;font-size:0.82rem;color:#7a7a7a;">
+            {% if u.last_login %}
+              {{ u.last_login|timesince }} ago
+            {% else %}
+              Never
+            {% endif %}
+          </td>
+          <td style="vertical-align:middle;">
+            <div class="vm-actions" style="justify-content:flex-end;">
+              {% if u != request.user %}
+                <button class="button is-small is-light"
+                        hx-post="/users/{{ u.id }}/toggle-active/"
+                        hx-target="#user-row-{{ u.id }}"
+                        hx-swap="outerHTML"
+                        title="{% if u.is_active %}Deactivate{% else %}Activate{% endif %}">
+                  {% if u.is_active %}
+                    <i class="fas fa-user-slash" style="color:#f14668;"></i>
+                  {% else %}
+                    <i class="fas fa-user-check" style="color:#48c78e;"></i>
+                  {% endif %}
+                </button>
+                {% if u.profile.auth_source == 'local' %}
+                  <button class="button is-small is-light" title="Reset password"
+                          onclick="showResetPasswordModal({{ u.id }}, '{{ u.username }}')">
+                    <i class="fas fa-key" style="color:#f59e0b;"></i>
+                  </button>
+                {% endif %}
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-users"></i></div>
+        <h3>No users found</h3>
+        <p>Add a local user to get started.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{# ===== Add User Modal ===== #}
+<div class="modal" id="add-user-modal">
+  <div class="modal-background" onclick="this.parentElement.classList.remove('is-active')"></div>
+  <div class="modal-card" style="max-width:480px;border-radius:12px;">
+    <header class="modal-card-head" style="background:#1a1a2e;border-radius:12px 12px 0 0;">
+      <p class="modal-card-title" style="color:#fff;font-size:1rem;font-weight:600;">
+        <i class="fas fa-user-plus" style="margin-right:0.5rem;"></i>Add Local User
+      </p>
+      <button class="delete" onclick="document.getElementById('add-user-modal').classList.remove('is-active')"></button>
+    </header>
+    <section class="modal-card-body">
+      <div id="add-user-result"></div>
+      <form method="post" action="{% url 'user_create' %}" id="add-user-form">
+        {% csrf_token %}
+        <div class="field">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">Username</label>
+          <div class="control has-icons-left">
+            <input class="input" type="text" name="username" placeholder="Username" required>
+            <span class="icon is-left"><i class="fas fa-user" style="color:#b5b5b5;"></i></span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">Email</label>
+          <div class="control has-icons-left">
+            <input class="input" type="email" name="email" placeholder="user@example.com">
+            <span class="icon is-left"><i class="fas fa-envelope" style="color:#b5b5b5;"></i></span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">Password</label>
+          <div class="control has-icons-left">
+            <input class="input" type="password" name="password1" placeholder="Password" required autocomplete="new-password">
+            <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">Confirm Password</label>
+          <div class="control has-icons-left">
+            <input class="input" type="password" name="password2" placeholder="Confirm password" required autocomplete="new-password">
+            <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="checkbox" style="font-size:0.875rem;">
+            <input type="checkbox" name="is_superuser">
+            &nbsp;Grant administrator access
+          </label>
+        </div>
+      </form>
+    </section>
+    <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
+      <button class="button is-light" onclick="document.getElementById('add-user-modal').classList.remove('is-active')">Cancel</button>
+      <button type="submit" form="add-user-form" class="button is-primary" style="font-weight:600;">
+        <span class="icon"><i class="fas fa-user-plus"></i></span>
+        <span>Create User</span>
+      </button>
+    </footer>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function showResetPasswordModal(userId, username) {
+    // Simple inline prompt for now
+    const pw = prompt('New password for ' + username + ':');
+    if (pw && pw.length >= 8) {
+      htmx.ajax('POST', '/users/' + userId + '/reset-password/', {
+        values: { password: pw },
+        target: '#user-row-' + userId,
+        swap: 'none'
+      }).then(() => showToast('Password updated for ' + username, 'success'));
+    } else if (pw !== null) {
+      showToast('Password must be at least 8 characters', 'error');
+    }
+  }
+
+  // CSRF for HTMX
+  document.addEventListener('htmx:configRequest', function(evt) {
+    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
+    if (csrfToken) evt.detail.headers['X-CSRFToken'] = csrfToken[1];
+  });
+</script>
+{% endblock %}

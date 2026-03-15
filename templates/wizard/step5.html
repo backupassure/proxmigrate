@@ -1,0 +1,193 @@
+{% extends "wizard/base_wizard.html" %}
+{% block title %}Step 5: Configure Defaults — Setup Wizard{% endblock %}
+{% block current_step_display %}5{% endblock %}
+
+{% block wizard_content %}
+<div class="wizard-card" style="max-width:760px;">
+  <div class="wizard-card-header">
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+      <div style="width:40px;height:40px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="fas fa-sliders-h" style="color:#48c78e;font-size:1.1rem;"></i>
+      </div>
+      <h2>Configure Defaults</h2>
+    </div>
+    <p class="subtitle">Set the default values used when creating new VMs. You can change these later in Settings.</p>
+  </div>
+
+  <div class="wizard-card-body">
+
+    {% if error %}
+      <div class="notification is-danger is-light" style="font-size:0.875rem;margin-bottom:1.25rem;">
+        <button class="delete" onclick="this.parentElement.remove()"></button>
+        {{ error }}
+      </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'wizard_step5' %}" id="step5-form">
+      {% csrf_token %}
+
+      <div class="columns">
+
+        {# LEFT COLUMN — Proxmox resources #}
+        <div class="column">
+          <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;font-weight:600;margin-bottom:1rem;">
+            Proxmox Resources
+          </div>
+
+          {# Default Node #}
+          <div class="field" style="margin-bottom:1.25rem;">
+            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">Default Node</label>
+            <div class="control">
+              <div class="select is-fullwidth">
+                <select name="default_node" id="id_default_node">
+                  {% for node in nodes %}
+                    <option value="{{ node.name }}" {% if form.default_node.value == node.name %}selected{% endif %}>
+                      {{ node.name }}{% if node.status == 'online' %} (online){% endif %}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <p class="field-hint">VMs will be created on this node by default.</p>
+          </div>
+
+          {# Default Storage #}
+          <div class="field" style="margin-bottom:1.25rem;">
+            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">Default Storage</label>
+            <div class="control">
+              <div class="select is-fullwidth">
+                <select name="default_storage" id="id_default_storage">
+                  {% for storage in storage_pools %}
+                    <option value="{{ storage.storage }}" {% if form.default_storage.value == storage.storage %}selected{% endif %}>
+                      {{ storage.storage }} ({{ storage.type }}, {{ storage.avail_gb|floatformat:0 }} GB free)
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <p class="field-hint">Disk images will be imported to this storage pool.</p>
+          </div>
+
+          {# Default Bridge #}
+          <div class="field" style="margin-bottom:1.25rem;">
+            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">Default Network Bridge</label>
+            <div class="control">
+              <div class="select is-fullwidth">
+                <select name="default_bridge" id="id_default_bridge">
+                  {% for bridge in network_bridges %}
+                    <option value="{{ bridge }}" {% if form.default_bridge.value == bridge %}selected{% endif %}>
+                      {{ bridge }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <p class="field-hint">New VM network interfaces will use this bridge.</p>
+          </div>
+
+          {# Temp Directory #}
+          <div class="field">
+            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">Upload Temp Directory</label>
+            <div class="control has-icons-left">
+              <input
+                class="input is-monospace"
+                type="text"
+                name="temp_dir"
+                value="{{ form.temp_dir.value|default:'/tmp/proxmigrate' }}"
+                placeholder="/tmp/proxmigrate"
+              >
+              <span class="icon is-left"><i class="fas fa-folder" style="color:#b5b5b5;"></i></span>
+            </div>
+            <p class="field-hint">Staging directory on this server for uploaded disk files before SFTP transfer.</p>
+          </div>
+        </div>
+
+        {# RIGHT COLUMN — VM defaults & VMID pool #}
+        <div class="column">
+          <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;font-weight:600;margin-bottom:1rem;">
+            VM Defaults
+          </div>
+
+          <div class="columns is-gapless" style="margin-bottom:0;">
+            <div class="column" style="padding-right:0.5rem;">
+              <div class="field" style="margin-bottom:1.25rem;">
+                <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">CPU Cores</label>
+                <div class="control has-icons-left">
+                  <input class="input" type="number" name="default_cores"
+                    value="{{ form.default_cores.value|default:2 }}" min="1" max="128">
+                  <span class="icon is-left"><i class="fas fa-microchip" style="color:#b5b5b5;"></i></span>
+                </div>
+              </div>
+            </div>
+            <div class="column" style="padding-left:0.5rem;">
+              <div class="field" style="margin-bottom:1.25rem;">
+                <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">RAM (MB)</label>
+                <div class="control has-icons-left">
+                  <input class="input" type="number" name="default_memory"
+                    value="{{ form.default_memory.value|default:2048 }}" min="256" step="256">
+                  <span class="icon is-left"><i class="fas fa-memory" style="color:#b5b5b5;"></i></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {# VMID Pool #}
+          <div style="background:#f5f7fa;border:1px solid #e8ecf0;border-radius:8px;padding:1rem;margin-bottom:1.25rem;">
+            <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;font-weight:600;margin-bottom:0.75rem;">
+              VMID Pool Range
+            </div>
+
+            {# Conflict warning #}
+            {% if existing_vmids %}
+              <div style="font-size:0.78rem;color:#7a7a7a;margin-bottom:0.75rem;">
+                <i class="fas fa-info-circle" style="color:#3273dc;margin-right:0.3rem;"></i>
+                Existing VMIDs on cluster:
+                <strong>{{ existing_vmids|join:", " }}</strong>
+                — avoid overlapping your pool range.
+              </div>
+            {% endif %}
+
+            <div class="columns is-gapless">
+              <div class="column" style="padding-right:0.5rem;">
+                <div class="field">
+                  <label class="label" style="font-size:0.85rem;font-weight:600;color:#4a4a4a;">Pool Min</label>
+                  <div class="control">
+                    <input class="input" type="number" name="vmid_pool_min"
+                      value="{{ form.vmid_pool_min.value|default:900 }}" min="100" max="999999999">
+                  </div>
+                </div>
+              </div>
+              <div class="column" style="padding-left:0.5rem;">
+                <div class="field">
+                  <label class="label" style="font-size:0.85rem;font-weight:600;color:#4a4a4a;">Pool Max</label>
+                  <div class="control">
+                    <input class="input" type="number" name="vmid_pool_max"
+                      value="{{ form.vmid_pool_max.value|default:999 }}" min="100" max="999999999">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="field-hint" style="margin-top:0.25rem;">
+              ProxMigrate will auto-select VMIDs within this range when creating VMs.
+              Proxmox reserves 100–999 for system use; we recommend starting at 900 or higher if those are free.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="wizard-card-footer">
+    <a href="{% url 'wizard_step4' %}" class="button is-light" style="font-weight:500;">
+      <span class="icon"><i class="fas fa-arrow-left"></i></span>
+      <span>Back</span>
+    </a>
+    <button type="submit" form="step5-form" class="button is-success is-medium" style="font-weight:600;min-width:200px;">
+      <span class="icon"><i class="fas fa-save"></i></span>
+      <span>Save &amp; Complete</span>
+      <span class="icon"><i class="fas fa-arrow-right"></i></span>
+    </button>
+  </div>
+</div>
+{% endblock %}

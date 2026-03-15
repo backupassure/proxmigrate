@@ -1,0 +1,552 @@
+{% extends "base.html" %}
+{% block title %}Configure VM — ProxMigrate{% endblock %}
+{% block page_title %}Configure VM{% endblock %}
+{% block help_slug %}importer-configure{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'importer_upload' %}" class="button is-light is-small">
+    <span class="icon is-small"><i class="fas fa-arrow-left"></i></span>
+    <span>Back to Upload</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+<form method="post" action="{% url 'importer_configure' job.id %}" id="configure-form">
+{% csrf_token %}
+
+<div class="columns">
+
+  {# ===== LEFT: VM Configuration Form ===== #}
+  <div class="column is-8">
+
+    {# Non-field errors #}
+    {% if form.non_field_errors %}
+      <div class="notification is-danger is-light" style="margin-bottom:1.5rem;">
+        {% for err in form.non_field_errors %}<p>{{ err }}</p>{% endfor %}
+      </div>
+    {% endif %}
+
+    {# ---- SECTION: General ---- #}
+    <div class="form-section">
+      <div class="form-section-header" id="section-general-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon" style="background:#eff6ff;color:#3273dc;"><i class="fas fa-tag"></i></div>
+          General
+        </div>
+        <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+      </div>
+      <div class="form-section-body is-open">
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">VM Name <span style="color:#f14668;">*</span></label>
+              <div class="control">
+                <input class="input {% if form.name.errors %}is-danger{% endif %}"
+                  type="text" name="name" value="{{ form.name.value|default:'' }}"
+                  placeholder="my-imported-vm" autofocus>
+              </div>
+              {% for e in form.name.errors %}<p class="help is-danger">{{ e }}</p>{% endfor %}
+              <p class="field-hint">Letters, numbers, hyphens only. No spaces.</p>
+            </div>
+          </div>
+          <div class="column is-3">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">VMID <span style="color:#f14668;">*</span></label>
+              <div class="control">
+                <input class="input {% if form.vmid.errors %}is-danger{% endif %}"
+                  type="number" name="vmid" value="{{ form.vmid.value|default:'' }}"
+                  placeholder="{{ suggested_vmid }}"
+                  hx-get="/inventory/api/vmid/check/"
+                  hx-trigger="change"
+                  hx-target="#vmid-feedback"
+                  hx-include="[name=vmid]">
+              </div>
+              {% for e in form.vmid.errors %}<p class="help is-danger">{{ e }}</p>{% endfor %}
+              <div id="vmid-feedback" style="margin-top:0.25rem;"></div>
+            </div>
+          </div>
+          <div class="column is-3">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Target Node</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="node">
+                    {% for node in nodes %}
+                      <option value="{{ node.name }}" {% if form.node.value == node.name %}selected{% endif %}>
+                        {{ node.name }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">Description</label>
+          <div class="control">
+            <textarea class="textarea is-small" name="description" rows="2"
+              placeholder="Optional notes about this VM">{{ form.description.value|default:'' }}</textarea>
+          </div>
+        </div>
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">OS Type</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="ostype">
+                    {% for val, label in form.ostype.field.choices %}
+                      <option value="{{ val }}" {% if form.ostype.value == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field" style="margin-top:2rem;">
+              <label class="checkbox">
+                <input type="checkbox" name="start_on_boot" {% if form.start_on_boot.value %}checked{% endif %}>
+                &nbsp;Start on boot
+              </label>
+              &nbsp;&nbsp;
+              <label class="checkbox">
+                <input type="checkbox" name="protection" {% if form.protection.value %}checked{% endif %}>
+                &nbsp;Protection
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ---- SECTION: Firmware & Boot ---- #}
+    <div class="form-section">
+      <div class="form-section-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon" style="background:#f5f0ff;color:#7c3aed;"><i class="fas fa-microchip"></i></div>
+          Firmware &amp; Boot
+        </div>
+        <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+      </div>
+      <div class="form-section-body is-open">
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">BIOS Type</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="bios" id="bios-select" onchange="handleBiosChange(this.value)">
+                    {% for val, label in form.bios.field.choices %}
+                      <option value="{{ val }}" {% if form.bios.value == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <p class="field-hint">Use <strong>OVMF (UEFI)</strong> for Windows 11, Secure Boot, or modern Linux.</p>
+            </div>
+          </div>
+          <div class="column" id="efi-disk-field">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">EFI Disk Storage</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="efidisk_storage">
+                    {% for storage in storage_pools %}
+                      <option value="{{ storage.storage }}" {% if form.efidisk_storage.value == storage.storage %}selected{% endif %}>
+                        {{ storage.storage }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="columns" id="uefi-options">
+          <div class="column">
+            <div class="field">
+              <label class="checkbox">
+                <input type="checkbox" name="secure_boot" id="secure-boot-check"
+                  {% if form.secure_boot.value %}checked{% endif %}>
+                &nbsp;<strong>Enable Secure Boot</strong>
+              </label>
+              <p class="field-hint">Required for Windows 11. Only available with OVMF UEFI.</p>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field">
+              <label class="checkbox">
+                <input type="checkbox" name="tpm" {% if form.tpm.value %}checked{% endif %} id="tpm-check">
+                &nbsp;<strong>Add TPM 2.0</strong>
+              </label>
+              <p class="field-hint">Required for Windows 11.</p>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">Boot Order</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select name="boot">
+                <option value="order=scsi0" {% if form.boot.value == 'order=scsi0' %}selected{% endif %}>Disk first (default)</option>
+                <option value="order=ide2;scsi0" {% if form.boot.value == 'order=ide2;scsi0' %}selected{% endif %}>CD-ROM, then Disk</option>
+                <option value="order=net0;scsi0" {% if form.boot.value == 'order=net0;scsi0' %}selected{% endif %}>Network (PXE), then Disk</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ---- SECTION: CPU ---- #}
+    <div class="form-section">
+      <div class="form-section-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon" style="background:#f0fdf4;color:#48c78e;"><i class="fas fa-microchip"></i></div>
+          CPU
+        </div>
+        <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+      </div>
+      <div class="form-section-body is-open">
+        <div class="columns">
+          <div class="column is-5">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">CPU Type</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="cpu_type">
+                    {% for val, label in form.cpu_type.field.choices %}
+                      <option value="{{ val }}" {% if form.cpu_type.value == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <p class="field-hint"><strong>host</strong> = best performance (migration restricted). <strong>x86-64-v2-AES</strong> = best compatibility.</p>
+            </div>
+          </div>
+          <div class="column is-3">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Sockets</label>
+              <div class="control">
+                <input class="input" type="number" name="sockets"
+                  value="{{ form.sockets.value|default:1 }}" min="1" max="4">
+              </div>
+            </div>
+          </div>
+          <div class="column is-4">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Cores per Socket</label>
+              <div class="control">
+                <input class="input" type="number" name="cores"
+                  value="{{ form.cores.value|default:2 }}" min="1" max="128">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="checkbox">
+            <input type="checkbox" name="numa" {% if form.numa.value %}checked{% endif %}>
+            &nbsp;Enable NUMA topology
+          </label>
+        </div>
+      </div>
+    </div>
+
+    {# ---- SECTION: Memory ---- #}
+    <div class="form-section">
+      <div class="form-section-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon" style="background:#fff8f0;color:#f59e0b;"><i class="fas fa-memory"></i></div>
+          Memory
+        </div>
+        <i class="fas fa-chevron-down section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+      </div>
+      <div class="form-section-body">
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">RAM (MB)</label>
+              <div class="control has-icons-right">
+                <input class="input" type="number" name="memory"
+                  value="{{ form.memory.value|default:2048 }}" min="256" step="256">
+                <span class="icon is-right" style="color:#b5b5b5;width:3rem;">MB</span>
+              </div>
+              <p class="field-hint">1 GB = 1024 MB</p>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Balloon Memory (MB)</label>
+              <div class="control">
+                <input class="input" type="number" name="balloon"
+                  value="{{ form.balloon.value|default:0 }}" min="0">
+              </div>
+              <p class="field-hint">0 = disable ballooning</p>
+            </div>
+          </div>
+          <div class="column is-3" style="display:flex;align-items:flex-end;padding-bottom:1.5rem;">
+            <div class="field">
+              <label class="checkbox">
+                <input type="checkbox" name="balloon_enabled"
+                  {% if form.balloon_enabled.value %}checked{% endif %}
+                  onchange="document.querySelector('[name=balloon]').disabled = !this.checked">
+                &nbsp;Enable ballooning
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ---- SECTION: Disk ---- #}
+    <div class="form-section">
+      <div class="form-section-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon" style="background:#f0fdf4;color:#48c78e;"><i class="fas fa-hdd"></i></div>
+          Disk
+        </div>
+        <i class="fas fa-chevron-down section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+      </div>
+      <div class="form-section-body">
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Storage Pool</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="storage">
+                    {% for storage in storage_pools %}
+                      <option value="{{ storage.storage }}" {% if form.storage.value == storage.storage %}selected{% endif %}>
+                        {{ storage.storage }} ({{ storage.avail_gb|floatformat:0 }} GB free)
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Disk Interface</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="disk_interface">
+                    {% for val, label in form.disk_interface.field.choices %}
+                      <option value="{{ val }}" {% if form.disk_interface.value == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <p class="field-hint">scsi0 (VirtIO SCSI) recommended for best performance.</p>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="checkbox">
+            <input type="checkbox" name="discard" {% if form.discard.value %}checked{% endif %}>
+            &nbsp;Enable discard (trim) — recommended for SSDs
+          </label>
+        </div>
+        <div class="field">
+          <label class="checkbox">
+            <input type="checkbox" name="ssd" {% if form.ssd.value %}checked{% endif %}>
+            &nbsp;Emulate SSD — tells the guest OS the disk is an SSD
+          </label>
+        </div>
+      </div>
+    </div>
+
+    {# ---- SECTION: Network ---- #}
+    <div class="form-section">
+      <div class="form-section-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon" style="background:#f0f9ff;color:#0369a1;"><i class="fas fa-ethernet"></i></div>
+          Network
+        </div>
+        <i class="fas fa-chevron-down section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+      </div>
+      <div class="form-section-body">
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Network Bridge</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="net_bridge">
+                    {% for bridge in network_bridges %}
+                      <option value="{{ bridge }}" {% if form.net_bridge.value == bridge %}selected{% endif %}>{{ bridge }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Network Model</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="net_model">
+                    {% for val, label in form.net_model.field.choices %}
+                      <option value="{{ val }}" {% if form.net_model.value == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <p class="field-hint">VirtIO recommended for best performance.</p>
+            </div>
+          </div>
+          <div class="column is-3">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">VLAN Tag</label>
+              <div class="control">
+                <input class="input" type="number" name="vlan_tag"
+                  value="{{ form.vlan_tag.value|default:'' }}"
+                  placeholder="None" min="1" max="4094">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">MAC Address</label>
+          <div class="control has-icons-left">
+            <input class="input is-monospace" type="text" name="net_mac"
+              value="{{ form.net_mac.value|default:'' }}"
+              placeholder="auto-generated" pattern="([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}">
+            <span class="icon is-left"><i class="fas fa-network-wired" style="color:#b5b5b5;"></i></span>
+          </div>
+          <p class="field-hint">Leave blank for auto-generated MAC address.</p>
+        </div>
+      </div>
+    </div>
+
+    {# ---- SECTION: Display ---- #}
+    <div class="form-section">
+      <div class="form-section-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon"><i class="fas fa-desktop"></i></div>
+          Display &amp; Agent
+        </div>
+        <i class="fas fa-chevron-down section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+      </div>
+      <div class="form-section-body">
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">VGA Type</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="vga">
+                    {% for val, label in form.vga.field.choices %}
+                      <option value="{{ val }}" {% if form.vga.value == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field" style="margin-top:2rem;">
+              <label class="checkbox">
+                <input type="checkbox" name="qemu_agent" {% if form.qemu_agent.value %}checked{% endif %}>
+                &nbsp;<strong>Enable QEMU Guest Agent</strong>
+              </label>
+              <p class="field-hint" style="margin-left:1.5rem;">Requires guest agent installed in the VM.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>{# end left column #}
+
+  {# ===== RIGHT: Summary + Tips ===== #}
+  <div class="column is-4">
+
+    {# File summary card #}
+    <div class="proxmigrate-card" style="position:sticky;top:70px;">
+      <div class="card-header">
+        <i class="fas fa-file" style="color:#7a7a7a;"></i> Uploaded File
+      </div>
+      <div class="card-body" style="padding:1.25rem 1.5rem;">
+        <div style="word-break:break-all;font-family:monospace;font-size:0.82rem;color:#1a1a2e;font-weight:600;margin-bottom:0.75rem;">
+          {{ job.original_filename }}
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
+          <span class="tag" style="background:#eff6ff;color:#3273dc;border:1px solid #c8d8ff;font-weight:600;">
+            {{ job.detected_format|upper|default:"Unknown" }}
+          </span>
+          <span class="tag is-light">{{ job.file_size_human|default:"" }}</span>
+        </div>
+        {% if job.detected_format and job.detected_format != 'qcow2' %}
+          <div class="info-box" style="font-size:0.78rem;padding:0.65rem 0.85rem;">
+            <div class="info-box-icon" style="font-size:0.85rem;"><i class="fas fa-sync-alt"></i></div>
+            <div>Will be converted to <strong>qcow2</strong> before transfer.</div>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="card-header" style="border-top:1px solid #f0f0f0;border-radius:0;">
+        <i class="fas fa-lightbulb" style="color:#f59e0b;"></i> Configuration Tips
+      </div>
+      <div class="card-body" style="padding:1.25rem 1.5rem;">
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0.75rem;">
+          <li style="font-size:0.82rem;color:#4a4a4a;display:flex;gap:0.5rem;">
+            <i class="fas fa-circle" style="color:#3273dc;font-size:0.4rem;margin-top:0.45rem;flex-shrink:0;"></i>
+            Use <strong>OVMF (UEFI)</strong> if the source VM was UEFI-booted.
+          </li>
+          <li style="font-size:0.82rem;color:#4a4a4a;display:flex;gap:0.5rem;">
+            <i class="fas fa-circle" style="color:#3273dc;font-size:0.4rem;margin-top:0.45rem;flex-shrink:0;"></i>
+            VirtIO network &amp; SCSI gives best performance but requires drivers in the guest.
+          </li>
+          <li style="font-size:0.82rem;color:#4a4a4a;display:flex;gap:0.5rem;">
+            <i class="fas fa-circle" style="color:#3273dc;font-size:0.4rem;margin-top:0.45rem;flex-shrink:0;"></i>
+            Windows 11 requires <strong>UEFI + Secure Boot + TPM 2.0</strong>.
+          </li>
+          <li style="font-size:0.82rem;color:#4a4a4a;display:flex;gap:0.5rem;">
+            <i class="fas fa-circle" style="color:#3273dc;font-size:0.4rem;margin-top:0.45rem;flex-shrink:0;"></i>
+            Enable <strong>QEMU Guest Agent</strong> after installing it in the VM for better integration.
+          </li>
+        </ul>
+      </div>
+
+      <div style="padding:1rem 1.5rem;border-top:1px solid #f0f0f0;">
+        <button type="submit" form="configure-form" class="button is-success is-fullwidth is-medium" style="font-weight:700;">
+          <span class="icon"><i class="fas fa-rocket"></i></span>
+          <span>Deploy VM</span>
+          <span class="icon"><i class="fas fa-arrow-right"></i></span>
+        </button>
+        <p style="text-align:center;font-size:0.75rem;color:#b5b5b5;margin-top:0.65rem;">
+          This will start the import pipeline
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // UEFI/EFI field visibility
+  function handleBiosChange(value) {
+    const efiField    = document.getElementById('efi-disk-field');
+    const uefiOptions = document.getElementById('uefi-options');
+    if (value === 'ovmf') {
+      efiField.style.display    = '';
+      uefiOptions.style.display = '';
+    } else {
+      efiField.style.display    = 'none';
+      uefiOptions.style.display = 'none';
+      document.getElementById('secure-boot-check').checked = false;
+      document.getElementById('tpm-check').checked = false;
+    }
+  }
+
+  // Init on load
+  handleBiosChange(document.getElementById('bios-select').value);
+</script>
+{% endblock %}
