@@ -455,6 +455,17 @@
   margin-top: 0.2rem;
 }
 
+a.stat-card-link {
+  text-decoration: none;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s;
+}
+a.stat-card-link:hover {
+  border-color: #c0c8d4;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+  transform: translateY(-2px);
+}
+
 /* --------------------------------------------------------------------------
    Collapsible Form Sections
    -------------------------------------------------------------------------- */

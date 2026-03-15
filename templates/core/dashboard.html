@@ -41,7 +41,7 @@
 {# ===== STAT CARDS ===== #}
 <div class="columns is-multiline" style="margin-bottom:0.5rem;">
   <div class="column is-3">
-    <div class="stat-card"
+    <a href="{% url 'inventory' %}" class="stat-card stat-card-link"
          hx-get="{% url 'inventory_stats' %}"
          hx-trigger="load"
          hx-target="#stat-total"
@@ -55,11 +55,11 @@
         </div>
         <div class="stat-card-label">Total VMs</div>
       </div>
-    </div>
+    </a>
   </div>
 
   <div class="column is-3">
-    <div class="stat-card">
+    <a href="{% url 'inventory' %}" class="stat-card stat-card-link">
       <div class="stat-card-icon is-green">
         <i class="fas fa-play-circle"></i>
       </div>
@@ -69,11 +69,11 @@
         </div>
         <div class="stat-card-label">Running</div>
       </div>
-    </div>
+    </a>
   </div>
 
   <div class="column is-3">
-    <div class="stat-card">
+    <a href="{% url 'inventory' %}" class="stat-card stat-card-link">
       <div class="stat-card-icon is-red">
         <i class="fas fa-stop-circle"></i>
       </div>
@@ -83,11 +83,11 @@
         </div>
         <div class="stat-card-label">Stopped</div>
       </div>
-    </div>
+    </a>
   </div>
 
   <div class="column is-3">
-    <div class="stat-card">
+    <a href="{% url 'inventory' %}" class="stat-card stat-card-link">
       <div class="stat-card-icon is-purple">
         <i class="fas fa-database"></i>
       </div>
@@ -95,7 +95,7 @@
         <div class="stat-card-value" style="font-size:1rem;padding-top:0.3rem;">See inventory</div>
         <div class="stat-card-label">Storage usage</div>
       </div>
-    </div>
+    </a>
   </div>
 </div>
 
