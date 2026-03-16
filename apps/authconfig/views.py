@@ -164,7 +164,6 @@ def auth_settings_test(request, auth_type):
 
     try:
         import ldap
-        import ldap.initialize
 
         if skip_cert_verify:
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
