@@ -75,14 +75,9 @@
             <div style="font-weight:600;color:#1a1a2e;">Enable LDAP Authentication</div>
             <div style="font-size:0.82rem;color:#7a7a7a;margin-top:0.2rem;">Allow users to sign in with LDAP/Active Directory credentials.</div>
           </div>
-          <label class="switch" style="position:relative;display:inline-block;width:44px;height:24px;">
-            <input type="checkbox" id="ldap-enable-toggle"
-              {% if ldap_enabled %}checked{% endif %}
-              hx-post="{% url 'auth_settings_toggle' 'ldap' %}"
-              hx-include="#ldap-enable-toggle"
-              hx-target="#ldap-toggle-result">
-            <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:{% if ldap_enabled %}#48c78e{% else %}#dbdbdb{% endif %};border-radius:24px;transition:0.3s;"></span>
-          </label>
+          <input type="checkbox" {% if ldap_enabled %}checked{% endif %}
+            hx-post="{% url 'auth_settings_toggle' 'ldap' %}"
+            hx-target="#ldap-toggle-result">
         </div>
         <div id="ldap-toggle-result"></div>
 
@@ -177,7 +172,7 @@
                     value="{{ ldap_config.require_group|default:'' }}"
                     placeholder="CN=ProxMigrateUsers,OU=Groups,DC=example,DC=com">
                 </div>
-                <p class="field-hint">Only allow users who are members of this group. Leave blank to allow all LDAP users.</p>
+                <p class="field-hint">Only allow users who are members of this group. Leave blank to allow all LDAP users (or only the Admin Group if one is set).</p>
               </div>
             </div>
             <div class="column">

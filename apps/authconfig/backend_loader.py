@@ -121,10 +121,11 @@ def _configure_ldap(config):
         )
 
     # Always set/clear these so stale values don't persist after config changes.
-    if config.require_group:
-        settings.AUTH_LDAP_REQUIRE_GROUP = config.require_group
-    else:
-        settings.AUTH_LDAP_REQUIRE_GROUP = None
+    # If admin_group is set but require_group is blank, restrict login to admin
+    # group members only — it makes no sense to allow arbitrary LDAP users in
+    # when you only want admins.
+    effective_require = config.require_group or config.admin_group
+    settings.AUTH_LDAP_REQUIRE_GROUP = effective_require or None
 
     if config.admin_group:
         settings.AUTH_LDAP_USER_FLAGS_BY_GROUP = {
