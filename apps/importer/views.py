@@ -4,11 +4,13 @@ import os
 import uuid
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
+from django.views.decorators.http import require_POST
 
 from apps.importer.forms import ALLOWED_EXTENSIONS
 from apps.importer.forms import UploadForm
@@ -196,3 +198,52 @@ def job_status(request, job_id):
         "importer/partials/job_status.html",
         {"job": job, "stages": stages, "stages_done_count": stages_done_count},
     )
+
+
+@login_required
+@require_POST
+def delete_job(request, job_id):
+    """Delete an import job and clean up its local upload file."""
+    job = get_object_or_404(ImportJob, pk=job_id)
+    name = job.vm_name or job.upload_filename or f"job #{job_id}"
+
+    # Remove local file if still present
+    try:
+        if job.local_input_path and os.path.exists(job.local_input_path):
+            os.remove(job.local_input_path)
+            parent = os.path.dirname(job.local_input_path)
+            if parent and not os.listdir(parent):
+                os.rmdir(parent)
+    except OSError as exc:
+        logger.warning("delete_job %d: could not remove local file: %s", job_id, exc)
+
+    job.delete()
+    messages.success(request, f'Import job "{name}" deleted.')
+    return redirect("dashboard")
+
+
+@login_required
+@require_POST
+def resume_job(request, job_id):
+    """Re-queue a QUEUED or FAILED import job."""
+    job = get_object_or_404(ImportJob, pk=job_id)
+
+    if job.stage == "FAILED":
+        # Send back to configure so the user can fix settings and retry
+        return redirect("importer_configure", job_id=job.pk)
+
+    if not job.vm_config_json:
+        # Job was never configured — send to configure step
+        return redirect("importer_configure", job_id=job.pk)
+
+    # Reset stage to QUEUED and re-fire the Celery task
+    job.stage = "QUEUED"
+    job.message = ""
+    job.error = ""
+    job.percent = 0
+    job.save(update_fields=["stage", "message", "error", "percent", "updated_at"])
+
+    from apps.importer.tasks import run_import_pipeline
+    run_import_pipeline.delay(job.pk)
+
+    return redirect("importer_progress", job_id=job.pk)

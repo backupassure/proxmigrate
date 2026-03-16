@@ -4,8 +4,10 @@ import os
 import uuid
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from apps.vmcreator.forms import VmCreateConfigForm
 from apps.vmcreator.models import VmCreateJob
@@ -204,3 +206,48 @@ def job_status(request, job_id):
         "stages": stages,
         "stages_done_count": stages_done_count,
     })
+
+
+@login_required
+@require_POST
+def delete_job(request, job_id):
+    """Delete a VM create job and clean up its local ISO file if present."""
+    job = get_object_or_404(VmCreateJob, pk=job_id)
+    name = job.vm_name or f"job #{job_id}"
+
+    try:
+        if job.iso_local_path and os.path.exists(job.iso_local_path):
+            os.remove(job.iso_local_path)
+            parent = os.path.dirname(job.iso_local_path)
+            if parent and not os.listdir(parent):
+                os.rmdir(parent)
+    except OSError as exc:
+        logger.warning("vmcreator delete_job %d: could not remove local ISO: %s", job_id, exc)
+
+    job.delete()
+    messages.success(request, f'VM creation job "{name}" deleted.')
+    return redirect("dashboard")
+
+
+@login_required
+@require_POST
+def resume_job(request, job_id):
+    """Re-queue a QUEUED or FAILED VM create job."""
+    job = get_object_or_404(VmCreateJob, pk=job_id)
+
+    if job.stage == VmCreateJob.STAGE_FAILED:
+        return redirect("vmcreator_configure", job_id=job.pk)
+
+    if not job.vm_config_json:
+        return redirect("vmcreator_configure", job_id=job.pk)
+
+    job.stage = VmCreateJob.STAGE_QUEUED
+    job.message = ""
+    job.error = ""
+    job.percent = 0
+    job.save(update_fields=["stage", "message", "error", "percent", "updated_at"])
+
+    from apps.vmcreator.tasks import run_create_pipeline
+    run_create_pipeline.delay(job.pk)
+
+    return redirect("vmcreator_progress", job_id=job.pk)
