@@ -69,7 +69,7 @@ class VmCreateConfigForm(forms.Form):
     protection = forms.BooleanField(required=False)
     start_on_boot = forms.BooleanField(required=False)
     start_after_create = forms.BooleanField(required=False)
-    attach_virtio_iso = forms.BooleanField(required=False)
+    virtio_iso_ref = forms.CharField(required=False, max_length=500)
 
     def __init__(self, *args, node_choices=None, storage_choices=None,
                  bridge_choices=None, config_defaults=None, **kwargs):

@@ -119,29 +119,19 @@
           </div>
         </div>
         <div id="virtio-iso-row" style="display:none;">
-          {% if virtio_iso_configured %}
-          <div class="field">
-            <label class="checkbox">
-              <input type="checkbox" name="attach_virtio_iso" id="attach_virtio_iso" checked>
-              &nbsp;<strong>Attach VirtIO Windows Drivers ISO as second CD-ROM</strong>
-            </label>
-            <p class="field-hint" style="margin-left:1.5rem;">
-              <i class="fas fa-compact-disc" style="color:#48c78e;margin-right:0.3rem;"></i>
-              <code>{{ virtio_iso }}</code> — attached as ide3 so drivers are ready to install
-              from the Proxmox console immediately after the VM boots.
-            </p>
+          <div style="border:1px solid #e5e7eb;border-radius:8px;padding:0.9rem 1rem;background:#fafafa;">
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.65rem;">
+              <i class="fas fa-compact-disc" style="color:#10b981;"></i>
+              <strong style="font-size:0.9rem;">VirtIO Windows Drivers ISO</strong>
+              <span style="font-size:0.75rem;color:#6b7280;">— attached as ide3 so drivers are ready on first boot</span>
+            </div>
+            <div id="virtio-iso-picker"
+                 hx-get="/wizard/iso-list/?default={{ virtio_iso|urlencode }}"
+                 hx-trigger="revealed"
+                 hx-swap="innerHTML">
+              <div style="color:#9ca3af;font-size:0.8rem;"><i class="fas fa-spinner fa-spin" style="margin-right:0.4rem;"></i>Loading ISO list…</div>
+            </div>
           </div>
-          {% else %}
-          <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:0.75rem 1rem;font-size:0.82rem;line-height:1.5;">
-            <i class="fas fa-exclamation-triangle" style="color:#d97706;margin-right:0.4rem;"></i>
-            <strong>No VirtIO drivers ISO configured.</strong>
-            Windows VMs need the VirtIO driver package to use high-performance SCSI/network devices.
-            <a href="https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/?C=M;O=D" target="_blank" rel="noopener" style="color:#0369a1;">
-              Download virtio-win ISO <i class="fas fa-external-link-alt" style="font-size:0.7rem;"></i></a>
-            (Fedora archive, sorted newest first), upload it to your Proxmox ISO storage, then set the path in
-            <a href="/wizard/settings/" style="color:#0369a1;">Proxmox Settings → VM Defaults</a>.
-          </div>
-          {% endif %}
         </div>
         <div class="field">
           <label class="checkbox">
@@ -696,16 +686,22 @@
   document.getElementById('disk-bus-select').addEventListener('change', checkWindowsVirtio);
   checkWindowsVirtio();
 
-  {% if virtio_iso_configured %}
-  // Show/hide VirtIO ISO checkbox based on OS type
+  // Show/hide VirtIO ISO picker based on OS type; trigger HTMX load on first reveal
+  let virtioIsoLoaded = false;
   function updateVirtioIsoRow() {
     const osType = document.querySelector('[name=os_type]').value;
     const row = document.getElementById('virtio-iso-row');
-    if (row) row.style.display = osType.startsWith('win') ? '' : 'none';
+    if (!row) return;
+    const isWindows = osType.startsWith('win');
+    row.style.display = isWindows ? '' : 'none';
+    if (isWindows && !virtioIsoLoaded) {
+      virtioIsoLoaded = true;
+      const picker = document.getElementById('virtio-iso-picker');
+      if (picker) htmx.trigger(picker, 'revealed');
+    }
   }
   document.querySelector('[name=os_type]').addEventListener('change', updateVirtioIsoRow);
   updateVirtioIsoRow();
-  {% endif %}
 
   // ── Extra disks ──────────────────────────────────────────────────────────
   const STORAGE_OPTIONS = [

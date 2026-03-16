@@ -663,3 +663,72 @@ def virtio_scan(request):
     if found:
         return JsonResponse({"found": found})
     return JsonResponse({"found": "", "error": "No VirtIO ISO found in any storage pool."})
+
+
+@login_required
+def iso_list(request):
+    """HTMX endpoint: return an HTML partial listing all ISOs across all Proxmox storage pools.
+
+    VirtIO-win ISOs are sorted first with a 'Recommended' badge.
+    The caller passes ?default=<vol_id> to pre-select a particular ISO.
+    """
+    config = _get_or_create_config()
+    default_ref = request.GET.get("default", "").strip()
+
+    isos = []
+    error = None
+
+    if not config.host:
+        error = "Proxmox not configured yet."
+    else:
+        storage_list = []
+        try:
+            env = DiscoveredEnvironment.objects.get(config=config)
+            storage_list = [s["storage"] for s in env.storage_pools]
+        except DiscoveredEnvironment.DoesNotExist:
+            error = "No storage pools discovered. Complete the wizard first."
+
+        if storage_list:
+            try:
+                with config.get_ssh_client() as ssh:
+                    for storage in storage_list:
+                        out, _err, rc = ssh.run(["pvesm", "list", storage, "--content", "iso"])
+                        if rc != 0:
+                            continue
+                        for line in out.splitlines():
+                            parts = line.split()
+                            if not parts:
+                                continue
+                            vol_id = parts[0]
+                            if not vol_id.startswith(storage + ":"):
+                                continue
+                            # Only include .iso files
+                            if not vol_id.lower().endswith(".iso"):
+                                continue
+                            filename = vol_id.split("/")[-1] if "/" in vol_id else vol_id.split(":")[-1]
+                            is_virtio = "virtio-win" in filename.lower()
+                            isos.append({
+                                "vol_id": vol_id,
+                                "filename": filename,
+                                "storage": storage,
+                                "is_virtio": is_virtio,
+                            })
+            except Exception as exc:
+                error = str(exc)
+                logger.warning("iso_list SSH error: %s", exc)
+
+    # Sort: virtio-win first, then alphabetical within each group
+    isos.sort(key=lambda x: (0 if x["is_virtio"] else 1, x["filename"].lower()))
+
+    # Determine the pre-selected value: explicit default → global config → first virtio → first ISO
+    if not default_ref and config.virtio_iso:
+        default_ref = config.virtio_iso
+    if not default_ref and isos:
+        virtio_isos = [i for i in isos if i["is_virtio"]]
+        default_ref = virtio_isos[0]["vol_id"] if virtio_isos else isos[0]["vol_id"]
+
+    return render(request, "wizard/partials/iso_list.html", {
+        "isos": isos,
+        "default_ref": default_ref,
+        "error": error,
+    })

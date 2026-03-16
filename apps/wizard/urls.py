@@ -14,4 +14,5 @@ urlpatterns = [
     path("step/5/browse/", views.step5_browse, name="wizard_step5_browse"),
     path("step/6/", views.step6, name="wizard_step6"),
     path("virtio-scan/", views.virtio_scan, name="wizard_virtio_scan"),
+    path("iso-list/", views.iso_list, name="wizard_iso_list"),
 ]
