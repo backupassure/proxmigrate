@@ -80,6 +80,7 @@ def auth_settings_save(request, auth_type):
         config.admin_group = request.POST.get("admin_group", "").strip()
         config.use_tls = "use_tls" in request.POST
         config.skip_cert_verify = "skip_cert_verify" in request.POST
+        config.ca_cert = request.POST.get("ca_cert", "").strip()
         new_pw = request.POST.get("bind_password", "").strip()
         if new_pw:
             config.bind_password = new_pw
@@ -150,12 +151,15 @@ def auth_settings_test(request, auth_type):
     user_search_base = request.POST.get("user_search_base", "").strip()
     use_tls = "use_tls" in request.POST
     skip_cert_verify = "skip_cert_verify" in request.POST
+    ca_cert = request.POST.get("ca_cert", "").strip()
 
+    stored = LDAPConfig.objects.first()
     # Fall back to stored password if none submitted (field was left blank)
-    if not bind_password:
-        stored = LDAPConfig.objects.first()
-        if stored:
-            bind_password = stored.bind_password or ""
+    if not bind_password and stored:
+        bind_password = stored.bind_password or ""
+    # Fall back to stored CA cert if not in form
+    if not ca_cert and stored:
+        ca_cert = stored.ca_cert or ""
 
     if not server_uri:
         return HttpResponse(
@@ -173,9 +177,17 @@ def auth_settings_test(request, auth_type):
 
     try:
         import ldap
+        import tempfile
 
         if skip_cert_verify:
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+            ldap.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
+        elif ca_cert:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as f:
+                f.write(ca_cert)
+                ca_cert_path = f.name
+            ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, ca_cert_path)
+            ldap.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
 
         conn = ldap.initialize(server_uri)
         conn.set_option(ldap.OPT_NETWORK_TIMEOUT, 5)

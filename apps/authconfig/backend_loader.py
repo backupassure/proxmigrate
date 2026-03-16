@@ -6,12 +6,15 @@ migrations have run.
 """
 
 import logging
+import os
+import tempfile
 
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
 _BASE_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
+_LDAP_CA_CERT_PATH = "/opt/proxmigrate/certs/ldap-ca.pem"
 
 
 def load_auth_backends_from_db():
@@ -55,6 +58,32 @@ def _configure_ldap(config):
         logger.warning("_configure_ldap: django-auth-ldap / python-ldap not installed")
         return
 
+    # TLS options must be set at the module level BEFORE any ldap.initialize()
+    # call — AUTH_LDAP_GLOBAL_OPTIONS alone is applied too late for ldaps://
+    # because TLS negotiation happens at connect time. OPT_X_TLS_NEWCTX forces
+    # OpenLDAP to create a fresh TLS context with the updated settings.
+    if config.skip_cert_verify:
+        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+        ldap.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
+        settings.AUTH_LDAP_GLOBAL_OPTIONS = {
+            ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER,
+            ldap.OPT_X_TLS_NEWCTX: 0,
+        }
+    elif config.ca_cert:
+        # Write the CA cert PEM to disk so OpenLDAP can load it
+        try:
+            os.makedirs(os.path.dirname(_LDAP_CA_CERT_PATH), exist_ok=True)
+            with open(_LDAP_CA_CERT_PATH, "w") as f:
+                f.write(config.ca_cert)
+            ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, _LDAP_CA_CERT_PATH)
+            ldap.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
+            settings.AUTH_LDAP_GLOBAL_OPTIONS = {
+                ldap.OPT_X_TLS_CACERTFILE: _LDAP_CA_CERT_PATH,
+                ldap.OPT_X_TLS_NEWCTX: 0,
+            }
+        except Exception as exc:
+            logger.warning("_configure_ldap: failed to write CA cert: %s", exc)
+
     settings.AUTH_LDAP_SERVER_URI = config.server_uri
     settings.AUTH_LDAP_BIND_DN = config.bind_dn or ""
     settings.AUTH_LDAP_BIND_PASSWORD = config.bind_password or ""
@@ -68,11 +97,6 @@ def _configure_ldap(config):
     # STARTTLS only applies to plain ldap:// — ldaps:// is already TLS
     if config.use_tls and not config.server_uri.lower().startswith("ldaps://"):
         settings.AUTH_LDAP_START_TLS = True
-
-    if config.skip_cert_verify:
-        settings.AUTH_LDAP_GLOBAL_OPTIONS = {
-            ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER,
-        }
 
     if config.require_group:
         settings.AUTH_LDAP_REQUIRE_GROUP = config.require_group

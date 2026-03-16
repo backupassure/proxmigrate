@@ -55,6 +55,11 @@ class LDAPConfig(models.Model):
         verbose_name="Skip Certificate Verification",
         help_text="Disable TLS certificate verification (insecure — dev only).",
     )
+    ca_cert = models.TextField(
+        blank=True,
+        verbose_name="CA Certificate (PEM)",
+        help_text="Paste the PEM certificate of the CA or LDAP server to trust. Leave blank to use system CAs.",
+    )
     is_enabled = models.BooleanField(
         default=False,
         verbose_name="Enable LDAP Authentication",

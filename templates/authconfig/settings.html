@@ -193,6 +193,23 @@
             </div>
           </div>
 
+          {# CA Certificate trust #}
+          <div class="field" style="margin-bottom:1.25rem;">
+            <label class="label" style="font-size:0.875rem;font-weight:600;">
+              Trusted CA Certificate (PEM) <span style="font-weight:400;color:#7a7a7a;">— optional</span>
+            </label>
+            <div class="control">
+              <textarea class="textarea is-small" name="ca_cert" rows="4"
+                placeholder="-----BEGIN CERTIFICATE-----&#10;Paste the CA or LDAP server certificate here to trust it for LDAPS connections.&#10;Leave blank to use system CAs or if Skip Certificate Verification is enabled.&#10;-----END CERTIFICATE-----"
+                style="font-family:monospace;font-size:0.75rem;resize:vertical;">{{ ldap_config.ca_cert|default:'' }}</textarea>
+            </div>
+            <p class="field-hint">
+              Paste either the <strong>CA certificate</strong> that signed the LDAP server's cert, or the <strong>LDAP server certificate</strong> itself.
+              Either works — the CA cert is preferred as it also covers certificate renewals.
+              Ignored when <em>Skip certificate verification</em> is checked.
+            </p>
+          </div>
+
           <div style="display:flex;gap:1rem;align-items:center;margin-top:0.5rem;flex-wrap:wrap;">
             <button type="submit" class="button is-primary" style="font-weight:600;">
               <span class="icon"><i class="fas fa-save"></i></span>
