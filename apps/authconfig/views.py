@@ -147,6 +147,7 @@ def auth_settings_test(request, auth_type):
     server_uri = request.POST.get("server_uri", "").strip()
     bind_dn = request.POST.get("bind_dn", "").strip()
     bind_password = request.POST.get("bind_password", "").strip()
+    user_search_base = request.POST.get("user_search_base", "").strip()
     use_tls = "use_tls" in request.POST
     skip_cert_verify = "skip_cert_verify" in request.POST
 
@@ -160,6 +161,14 @@ def auth_settings_test(request, auth_type):
         return HttpResponse(
             '<div class="notification is-warning is-light" style="font-size:0.82rem;padding:0.5rem 0.75rem;margin:0;">'
             "Enter an LDAP server URI first.</div>"
+        )
+
+    if not user_search_base:
+        return HttpResponse(
+            '<div class="notification is-warning is-light" style="font-size:0.82rem;padding:0.5rem 0.75rem;margin:0;">'
+            '<i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>'
+            "<strong>User Search Base is required.</strong> For Active Directory, use the root of your domain — "
+            "e.g. <code>DC=example,DC=com</code>.</div>"
         )
 
     try:
