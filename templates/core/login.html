@@ -111,19 +111,23 @@
           <div style="flex:1;height:1px;background:#e8ecf0;"></div>
         </div>
 
-        <a href="{% url 'microsoft_login' %}"
-           style="display:flex;align-items:center;width:100%;border:1px solid #8c8c8c;background:#fff;padding:0;border-radius:0;text-decoration:none;font-family:'Segoe UI',Frutiger,Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;color:#5e5e5e;transition:background 0.15s;"
-           onmouseover="this.style.background='#f3f3f3'" onmouseout="this.style.background='#fff'">
-          <span style="display:flex;align-items:center;justify-content:center;padding:10px 12px;border-right:1px solid #8c8c8c;background:#fff;flex-shrink:0;">
-            <svg width="21" height="21" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
-              <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-              <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
-              <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
-              <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
-            </svg>
-          </span>
-          <span style="flex:1;text-align:center;padding:10px 12px;">Sign in with Microsoft</span>
-        </a>
+        <form method="post" action="{% url 'microsoft_login' %}" style="margin:0;">
+          {% csrf_token %}
+          {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+          <button type="submit"
+             style="display:flex;align-items:center;width:100%;border:1px solid #8c8c8c;background:#fff;padding:0;border-radius:0;cursor:pointer;font-family:'Segoe UI',Frutiger,Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;color:#5e5e5e;transition:background 0.15s;"
+             onmouseover="this.style.background='#f3f3f3'" onmouseout="this.style.background='#fff'">
+            <span style="display:flex;align-items:center;justify-content:center;padding:10px 12px;border-right:1px solid #8c8c8c;background:#fff;flex-shrink:0;">
+              <svg width="21" height="21" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+              </svg>
+            </span>
+            <span style="flex:1;text-align:center;padding:10px 12px;">Sign in with Microsoft</span>
+          </button>
+        </form>
       {% endif %}
 
       {# LDAP note if configured #}
