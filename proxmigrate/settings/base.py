@@ -205,6 +205,32 @@ LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
 
 # ---------------------------------------------------------------------------
+# Logging — errors to gunicorn error log
+# ---------------------------------------------------------------------------
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": "/var/log/proxmigrate/django.log",
+        },
+    },
+    "root": {
+        "handlers": ["file"],
+        "level": "WARNING",
+    },
+    "loggers": {
+        "django.request": {
+            "handlers": ["file"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+}
+
+# ---------------------------------------------------------------------------
 # Help system
 # ---------------------------------------------------------------------------
 

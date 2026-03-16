@@ -38,12 +38,16 @@ class AuthConfigConfig(AppConfig):
             from allauth.socialaccount.signals import social_account_added, social_account_updated
 
             def _entra_auth_source(sender, request, sociallogin, **kwargs):
-                if sociallogin.account.provider == "microsoft":
-                    from apps.core.models import UserProfile
-                    profile, _ = UserProfile.objects.get_or_create(user=sociallogin.user)
-                    if profile.auth_source != UserProfile.AUTH_SOURCE_ENTRA:
-                        profile.auth_source = UserProfile.AUTH_SOURCE_ENTRA
-                        profile.save(update_fields=["auth_source"])
+                try:
+                    if sociallogin.account.provider == "microsoft":
+                        from apps.core.models import UserProfile
+                        profile, _ = UserProfile.objects.get_or_create(user=sociallogin.user)
+                        if profile.auth_source != UserProfile.AUTH_SOURCE_ENTRA:
+                            profile.auth_source = UserProfile.AUTH_SOURCE_ENTRA
+                            profile.save(update_fields=["auth_source"])
+                except Exception:
+                    import logging as _logging
+                    _logging.getLogger(__name__).exception("_entra_auth_source signal failed")
 
             social_account_added.connect(_entra_auth_source, weak=False)
             social_account_updated.connect(_entra_auth_source, weak=False)
