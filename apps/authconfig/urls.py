@@ -9,4 +9,6 @@ urlpatterns = [
     path("entra/save/", views.save_entra, name="save_entra"),
     path("ldap/test/", views.test_ldap, name="test_ldap"),
     path("users/", views.user_list, name="user_list"),
+    path("users/create/", views.user_create, name="user_create"),
+    path("users/change-password/", views.change_own_password, name="change_own_password"),
 ]

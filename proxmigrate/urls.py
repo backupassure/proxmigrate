@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+from apps.authconfig import views as authconfig_views
 from apps.wizard.views import proxmox_settings
 
 urlpatterns = [
@@ -20,6 +21,10 @@ urlpatterns = [
     path("settings/auth/", include("apps.authconfig.urls")),
     path("settings/certificates/", include("apps.certificates.urls")),
     path("accounts/", include("allauth.urls")),
+    # User management actions (HTMX targets)
+    path("users/<int:user_id>/toggle-admin/", authconfig_views.user_toggle_admin, name="user_toggle_admin"),
+    path("users/<int:user_id>/toggle-active/", authconfig_views.user_toggle_active, name="user_toggle_active"),
+    path("users/<int:user_id>/reset-password/", authconfig_views.user_reset_password, name="user_reset_password"),
 ]
 
 # Serve uploaded media files during development

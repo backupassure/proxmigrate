@@ -12,6 +12,16 @@
 
 {% block content %}
 
+{% if messages %}
+  {% for message in messages %}
+    <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% elif message.tags == 'warning' %}is-warning{% else %}is-info{% endif %} is-light"
+         style="font-size:0.875rem;margin-bottom:1rem;border-radius:8px;">
+      <button class="delete" onclick="this.parentElement.remove()"></button>
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+
 <div class="proxmigrate-card">
   <div class="card-header">
     <i class="fas fa-users" style="color:#3273dc;"></i> All Users
@@ -33,80 +43,7 @@
       </thead>
       <tbody>
         {% for u in users %}
-        <tr id="user-row-{{ u.id }}">
-          <td style="vertical-align:middle;font-weight:600;color:#1a1a2e;">
-            <span class="icon" style="margin-right:0.3rem;color:#b5b5b5;"><i class="fas fa-user"></i></span>
-            {{ u.username }}
-            {% if u == request.user %}
-              <span class="tag is-light" style="font-size:0.65rem;margin-left:0.3rem;">You</span>
-            {% endif %}
-          </td>
-          <td style="vertical-align:middle;font-size:0.875rem;color:#4a4a4a;">{{ u.email|default:"—" }}</td>
-          <td style="vertical-align:middle;">
-            {% if u.profile.auth_source == 'ldap' %}
-              <span class="auth-badge auth-badge-ldap">LDAP</span>
-            {% elif u.profile.auth_source == 'entra' %}
-              <span class="auth-badge auth-badge-entra">Entra ID</span>
-            {% else %}
-              <span class="auth-badge auth-badge-local">Local</span>
-            {% endif %}
-          </td>
-          <td style="vertical-align:middle;text-align:center;">
-            <span id="admin-status-{{ u.id }}">
-              {% if u.is_superuser %}
-                <i class="fas fa-check-circle" style="color:#48c78e;" title="Admin"></i>
-              {% else %}
-                <i class="fas fa-minus-circle" style="color:#dbdbdb;" title="Not admin"></i>
-              {% endif %}
-            </span>
-            {% if u != request.user %}
-              <button class="button is-tiny is-ghost" style="font-size:0.7rem;padding:0 0.3rem;height:auto;"
-                      hx-post="/users/{{ u.id }}/toggle-admin/"
-                      hx-target="#user-row-{{ u.id }}"
-                      hx-swap="outerHTML"
-                      title="Toggle admin">
-                <i class="fas fa-exchange-alt" style="font-size:0.65rem;color:#b5b5b5;"></i>
-              </button>
-            {% endif %}
-          </td>
-          <td style="vertical-align:middle;text-align:center;">
-            {% if u.is_active %}
-              <span class="status-badge vm-status-running" style="font-size:0.65rem;">Active</span>
-            {% else %}
-              <span class="status-badge vm-status-stopped" style="font-size:0.65rem;">Inactive</span>
-            {% endif %}
-          </td>
-          <td style="vertical-align:middle;font-size:0.82rem;color:#7a7a7a;">
-            {% if u.last_login %}
-              {{ u.last_login|timesince }} ago
-            {% else %}
-              Never
-            {% endif %}
-          </td>
-          <td style="vertical-align:middle;">
-            <div class="vm-actions" style="justify-content:flex-end;">
-              {% if u != request.user %}
-                <button class="button is-small is-light"
-                        hx-post="/users/{{ u.id }}/toggle-active/"
-                        hx-target="#user-row-{{ u.id }}"
-                        hx-swap="outerHTML"
-                        title="{% if u.is_active %}Deactivate{% else %}Activate{% endif %}">
-                  {% if u.is_active %}
-                    <i class="fas fa-user-slash" style="color:#f14668;"></i>
-                  {% else %}
-                    <i class="fas fa-user-check" style="color:#48c78e;"></i>
-                  {% endif %}
-                </button>
-                {% if u.profile.auth_source == 'local' %}
-                  <button class="button is-small is-light" title="Reset password"
-                          onclick="showResetPasswordModal({{ u.id }}, '{{ u.username }}')">
-                    <i class="fas fa-key" style="color:#f59e0b;"></i>
-                  </button>
-                {% endif %}
-              {% endif %}
-            </div>
-          </td>
-        </tr>
+          {% include "authconfig/partials/user_row.html" with current_user=request.user %}
         {% endfor %}
       </tbody>
     </table>
@@ -131,13 +68,12 @@
       <button class="delete" onclick="document.getElementById('add-user-modal').classList.remove('is-active')"></button>
     </header>
     <section class="modal-card-body">
-      <div id="add-user-result"></div>
       <form method="post" action="{% url 'user_create' %}" id="add-user-form">
         {% csrf_token %}
         <div class="field">
           <label class="label" style="font-size:0.875rem;font-weight:600;">Username</label>
           <div class="control has-icons-left">
-            <input class="input" type="text" name="username" placeholder="Username" required>
+            <input class="input" type="text" name="username" placeholder="Username" required autocomplete="off">
             <span class="icon is-left"><i class="fas fa-user" style="color:#b5b5b5;"></i></span>
           </div>
         </div>
@@ -180,27 +116,140 @@
   </div>
 </div>
 
+{# ===== Reset Password Modal (admin resetting another user) ===== #}
+<div class="modal" id="reset-password-modal">
+  <div class="modal-background" onclick="closeResetModal()"></div>
+  <div class="modal-card" style="max-width:420px;border-radius:12px;">
+    <header class="modal-card-head" style="background:#1a1a2e;border-radius:12px 12px 0 0;">
+      <p class="modal-card-title" style="color:#fff;font-size:1rem;font-weight:600;">
+        <i class="fas fa-key" style="margin-right:0.5rem;color:#f59e0b;"></i>
+        Reset Password — <span id="reset-username"></span>
+      </p>
+      <button class="delete" onclick="closeResetModal()"></button>
+    </header>
+    <section class="modal-card-body">
+      <div id="reset-password-result" style="margin-bottom:0.75rem;"></div>
+      <div class="field">
+        <label class="label" style="font-size:0.875rem;font-weight:600;">New Password</label>
+        <div class="control has-icons-left">
+          <input class="input" type="password" id="reset-new-password" placeholder="New password" autocomplete="new-password">
+          <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" style="font-size:0.875rem;font-weight:600;">Confirm Password</label>
+        <div class="control has-icons-left">
+          <input class="input" type="password" id="reset-confirm-password" placeholder="Confirm new password" autocomplete="new-password">
+          <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+        </div>
+      </div>
+    </section>
+    <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
+      <button class="button is-light" onclick="closeResetModal()">Cancel</button>
+      <button class="button is-warning" style="font-weight:600;" onclick="submitResetPassword()">
+        <span class="icon"><i class="fas fa-key"></i></span>
+        <span>Set Password</span>
+      </button>
+    </footer>
+  </div>
+</div>
+
+{# ===== Change My Password Modal (signed-in user) ===== #}
+<div class="modal" id="change-password-modal">
+  <div class="modal-background" onclick="this.parentElement.classList.remove('is-active')"></div>
+  <div class="modal-card" style="max-width:420px;border-radius:12px;">
+    <header class="modal-card-head" style="background:#1a1a2e;border-radius:12px 12px 0 0;">
+      <p class="modal-card-title" style="color:#fff;font-size:1rem;font-weight:600;">
+        <i class="fas fa-key" style="margin-right:0.5rem;color:#3273dc;"></i>Change My Password
+      </p>
+      <button class="delete" onclick="document.getElementById('change-password-modal').classList.remove('is-active')"></button>
+    </header>
+    <section class="modal-card-body">
+      <form method="post" action="{% url 'change_own_password' %}" id="change-password-form">
+        {% csrf_token %}
+        <div class="field">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">Current Password</label>
+          <div class="control has-icons-left">
+            <input class="input" type="password" name="current_password" placeholder="Current password" required autocomplete="current-password">
+            <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">New Password</label>
+          <div class="control has-icons-left">
+            <input class="input" type="password" name="new_password" placeholder="New password" required autocomplete="new-password">
+            <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">Confirm New Password</label>
+          <div class="control has-icons-left">
+            <input class="input" type="password" name="confirm_password" placeholder="Confirm new password" required autocomplete="new-password">
+            <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+          </div>
+        </div>
+      </form>
+    </section>
+    <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
+      <button class="button is-light" onclick="document.getElementById('change-password-modal').classList.remove('is-active')">Cancel</button>
+      <button type="submit" form="change-password-form" class="button is-primary" style="font-weight:600;">
+        <span class="icon"><i class="fas fa-key"></i></span>
+        <span>Update Password</span>
+      </button>
+    </footer>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
+  var _resetUserId = null;
+
   function showResetPasswordModal(userId, username) {
-    // Simple inline prompt for now
-    const pw = prompt('New password for ' + username + ':');
-    if (pw && pw.length >= 8) {
-      htmx.ajax('POST', '/users/' + userId + '/reset-password/', {
-        values: { password: pw },
-        target: '#user-row-' + userId,
-        swap: 'none'
-      }).then(() => showToast('Password updated for ' + username, 'success'));
-    } else if (pw !== null) {
-      showToast('Password must be at least 8 characters', 'error');
-    }
+    _resetUserId = userId;
+    document.getElementById('reset-username').textContent = username;
+    document.getElementById('reset-new-password').value = '';
+    document.getElementById('reset-confirm-password').value = '';
+    document.getElementById('reset-password-result').innerHTML = '';
+    document.getElementById('reset-password-modal').classList.add('is-active');
+    setTimeout(function() { document.getElementById('reset-new-password').focus(); }, 100);
+  }
+
+  function closeResetModal() {
+    document.getElementById('reset-password-modal').classList.remove('is-active');
+    _resetUserId = null;
+  }
+
+  function submitResetPassword() {
+    if (!_resetUserId) return;
+    var newPw = document.getElementById('reset-new-password').value;
+    var confirmPw = document.getElementById('reset-confirm-password').value;
+    var resultEl = document.getElementById('reset-password-result');
+
+    htmx.ajax('POST', '/users/' + _resetUserId + '/reset-password/', {
+      values: { new_password: newPw, confirm_password: confirmPw },
+      target: '#reset-password-result',
+      swap: 'innerHTML'
+    }).then(function() {
+      var result = document.getElementById('reset-password-result');
+      if (result.querySelector('.is-success')) {
+        setTimeout(closeResetModal, 1500);
+      }
+    });
+  }
+
+  function showChangePasswordModal() {
+    document.getElementById('change-password-modal').classList.add('is-active');
+    setTimeout(function() {
+      var el = document.querySelector('#change-password-form input[name="current_password"]');
+      if (el) el.focus();
+    }, 100);
   }
 
   // CSRF for HTMX
   document.addEventListener('htmx:configRequest', function(evt) {
-    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
+    var csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
     if (csrfToken) evt.detail.headers['X-CSRFToken'] = csrfToken[1];
   });
 </script>
