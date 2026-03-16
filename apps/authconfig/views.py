@@ -95,6 +95,7 @@ def auth_settings_save(request, auth_type):
         config.tenant_id = request.POST.get("tenant_id", "").strip()
         config.client_id = request.POST.get("client_id", "").strip()
         config.allowed_domains = request.POST.get("allowed_domains", "").strip()
+        config.require_group_id = request.POST.get("require_group_id", "").strip()
         config.admin_group_id = request.POST.get("admin_group_id", "").strip()
         new_secret = request.POST.get("client_secret", "").strip()
         if new_secret:

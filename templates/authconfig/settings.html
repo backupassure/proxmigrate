@@ -320,7 +320,7 @@
                         <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;font-family:monospace;">GroupMember.Read.All</td>
                         <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;">Delegated</td>
                         <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;"><span class="tag is-warning is-light" style="font-size:0.72rem;">Required</span></td>
-                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;">Check Admin Group membership — only needed if Admin Group ID is set</td>
+                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;">Check group membership — required if Require Group ID or Admin Group ID is set</td>
                       </tr>
                     </tbody>
                   </table>
@@ -389,14 +389,29 @@
             </div>
           </div>
 
-          <div class="field">
-            <label class="label" style="font-size:0.875rem;font-weight:600;">Admin Group Object ID (optional)</label>
-            <div class="control">
-              <input class="input is-monospace" type="text" name="admin_group_id"
-                value="{{ entra_config.admin_group_id|default:'' }}"
-                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+          <div class="columns">
+            <div class="column">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">Require Group Object ID (optional)</label>
+                <div class="control">
+                  <input class="input is-monospace" type="text" name="require_group_id"
+                    value="{{ entra_config.require_group_id|default:'' }}"
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                </div>
+                <p class="field-hint">Only members of this Azure group can log in. Leave blank to allow all tenant users (or only Admin Group members if one is set).</p>
+              </div>
             </div>
-            <p class="field-hint">Members of this Azure group will be granted ProxMigrate admin access automatically.</p>
+            <div class="column">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">Admin Group Object ID (optional)</label>
+                <div class="control">
+                  <input class="input is-monospace" type="text" name="admin_group_id"
+                    value="{{ entra_config.admin_group_id|default:'' }}"
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                </div>
+                <p class="field-hint">Members of this Azure group receive admin access automatically. If set without a Require Group, only admin group members can log in.</p>
+              </div>
+            </div>
           </div>
 
           <div style="margin-top:1rem;">

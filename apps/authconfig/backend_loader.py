@@ -138,6 +138,12 @@ def _configure_ldap(config):
 
 def _configure_entra(config):
     providers = getattr(settings, "SOCIALACCOUNT_PROVIDERS", {})
+    # Request GroupMember.Read.All whenever either group field is configured so
+    # the pre_social_login handler can check group membership via the Graph API.
+    scopes = ["User.Read"]
+    require_group_id = getattr(config, "require_group_id", "")
+    if (require_group_id or "").strip() or (config.admin_group_id or "").strip():
+        scopes.append("GroupMember.Read.All")
     providers["microsoft"] = {
         "APP": {
             "client_id": config.client_id,
@@ -146,6 +152,6 @@ def _configure_entra(config):
                 "tenant": config.tenant_id or "common",
             },
         },
-        "SCOPE": ["User.Read"],
+        "SCOPE": scopes,
     }
     settings.SOCIALACCOUNT_PROVIDERS = providers
