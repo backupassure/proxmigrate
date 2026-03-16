@@ -6,6 +6,7 @@ paramiko==3.4.0
 requests==2.31.0
 python-dotenv==1.0.0
 django-encrypted-model-fields==0.6.5
+python-ldap==3.4.5
 django-auth-ldap==4.6.0
 django-allauth==0.61.1
 Markdown==3.5.2
