@@ -60,6 +60,10 @@ class LDAPConfig(models.Model):
         verbose_name="Enable LDAP Authentication",
     )
 
+    @property
+    def bind_password_set(self):
+        return bool(self.bind_password)
+
     class Meta:
         verbose_name = "LDAP Configuration"
 
@@ -102,6 +106,10 @@ class EntraIDConfig(models.Model):
         default=False,
         verbose_name="Enable Entra ID Authentication",
     )
+
+    @property
+    def client_secret_set(self):
+        return bool(self.client_secret)
 
     class Meta:
         verbose_name = "Entra ID Configuration"

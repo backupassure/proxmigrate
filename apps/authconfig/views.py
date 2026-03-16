@@ -7,10 +7,10 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from apps.authconfig.forms import EntraIDConfigForm
-from apps.authconfig.forms import LDAPConfigForm
+from apps.authconfig.backend_loader import load_auth_backends_from_db
 from apps.authconfig.models import EntraIDConfig
 from apps.authconfig.models import LDAPConfig
 
@@ -55,112 +55,143 @@ def _render_user_row(request, user):
 
 @_staff_required
 def auth_settings(request):
-    """Main auth settings page showing LDAP and Entra ID config."""
     ldap_config = LDAPConfig.objects.first()
     entra_config = EntraIDConfig.objects.first()
-
-    ldap_form = LDAPConfigForm(instance=ldap_config)
-    entra_form = EntraIDConfigForm(instance=entra_config)
-
-    return render(
-        request,
-        "authconfig/settings.html",
-        {
-            "ldap_form": ldap_form,
-            "entra_form": entra_form,
-            "ldap_config": ldap_config,
-            "entra_config": entra_config,
-        },
-    )
+    active_tab = request.GET.get("tab", "local")
+    return render(request, "authconfig/settings.html", {
+        "ldap_config": ldap_config,
+        "entra_config": entra_config,
+        "ldap_enabled": ldap_config.is_enabled if ldap_config else False,
+        "entra_enabled": entra_config.is_enabled if entra_config else False,
+        "active_tab": active_tab,
+    })
 
 
 @_staff_required
 @require_POST
-def save_ldap(request):
-    """Save LDAP settings. Returns HTMX partial."""
-    ldap_config = LDAPConfig.objects.first()
-    form = LDAPConfigForm(request.POST, instance=ldap_config)
-
-    if form.is_valid():
-        form.save()
+def auth_settings_save(request, auth_type):
+    if auth_type == "ldap":
+        config, _ = LDAPConfig.objects.get_or_create(pk=1)
+        config.server_uri = request.POST.get("server_uri", "").strip() or "ldap://localhost"
+        config.bind_dn = request.POST.get("bind_dn", "").strip()
+        config.user_search_base = request.POST.get("user_search_base", "").strip()
+        config.user_search_filter = request.POST.get("user_search_filter", "(uid=%(user)s)").strip()
+        config.require_group = request.POST.get("require_group", "").strip()
+        config.admin_group = request.POST.get("admin_group", "").strip()
+        config.use_tls = "use_tls" in request.POST
+        config.skip_cert_verify = "skip_cert_verify" in request.POST
+        new_pw = request.POST.get("bind_password", "").strip()
+        if new_pw:
+            config.bind_password = new_pw
+        config.save()
+        load_auth_backends_from_db()
         logger.info("LDAP config saved by %s", request.user)
-        return HttpResponse(
-            '<div class="alert alert-success">LDAP settings saved.</div>'
-        )
-    else:
-        return render(
-            request,
-            "authconfig/partials/ldap_form.html",
-            {"ldap_form": form},
-            status=422,
-        )
+        messages.success(request, "LDAP settings saved.")
+        return redirect(reverse("auth_settings") + "?tab=ldap")
 
-
-@_staff_required
-@require_POST
-def save_entra(request):
-    """Save Entra ID settings. Returns HTMX partial."""
-    entra_config = EntraIDConfig.objects.first()
-    form = EntraIDConfigForm(request.POST, instance=entra_config)
-
-    if form.is_valid():
-        form.save()
+    elif auth_type == "entra":
+        config, _ = EntraIDConfig.objects.get_or_create(pk=1)
+        config.tenant_id = request.POST.get("tenant_id", "").strip()
+        config.client_id = request.POST.get("client_id", "").strip()
+        config.allowed_domains = request.POST.get("allowed_domains", "").strip()
+        config.admin_group_id = request.POST.get("admin_group_id", "").strip()
+        new_secret = request.POST.get("client_secret", "").strip()
+        if new_secret:
+            config.client_secret = new_secret
+        config.save()
+        load_auth_backends_from_db()
         logger.info("Entra ID config saved by %s", request.user)
-        return HttpResponse(
-            '<div class="alert alert-success">Entra ID settings saved.</div>'
-        )
-    else:
-        return render(
-            request,
-            "authconfig/partials/entra_form.html",
-            {"entra_form": form},
-            status=422,
-        )
+        messages.success(request, "Entra ID settings saved.")
+        return redirect(reverse("auth_settings") + "?tab=entra")
+
+    messages.error(request, f"Unknown auth type: {auth_type}")
+    return redirect("auth_settings")
 
 
 @_staff_required
 @require_POST
-def test_ldap(request):
-    """Attempt an LDAP bind and return result as HTMX partial."""
-    ldap_config = LDAPConfig.objects.first()
-    if not ldap_config or not ldap_config.is_enabled:
+def auth_settings_toggle(request, auth_type):
+    if auth_type == "ldap":
+        config, _ = LDAPConfig.objects.get_or_create(pk=1)
+        config.is_enabled = not config.is_enabled
+        config.save()
+        load_auth_backends_from_db()
+        state = "enabled" if config.is_enabled else "disabled"
+        logger.info("LDAP %s by %s", state, request.user)
+    elif auth_type == "entra":
+        config, _ = EntraIDConfig.objects.get_or_create(pk=1)
+        config.is_enabled = not config.is_enabled
+        config.save()
+        load_auth_backends_from_db()
+        state = "enabled" if config.is_enabled else "disabled"
+        logger.info("Entra ID %s by %s", state, request.user)
+    else:
+        return HttpResponse("Unknown auth type", status=400)
+
+    return HttpResponse("", headers={"HX-Refresh": "true"})
+
+
+@_staff_required
+@require_POST
+def auth_settings_test(request, auth_type):
+    if auth_type == "entra":
         return HttpResponse(
-            '<div class="alert alert-warning">LDAP is not configured or not enabled.</div>'
+            '<div class="notification is-info is-light" style="font-size:0.82rem;padding:0.5rem 0.75rem;margin:0;">'
+            '<i class="fas fa-info-circle" style="margin-right:0.3rem;"></i>'
+            "Save settings and use the <strong>Sign in with Microsoft</strong> button on the login page to verify.</div>"
+        )
+
+    if auth_type != "ldap":
+        return HttpResponse("Unknown auth type", status=400)
+
+    server_uri = request.POST.get("server_uri", "").strip()
+    bind_dn = request.POST.get("bind_dn", "").strip()
+    bind_password = request.POST.get("bind_password", "").strip()
+    use_tls = "use_tls" in request.POST
+    skip_cert_verify = "skip_cert_verify" in request.POST
+
+    # Fall back to stored password if none submitted (field was left blank)
+    if not bind_password:
+        stored = LDAPConfig.objects.first()
+        if stored:
+            bind_password = stored.bind_password or ""
+
+    if not server_uri:
+        return HttpResponse(
+            '<div class="notification is-warning is-light" style="font-size:0.82rem;padding:0.5rem 0.75rem;margin:0;">'
+            "Enter an LDAP server URI first.</div>"
         )
 
     try:
-        import ldap3
+        import ldap
+        import ldap.initialize
 
-        server = ldap3.Server(
-            ldap_config.server_uri,
-            use_ssl=ldap_config.server_uri.startswith("ldaps://"),
-            get_info=ldap3.ALL,
-        )
-        conn = ldap3.Connection(
-            server,
-            user=ldap_config.bind_dn or None,
-            password=ldap_config.bind_password or None,
-            auto_bind=ldap3.AUTO_BIND_TLS_BEFORE_BIND if ldap_config.use_tls else True,
-        )
-        if conn.bound:
-            conn.unbind()
-            return HttpResponse(
-                '<div class="alert alert-success">LDAP connection successful.</div>'
-            )
-        else:
-            return HttpResponse(
-                f'<div class="alert alert-danger">LDAP bind failed: {conn.last_error}</div>'
-            )
+        if skip_cert_verify:
+            ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
 
+        conn = ldap.initialize(server_uri)
+        conn.set_option(ldap.OPT_NETWORK_TIMEOUT, 5)
+        conn.set_option(ldap.OPT_TIMEOUT, 5)
+
+        if use_tls:
+            conn.start_tls_s()
+
+        conn.simple_bind_s(bind_dn or "", bind_password or "")
+        conn.unbind_s()
+        return HttpResponse(
+            '<div class="notification is-success is-light" style="font-size:0.82rem;padding:0.5rem 0.75rem;margin:0;">'
+            '<i class="fas fa-check-circle" style="margin-right:0.3rem;"></i>LDAP connection successful.</div>'
+        )
     except ImportError:
         return HttpResponse(
-            '<div class="alert alert-danger">ldap3 library not installed. '
-            "Run: pip install ldap3</div>"
+            '<div class="notification is-danger is-light" style="font-size:0.82rem;padding:0.5rem 0.75rem;margin:0;">'
+            "python-ldap not installed. Run: pip install python-ldap</div>"
         )
     except Exception as exc:
-        logger.warning("test_ldap failed: %s", exc)
+        logger.warning("auth_settings_test LDAP: %s", exc)
         return HttpResponse(
-            f'<div class="alert alert-danger">LDAP connection failed: {exc}</div>'
+            f'<div class="notification is-danger is-light" style="font-size:0.82rem;padding:0.5rem 0.75rem;margin:0;">'
+            f'<i class="fas fa-times-circle" style="margin-right:0.3rem;"></i>Connection failed: {exc}</div>'
         )
 
 
