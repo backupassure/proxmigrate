@@ -59,6 +59,7 @@
       transition: background 0.15s;
     }
     .toolbar-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    .toolbar-btn.active { background: rgba(72,199,142,0.2); border-color: rgba(72,199,142,0.4); color: #48c78e; }
 
     #novnc-container {
       flex: 1;
@@ -90,18 +91,108 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .status-text { font-size: 0.9rem; color: #9a9a9a; }
 
-    .cert-warning {
-      background: rgba(245,158,11,0.1);
-      border: 1px solid rgba(245,158,11,0.3);
-      border-radius: 10px;
-      padding: 1.5rem 2rem;
-      max-width: 480px;
+    /* Clipboard panel */
+    #clipboard-panel {
       display: none;
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 20;
+      width: 340px;
+      background: #1e1e32;
+      border: 1px solid #3a3a5a;
+      border-radius: 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      flex-direction: column;
+      gap: 0;
+      overflow: hidden;
     }
-    .cert-warning h3 { color: #f59e0b; font-size: 1rem; margin-bottom: 0.5rem; }
-    .cert-warning p { font-size: 0.85rem; color: #b5b5b5; line-height: 1.6; margin-bottom: 1rem; }
-    .cert-warning .steps { font-size: 0.82rem; color: #9a9a9a; text-align: left; line-height: 2; margin-bottom: 1rem; }
-    .cert-warning .steps strong { color: #e0e0e0; }
+    #clipboard-panel.open { display: flex; }
+    .clipboard-header {
+      padding: 0.6rem 1rem;
+      background: #252540;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #c0c0d0;
+      border-bottom: 1px solid #3a3a5a;
+    }
+    .clipboard-header button {
+      background: none; border: none; color: #888; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 0.2rem;
+    }
+    .clipboard-header button:hover { color: #fff; }
+    .clipboard-tabs {
+      display: flex;
+      border-bottom: 1px solid #3a3a5a;
+    }
+    .clipboard-tab {
+      flex: 1;
+      padding: 0.5rem;
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 0.75rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s;
+    }
+    .clipboard-tab.active { color: #48c78e; border-bottom-color: #48c78e; }
+    .clipboard-body { padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .clipboard-textarea {
+      width: 100%;
+      height: 100px;
+      background: #111;
+      border: 1px solid #3a3a5a;
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.8rem;
+      padding: 0.5rem;
+      resize: vertical;
+      outline: none;
+    }
+    .clipboard-textarea:focus { border-color: #48c78e; }
+    .clipboard-hint { font-size: 0.72rem; color: #666; line-height: 1.5; }
+    .clipboard-actions { display: flex; gap: 0.5rem; }
+    .clipboard-btn {
+      flex: 1;
+      padding: 0.4rem;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: #d0d0d0;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .clipboard-btn:hover { background: rgba(255,255,255,0.12); }
+    .clipboard-btn.primary { background: rgba(72,199,142,0.15); border-color: rgba(72,199,142,0.3); color: #48c78e; }
+    .clipboard-btn.primary:hover { background: rgba(72,199,142,0.25); }
+
+    /* Toast notification */
+    #clipboard-toast {
+      position: absolute;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: rgba(30,30,50,0.95);
+      border: 1px solid #3a3a5a;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.78rem;
+      color: #48c78e;
+      z-index: 30;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #clipboard-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -152,9 +243,38 @@
     {% else %}
       <div class="status-spinner"></div>
       <div class="status-text" id="status-text">Connecting to console…</div>
-
     {% endif %}
   </div>
+
+  {# Clipboard panel — floats over console #}
+  <div id="clipboard-panel">
+    <div class="clipboard-header">
+      <span>Clipboard</span>
+      <button id="btn-clipboard-close" title="Close">✕</button>
+    </div>
+    <div class="clipboard-tabs">
+      <button class="clipboard-tab active" id="tab-paste">Paste → VM</button>
+      <button class="clipboard-tab" id="tab-copy">Copy ← VM</button>
+    </div>
+    <div class="clipboard-body" id="pane-paste">
+      <textarea class="clipboard-textarea" id="paste-text" placeholder="Type or paste text here, then click Send…"></textarea>
+      <div class="clipboard-hint">Each character is typed into the VM as a keystroke. Works in any terminal — no clipboard integration required.</div>
+      <div class="clipboard-actions">
+        <button class="clipboard-btn" id="btn-paste-from-browser">Paste from browser</button>
+        <button class="clipboard-btn primary" id="btn-send-to-vm">Send to VM</button>
+      </div>
+    </div>
+    <div class="clipboard-body" id="pane-copy" style="display:none;">
+      <textarea class="clipboard-textarea" id="copy-text" placeholder="Text copied by the VM will appear here automatically…" readonly></textarea>
+      <div class="clipboard-hint">When you copy text inside the VM, it syncs here. Click Copy to put it on your local clipboard.</div>
+      <div class="clipboard-actions">
+        <button class="clipboard-btn" id="btn-clear-copy">Clear</button>
+        <button class="clipboard-btn primary" id="btn-copy-to-browser">Copy to clipboard</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="clipboard-toast">Copied to clipboard</div>
 </div>
 
 {% if not error %}
@@ -163,42 +283,19 @@
 {"host": "{{ vnc.proxmox_host }}", "port": {{ vnc.proxmox_port }}, "node": "{{ vnc.node }}", "vmid": {{ vmid }}, "ticket": "{{ vnc.ticket }}", "vnc_port": {{ vnc.port }}}
 </script>
 
-{# noVNC loaded from jsDelivr CDN — proper CORS headers, no dependency on Proxmox serving it #}
+{% load static %}
+{# noVNC served from local static files — no CDN dependency, works on air-gapped networks #}
 <script type="module">
   const d = JSON.parse(document.getElementById('console-data').textContent);
 
-  // Test WebSocket reachability before loading noVNC — catches cert errors early
-  function testWs(url) {
-    return new Promise((resolve) => {
-      const ws = new WebSocket(url);
-      const timer = setTimeout(() => { ws.close(); resolve('timeout'); }, 6000);
-      ws.onopen  = () => { clearTimeout(timer); ws.close(); resolve('ok'); };
-      ws.onerror = () => { clearTimeout(timer); resolve('error'); };
-    });
-  }
-
   // WebSocket goes through nginx /vm-ws/ proxy — avoids browser Origin rejection
-  // nginx proxies server-to-server to Proxmox, no cross-origin issue
   const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = `${wsProto}//${window.location.host}/vm-ws/nodes/${d.node}/qemu/${d.vmid}/vncwebsocket` +
                 `?port=${d.vnc_port}&vncticket=${encodeURIComponent(d.ticket)}`;
 
-  document.getElementById('status-text').textContent = 'Checking connection…';
-
-  const probe = await testWs(wsUrl);
-  if (probe === 'error') {
-    document.getElementById('status-text').textContent =
-      'Connection failed. nginx WebSocket proxy may not be configured yet — ' +
-      'try saving Proxmox settings again or contact your administrator.';
-    throw new Error('WebSocket probe failed');
-  }
-
   document.getElementById('status-text').textContent = 'Loading console…';
 
-  // Load noVNC from CDN
-  const { default: RFB } = await import(
-    'https://cdn.jsdelivr.net/npm/@novnc/novnc@1.5.0/core/rfb.js'
-  );
+  const { default: RFB } = await import('{% static "novnc/core/rfb.js" %}');
 
   const container = document.getElementById('novnc-container');
   const rfb = new RFB(container, wsUrl, {
@@ -228,6 +325,22 @@
     overlay.style.display = 'flex';
   });
 
+  // ── VM → host clipboard sync ─────────────────────────────────────────────
+  // Fires when the VM copies something (e.g. user does Ctrl+C inside the VM)
+  rfb.addEventListener('clipboard', (e) => {
+    const text = e.detail.text;
+    if (!text) return;
+    document.getElementById('copy-text').value = text;
+    // Auto-copy to host clipboard if permission already granted
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('VM clipboard synced to local clipboard');
+    }).catch(() => {
+      // Permission not granted — text is in the panel, user can copy manually
+      showToast('VM copied text — open Clipboard panel to copy');
+    });
+  });
+
+  // ── Toolbar buttons ──────────────────────────────────────────────────────
   document.getElementById('btn-ctrl-alt-del').addEventListener('click', () => rfb.sendCtrlAltDel());
 
   document.getElementById('btn-fullscreen').addEventListener('click', () => {
@@ -235,14 +348,104 @@
     else document.exitFullscreen();
   });
 
-  document.getElementById('btn-clipboard').addEventListener('click', async () => {
+  // ── Clipboard panel ──────────────────────────────────────────────────────
+  const panel = document.getElementById('clipboard-panel');
+  const btnClipboard = document.getElementById('btn-clipboard');
+
+  btnClipboard.addEventListener('click', () => {
+    const open = panel.classList.toggle('open');
+    btnClipboard.classList.toggle('active', open);
+  });
+
+  document.getElementById('btn-clipboard-close').addEventListener('click', () => {
+    panel.classList.remove('open');
+    btnClipboard.classList.remove('active');
+  });
+
+  // Tab switching
+  document.getElementById('tab-paste').addEventListener('click', () => {
+    document.getElementById('tab-paste').classList.add('active');
+    document.getElementById('tab-copy').classList.remove('active');
+    document.getElementById('pane-paste').style.display = '';
+    document.getElementById('pane-copy').style.display = 'none';
+  });
+  document.getElementById('tab-copy').addEventListener('click', () => {
+    document.getElementById('tab-copy').classList.add('active');
+    document.getElementById('tab-paste').classList.remove('active');
+    document.getElementById('pane-copy').style.display = '';
+    document.getElementById('pane-paste').style.display = 'none';
+  });
+
+  // Paste tab: pull from browser clipboard into textarea
+  document.getElementById('btn-paste-from-browser').addEventListener('click', async () => {
     try {
       const text = await navigator.clipboard.readText();
-      rfb.clipboardPasteFrom(text);
+      document.getElementById('paste-text').value = text;
     } catch {
-      alert('Clipboard access denied. Use Ctrl+V inside the console window.');
+      document.getElementById('paste-text').focus();
+      document.getElementById('paste-text').placeholder = 'Clipboard access denied — paste here manually with Ctrl+V then click Send.';
     }
   });
+
+  // Paste tab: type textarea contents into the VM as keystrokes
+  document.getElementById('btn-send-to-vm').addEventListener('click', async () => {
+    const raw = document.getElementById('paste-text').value;
+    if (!raw) return;
+
+    const btn = document.getElementById('btn-send-to-vm');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    // Normalise line endings so we don't send Enter twice for \r\n
+    const text = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+    for (const char of text) {
+      let keysym;
+      if (char === '\n') {
+        keysym = 0xff0d; // Return/Enter
+      } else if (char === '\t') {
+        keysym = 0xff09; // Tab
+      } else {
+        keysym = char.codePointAt(0);
+      }
+      rfb.sendKey(keysym, null, true);
+      rfb.sendKey(keysym, null, false);
+      // Small yield so we don't flood the WebSocket buffer
+      await new Promise(r => setTimeout(r, 5));
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Send to VM';
+    showToast('Sent to VM');
+  });
+
+  // Copy tab: copy VM text to host clipboard
+  document.getElementById('btn-copy-to-browser').addEventListener('click', async () => {
+    const text = document.getElementById('copy-text').value;
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Copied to local clipboard');
+    } catch {
+      document.getElementById('copy-text').select();
+      document.execCommand('copy');
+      showToast('Copied to local clipboard');
+    }
+  });
+
+  document.getElementById('btn-clear-copy').addEventListener('click', () => {
+    document.getElementById('copy-text').value = '';
+  });
+
+  // ── Toast helper ─────────────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg) {
+    const toast = document.getElementById('clipboard-toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+  }
 </script>
 {% endif %}
 

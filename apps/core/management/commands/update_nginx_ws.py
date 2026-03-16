@@ -24,6 +24,7 @@ location /vm-ws/ {{
     proxy_set_header    Upgrade    $http_upgrade;
     proxy_set_header    Connection "upgrade";
     proxy_set_header    Host       {host}:{port};
+    proxy_set_header    Authorization "PVEAPIToken={token_id}={token_secret}";
     proxy_ssl_verify    off;
     proxy_read_timeout  600s;
     proxy_send_timeout  600s;
@@ -31,8 +32,10 @@ location /vm-ws/ {{
 """
 
 
-def write_ws_conf(host, port):
-    content = WS_CONF_TEMPLATE.format(host=host, port=port)
+def write_ws_conf(host, port, token_id="", token_secret=""):
+    content = WS_CONF_TEMPLATE.format(
+        host=host, port=port, token_id=token_id, token_secret=token_secret
+    )
     with open(WS_CONF_PATH, "w") as f:
         f.write(content)
     logger.info("update_nginx_ws: wrote %s (host=%s port=%s)", WS_CONF_PATH, host, port)
@@ -57,7 +60,7 @@ class Command(BaseCommand):
             self.stderr.write("No ProxmoxConfig found or host not set — skipping")
             return
 
-        write_ws_conf(config.host, config.api_port)
+        write_ws_conf(config.host, config.api_port, config.api_token_id, config.api_token_secret)
         if reload_nginx():
             self.stdout.write(self.style.SUCCESS(
                 f"nginx WebSocket proxy updated: /vm-ws/ → {config.host}:{config.api_port}"

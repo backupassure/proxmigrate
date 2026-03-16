@@ -22,6 +22,16 @@ class ProxmoxConfig(models.Model):
     default_storage = models.CharField(max_length=100, blank=True)
     default_bridge = models.CharField(max_length=100, blank=True)
     proxmox_temp_dir = models.CharField(max_length=500, default="/var/tmp/proxmigrate/")
+    upload_temp_dir = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text=(
+            "Directory on this server where large upload temp files are written. "
+            "Leave blank to use the OS default (/tmp). "
+            "Set this to a path on a disk with enough free space when importing large images."
+        ),
+    )
     default_cores = models.IntegerField(default=2)
     default_memory_mb = models.IntegerField(default=2048)
     vmid_min = models.IntegerField(default=100)
@@ -134,6 +144,29 @@ class DiscoveredEnvironment(models.Model):
             return []
 
 
+def apply_upload_temp_dir(path):
+    """Apply upload_temp_dir to Django's live FILE_UPLOAD_TEMP_DIR setting."""
+    import os
+    from django.conf import settings
+
+    if path:
+        os.makedirs(path, exist_ok=True)
+        settings.FILE_UPLOAD_TEMP_DIR = path
+    else:
+        # Revert to OS default (None = Django uses tempfile.gettempdir())
+        settings.FILE_UPLOAD_TEMP_DIR = None
+
+
+def _apply_upload_temp_dir():
+    """Read upload_temp_dir from DB and apply it at startup. Safe to call early."""
+    try:
+        config = ProxmoxConfig.objects.first()
+        if config and config.upload_temp_dir:
+            apply_upload_temp_dir(config.upload_temp_dir)
+    except Exception:
+        pass  # DB may not exist yet during initial migrate
+
+
 # ── Signal: update nginx WebSocket proxy whenever ProxmoxConfig is saved ──────
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -146,7 +179,7 @@ def _update_nginx_ws(sender, instance, **kwargs):
         return
     try:
         from apps.core.management.commands.update_nginx_ws import write_ws_conf, reload_nginx
-        write_ws_conf(instance.host, instance.api_port)
+        write_ws_conf(instance.host, instance.api_port, instance.api_token_id, instance.api_token_secret)
         reload_nginx()
     except Exception as exc:
         logger.warning("Could not update nginx WS config: %s", exc)
