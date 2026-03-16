@@ -119,32 +119,42 @@
     </div>
   </div>
 
-  {# ===== RECENT IMPORTS ===== #}
+  {# ===== RECENT JOBS ===== #}
   <div class="column is-8">
     <div class="proxmigrate-card" style="height:100%;">
       <div class="card-header">
-        <i class="fas fa-history" style="color:#3273dc;"></i> Recent Import Jobs
+        <i class="fas fa-history" style="color:#3273dc;"></i> Recent Jobs
       </div>
       <div style="overflow-x:auto;">
         {% if recent_jobs %}
           <table class="table is-fullwidth" style="margin:0;">
             <thead>
               <tr style="background:#f5f7fa;">
-                <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Filename</th>
+                <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Source</th>
                 <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">VM Name</th>
+                <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Type</th>
                 <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Status</th>
                 <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Date</th>
-                <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;"></th>
+                <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;text-align:right;">Actions</th>
               </tr>
             </thead>
             <tbody>
               {% for job in recent_jobs %}
               <tr>
-                <td style="vertical-align:middle;">
-                  <span class="is-monospace has-text-tiny">{{ job.upload_filename|truncatechars:30 }}</span>
+                <td style="vertical-align:middle;max-width:160px;">
+                  <span style="font-family:monospace;font-size:0.78rem;color:#4a4a4a;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ job.display_name }}">
+                    {{ job.display_name|truncatechars:28 }}
+                  </span>
                 </td>
                 <td style="vertical-align:middle;font-weight:500;color:#1a1a2e;">
                   {{ job.vm_name|default:"—" }}
+                </td>
+                <td style="vertical-align:middle;">
+                  {% if job.job_type == 'import' %}
+                    <span style="font-size:0.72rem;background:#f0f4ff;color:#3273dc;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">Import</span>
+                  {% else %}
+                    <span style="font-size:0.72rem;background:#f0fdf4;color:#257953;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">New VM</span>
+                  {% endif %}
                 </td>
                 <td style="vertical-align:middle;">
                   {% if job.stage == 'DONE' %}
@@ -157,18 +167,90 @@
                     <span class="status-badge" style="background:#3273dc;color:#fff;">In Progress</span>
                   {% endif %}
                 </td>
-                <td style="vertical-align:middle;color:#7a7a7a;font-size:0.85rem;">
+                <td style="vertical-align:middle;color:#7a7a7a;font-size:0.85rem;white-space:nowrap;">
                   {{ job.created_at|date:"M j, Y" }}
                 </td>
-                <td style="vertical-align:middle;">
-                  {% if job.stage == 'DONE' and job.vmid %}
-                    <a href="{% url 'vm_detail' job.vmid %}" class="button is-small is-light">
-                      <i class="fas fa-external-link-alt"></i>
-                    </a>
-                  {% elif job.stage != 'DONE' and job.stage != 'FAILED' %}
-                    <a href="{% url 'importer_progress' job.id %}" class="button is-small is-info is-light">
-                      <i class="fas fa-spinner fa-spin"></i>
-                    </a>
+                <td style="vertical-align:middle;text-align:right;white-space:nowrap;">
+                  {% if job.stage == 'DONE' %}
+                    {% if job.vmid %}
+                      <a href="{% url 'vm_detail' job.vmid %}" class="button is-small is-light" title="View VM">
+                        <i class="fas fa-external-link-alt"></i>
+                      </a>
+                    {% endif %}
+
+                  {% elif job.stage == 'FAILED' %}
+                    {# Retry: go back to configure #}
+                    {% if job.job_type == 'import' %}
+                      <a href="{% url 'importer_configure' job.id %}" class="button is-small is-warning is-light" title="Retry — edit config and re-run">
+                        <i class="fas fa-redo"></i>
+                      </a>
+                    {% else %}
+                      <a href="{% url 'vmcreator_configure' job.id %}" class="button is-small is-warning is-light" title="Retry — edit config and re-run">
+                        <i class="fas fa-redo"></i>
+                      </a>
+                    {% endif %}
+                    {# Delete #}
+                    {% if job.job_type == 'import' %}
+                      <form method="post" action="{% url 'importer_delete_job' job.id %}" style="display:inline;" onsubmit="return confirm('Delete this job? This cannot be undone.')">
+                        {% csrf_token %}
+                        <button type="submit" class="button is-small is-danger is-light" title="Delete job">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </form>
+                    {% else %}
+                      <form method="post" action="{% url 'vmcreator_delete_job' job.id %}" style="display:inline;" onsubmit="return confirm('Delete this job? This cannot be undone.')">
+                        {% csrf_token %}
+                        <button type="submit" class="button is-small is-danger is-light" title="Delete job">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </form>
+                    {% endif %}
+
+                  {% elif job.stage == 'QUEUED' %}
+                    {# Resume: re-queue the pipeline #}
+                    {% if job.job_type == 'import' %}
+                      <form method="post" action="{% url 'importer_resume_job' job.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="button is-small is-info is-light" title="Resume job">
+                          <i class="fas fa-play"></i>
+                        </button>
+                      </form>
+                    {% else %}
+                      <form method="post" action="{% url 'vmcreator_resume_job' job.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="button is-small is-info is-light" title="Resume job">
+                          <i class="fas fa-play"></i>
+                        </button>
+                      </form>
+                    {% endif %}
+                    {# Delete #}
+                    {% if job.job_type == 'import' %}
+                      <form method="post" action="{% url 'importer_delete_job' job.id %}" style="display:inline;" onsubmit="return confirm('Delete this job? This cannot be undone.')">
+                        {% csrf_token %}
+                        <button type="submit" class="button is-small is-danger is-light" title="Delete job">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </form>
+                    {% else %}
+                      <form method="post" action="{% url 'vmcreator_delete_job' job.id %}" style="display:inline;" onsubmit="return confirm('Delete this job? This cannot be undone.')">
+                        {% csrf_token %}
+                        <button type="submit" class="button is-small is-danger is-light" title="Delete job">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </form>
+                    {% endif %}
+
+                  {% else %}
+                    {# In progress — view pipeline #}
+                    {% if job.job_type == 'import' %}
+                      <a href="{% url 'importer_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
+                        <i class="fas fa-spinner fa-spin"></i>
+                      </a>
+                    {% else %}
+                      <a href="{% url 'vmcreator_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
+                        <i class="fas fa-spinner fa-spin"></i>
+                      </a>
+                    {% endif %}
                   {% endif %}
                 </td>
               </tr>
@@ -178,12 +260,18 @@
         {% else %}
           <div class="empty-state" style="padding:2.5rem 1.5rem;">
             <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
-            <h3>No imports yet</h3>
-            <p>Import your first VM disk image to get started.</p>
-            <a href="{% url 'importer_upload' %}" class="button is-primary is-small">
-              <span class="icon is-small"><i class="fas fa-upload"></i></span>
-              <span>Import VM</span>
-            </a>
+            <h3>No jobs yet</h3>
+            <p>Import a disk image or create a new VM to get started.</p>
+            <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+              <a href="{% url 'vmcreator_create' %}" class="button is-primary is-small">
+                <span class="icon is-small"><i class="fas fa-plus-circle"></i></span>
+                <span>New VM</span>
+              </a>
+              <a href="{% url 'importer_upload' %}" class="button is-light is-small">
+                <span class="icon is-small"><i class="fas fa-upload"></i></span>
+                <span>Import Disk</span>
+              </a>
+            </div>
           </div>
         {% endif %}
       </div>

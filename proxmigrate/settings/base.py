@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "apps.exporter",
     "apps.authconfig",
     "apps.certificates",
+    "apps.vmcreator",
 ]
 
 # ---------------------------------------------------------------------------
@@ -154,6 +155,14 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 UPLOAD_ROOT = os.environ.get("UPLOAD_ROOT", "/opt/proxmigrate/uploads")
 MEDIA_URL = "/media/"
 MEDIA_ROOT = UPLOAD_ROOT
+
+# Where Django writes large upload temp files before the view saves them.
+# Defaults to the OS temp dir (/tmp on Linux, often a small tmpfs).
+# Set UPLOAD_TEMP_DIR in .env to a path on a disk with enough free space
+# when importing large images (e.g. a 15 GB qcow2 needs 15 GB here).
+_upload_temp = os.environ.get("UPLOAD_TEMP_DIR", "")
+if _upload_temp:
+    FILE_UPLOAD_TEMP_DIR = _upload_temp
 
 # ---------------------------------------------------------------------------
 # Default primary key

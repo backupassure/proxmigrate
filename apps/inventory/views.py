@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
@@ -184,41 +185,47 @@ def vm_stats(request):
 
 @login_required
 def check_vmid(request):
-    """Check whether a VMID is available and within the configured pool.
+    """Check whether a VMID is available. Returns an HTMX HTML fragment.
 
-    GET ?id=<n>
-    Returns JSON: {"available": bool, "in_pool": bool, "message": str}
+    GET ?vmid=<n>  (also accepts legacy ?id=<n>)
     """
-    raw_id = request.GET.get("id", "").strip()
+    raw_id = (request.GET.get("vmid") or request.GET.get("id") or "").strip()
+
+    if not raw_id:
+        return HttpResponse("")
+
     if not raw_id.isdigit():
-        return JsonResponse(
-            {"available": False, "in_pool": False, "message": "Invalid VMID — must be a number."}
+        return HttpResponse(
+            '<p class="help is-danger"><i class="fas fa-times-circle"></i> Invalid VMID — must be a number.</p>'
         )
 
     vmid = int(raw_id)
     config = ProxmoxConfig.get_config()
-    node = config.default_node
 
     in_pool = config.vmid_min <= vmid <= config.vmid_max
     available = False
-    message = ""
+    error = None
 
     try:
         api = config.get_api_client()
-        available = api.check_vmid_available(node, vmid)
+        available = api.check_vmid_available(config.default_node, vmid)
     except ProxmoxAPIError as exc:
-        message = f"Could not check VMID: {exc.message}"
+        error = exc.message
         logger.warning("check_vmid %d: %s", vmid, exc)
 
-    if not message:
-        if available and in_pool:
-            message = f"VMID {vmid} is available and within the configured pool."
-        elif available and not in_pool:
-            message = (
-                f"VMID {vmid} is available on Proxmox but is outside the configured pool "
-                f"({config.vmid_min}–{config.vmid_max})."
-            )
-        elif not available:
-            message = f"VMID {vmid} is already in use."
+    if error:
+        return HttpResponse(
+            f'<p class="help is-warning"><i class="fas fa-exclamation-triangle"></i> Could not verify: {error}</p>'
+        )
 
-    return JsonResponse({"available": available, "in_pool": in_pool, "message": message})
+    if available and in_pool:
+        return HttpResponse(
+            '<p class="help is-success"><i class="fas fa-check-circle"></i> Available</p>'
+        )
+    if available and not in_pool:
+        return HttpResponse(
+            f'<p class="help is-warning"><i class="fas fa-exclamation-triangle"></i> Available, but outside configured pool ({config.vmid_min}–{config.vmid_max})</p>'
+        )
+    return HttpResponse(
+        '<p class="help is-danger"><i class="fas fa-times-circle"></i> Already in use</p>'
+    )

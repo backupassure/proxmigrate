@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Configure VM — ProxMigrate{% endblock %}
-{% block page_title %}Configure VM{% endblock %}
-{% block help_slug %}importer-configure{% endblock %}
+{% block title %}Configure New VM — ProxMigrate{% endblock %}
+{% block page_title %}Configure New VM{% endblock %}
+{% block help_slug %}vmcreator-configure{% endblock %}
 
 {% block page_actions %}
-  <a href="{% url 'importer_upload' %}" class="button is-light is-small">
+  <a href="{% url 'vmcreator_create' %}" class="button is-light is-small">
     <span class="icon is-small"><i class="fas fa-arrow-left"></i></span>
-    <span>Back to Upload</span>
+    <span>Back</span>
   </a>
 {% endblock %}
 
 {% block content %}
-<form method="post" action="{% url 'importer_configure' job.id %}" id="configure-form">
+<form method="post" action="{% url 'vmcreator_configure' job.id %}" id="configure-form">
 {% csrf_token %}
 
 <div class="columns">
@@ -43,7 +43,7 @@
               <div class="control">
                 <input class="input {% if form.vm_name.errors %}is-danger{% endif %}"
                   type="text" name="vm_name" value="{{ form.vm_name.value|default:'' }}"
-                  placeholder="my-imported-vm" autofocus>
+                  placeholder="my-new-vm" autofocus>
               </div>
               {% for e in form.vm_name.errors %}<p class="help is-danger">{{ e }}</p>{% endfor %}
               <p class="field-hint">Letters, numbers, hyphens only. No spaces.</p>
@@ -110,13 +110,26 @@
                 &nbsp;Start on boot
               </label>
               &nbsp;&nbsp;
-              <label class="checkbox" title="Protects the VM from accidental deletion in Proxmox. Must be disabled before the VM can be deleted.">
+              <label class="checkbox" title="Protects the VM from accidental deletion in Proxmox.">
                 <input type="checkbox" name="protection" {% if form.protection.value %}checked{% endif %}>
                 &nbsp;Protection
               </label>
               <p class="field-hint">Protection prevents accidental deletion in Proxmox. Must be disabled to delete the VM.</p>
             </div>
           </div>
+        </div>
+        <div class="field">
+          <label class="checkbox">
+            <input type="checkbox" name="start_after_create" {% if form.start_after_create.value %}checked{% endif %}>
+            &nbsp;<strong>Start VM after creation</strong>
+          </label>
+          <p class="field-hint" style="margin-left:1.5rem;">
+            {% if job.source_type == 'iso' %}
+            VM will boot from the ISO immediately — you can connect via the Proxmox console to begin installation.
+            {% else %}
+            Powers on the blank VM after creation.
+            {% endif %}
+          </p>
         </div>
       </div>
     </div>
@@ -293,7 +306,22 @@
         <i class="fas fa-chevron-down section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
       </div>
       <div class="form-section-body">
+
+        {# Primary disk size — new blank disk #}
         <div class="columns">
+          <div class="column is-4">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Primary Disk Size (GB) <span style="color:#f14668;">*</span></label>
+              <div class="control has-icons-right">
+                <input class="input {% if form.primary_disk_size.errors %}is-danger{% endif %}"
+                  type="number" name="primary_disk_size"
+                  value="{{ form.primary_disk_size.value|default:32 }}" min="1" max="65536">
+                <span class="icon is-right" style="color:#b5b5b5;width:3rem;">GB</span>
+              </div>
+              {% for e in form.primary_disk_size.errors %}<p class="help is-danger">{{ e }}</p>{% endfor %}
+              <p class="field-hint">New empty disk. Thin-provisioned if the storage backend supports it.</p>
+            </div>
+          </div>
           <div class="column">
             <div class="field">
               <label class="label" style="font-size:0.875rem;font-weight:600;">Storage Pool</label>
@@ -311,12 +339,15 @@
               <p class="field-hint">Provisioning type (thin/thick) is determined by the storage backend on Proxmox.</p>
             </div>
           </div>
+        </div>
+
+        <div class="columns">
           <div class="column">
             <div class="field">
               <label class="label" style="font-size:0.875rem;font-weight:600;">Disk Bus</label>
               <div class="control">
                 <div class="select is-fullwidth">
-                  <select name="disk_bus">
+                  <select name="disk_bus" id="disk-bus-select">
                     {% for val, label in form.disk_bus.field.choices %}
                       <option value="{{ val }}" {% if form.disk_bus.value == val %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
@@ -324,10 +355,14 @@
                 </div>
               </div>
               <p class="field-hint">VirtIO-SCSI recommended for best performance.</p>
+              <p id="virtio-windows-warning" class="help is-warning" style="display:none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                The Windows installer has no VirtIO drivers — it won't see the disk.
+                ProxMigrate will automatically use <strong>SATA</strong> during installation.
+                You can switch to VirtIO-SCSI after installing the VirtIO driver package inside the guest.
+              </p>
             </div>
           </div>
-        </div>
-        <div class="columns">
           <div class="column">
             <div class="field">
               <label class="label" style="font-size:0.875rem;font-weight:600;">Disk Cache</label>
@@ -342,7 +377,7 @@
               </div>
             </div>
           </div>
-          <div class="column" style="display:flex;align-items:flex-end;padding-bottom:1.5rem;">
+          <div class="column is-3" style="display:flex;align-items:flex-end;padding-bottom:1.5rem;">
             <div class="field">
               <label class="checkbox">
                 <input type="checkbox" name="disk_iothread" {% if form.disk_iothread.value %}checked{% endif %}>
@@ -376,7 +411,7 @@
           </div>
           <div id="extra-disks-list"></div>
           <p style="font-size:0.78rem;color:#888;margin-top:0.5rem;">
-            Extra disks are created as new empty volumes and attached after the imported disk (slot 1+). Same bus and cache as the primary disk.
+            Extra disks are created as new empty volumes attached after the primary disk (slot 1+). Same bus and cache as the primary disk.
           </p>
           <input type="hidden" name="extra_disks" id="extra-disks-data" value="">
         </div>
@@ -522,25 +557,33 @@
   {# ===== RIGHT: Summary + Tips ===== #}
   <div class="column is-4">
 
-    {# File summary card #}
     <div class="proxmigrate-card" style="position:sticky;top:70px;">
+
+      {# Source summary card #}
       <div class="card-header">
-        <i class="fas fa-file" style="color:#7a7a7a;"></i> Uploaded File
+        {% if job.source_type == 'iso' %}
+          <i class="fas fa-compact-disc" style="color:#3273dc;"></i> ISO Install
+        {% else %}
+          <i class="fas fa-server" style="color:#7a7a7a;"></i> Blank VM
+        {% endif %}
       </div>
       <div class="card-body" style="padding:1.25rem 1.5rem;">
-        <div style="word-break:break-all;font-family:monospace;font-size:0.82rem;color:#1a1a2e;font-weight:600;margin-bottom:0.75rem;">
-          {{ job.upload_filename }}
-        </div>
-        <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
-          <span class="tag" style="background:#eff6ff;color:#3273dc;border:1px solid #c8d8ff;font-weight:600;">
-            {{ job.detected_format|upper|default:"Unknown" }}
-          </span>
-          <span class="tag is-light">{{ job.file_size_human|default:"" }}</span>
-        </div>
-        {% if job.detected_format and job.detected_format != 'qcow2' %}
+        {% if job.source_type == 'iso' %}
+          <div style="word-break:break-all;font-family:monospace;font-size:0.82rem;color:#1a1a2e;font-weight:600;margin-bottom:0.5rem;">
+            {{ job.iso_filename }}
+          </div>
+          <div style="margin-bottom:0.75rem;">
+            <span class="tag" style="background:#eff6ff;color:#3273dc;border:1px solid #c8d8ff;font-weight:600;">
+              ISO storage: {{ job.iso_storage }}
+            </span>
+          </div>
           <div class="info-box" style="font-size:0.78rem;padding:0.65rem 0.85rem;">
-            <div class="info-box-icon" style="font-size:0.85rem;"><i class="fas fa-sync-alt"></i></div>
-            <div>Will be converted to <strong>qcow2</strong> before transfer.</div>
+            <div class="info-box-icon" style="font-size:0.85rem;"><i class="fas fa-info-circle"></i></div>
+            <div>ISO will be uploaded to Proxmox storage, the VM created, and the CD-ROM attached. Boot into the installer via the Proxmox console.</div>
+          </div>
+        {% else %}
+          <div style="font-size:0.85rem;color:#555;line-height:1.6;">
+            A blank VM shell will be created with no media attached. You can attach an ISO or existing disk from the Proxmox web UI after creation.
           </div>
         {% endif %}
       </div>
@@ -552,7 +595,7 @@
         <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0.75rem;">
           <li style="font-size:0.82rem;color:#4a4a4a;display:flex;gap:0.5rem;">
             <i class="fas fa-circle" style="color:#3273dc;font-size:0.4rem;margin-top:0.45rem;flex-shrink:0;"></i>
-            Use <strong>OVMF (UEFI)</strong> if the source VM was UEFI-booted.
+            Use <strong>OVMF (UEFI)</strong> for Windows 11, Secure Boot, or modern Linux installs.
           </li>
           <li style="font-size:0.82rem;color:#4a4a4a;display:flex;gap:0.5rem;">
             <i class="fas fa-circle" style="color:#3273dc;font-size:0.4rem;margin-top:0.45rem;flex-shrink:0;"></i>
@@ -562,6 +605,12 @@
             <i class="fas fa-circle" style="color:#3273dc;font-size:0.4rem;margin-top:0.45rem;flex-shrink:0;"></i>
             Windows 11 requires <strong>UEFI + Secure Boot + TPM 2.0</strong>.
           </li>
+          {% if job.source_type == 'iso' %}
+          <li style="font-size:0.82rem;color:#4a4a4a;display:flex;gap:0.5rem;">
+            <i class="fas fa-circle" style="color:#3273dc;font-size:0.4rem;margin-top:0.45rem;flex-shrink:0;"></i>
+            For Windows guests, add the <strong>VirtIO drivers ISO</strong> as a second CD-ROM in Proxmox after creation.
+          </li>
+          {% endif %}
           <li style="font-size:0.82rem;color:#4a4a4a;display:flex;gap:0.5rem;">
             <i class="fas fa-circle" style="color:#3273dc;font-size:0.4rem;margin-top:0.45rem;flex-shrink:0;"></i>
             Enable <strong>QEMU Guest Agent</strong> after installing it in the VM for better integration.
@@ -571,12 +620,16 @@
 
       <div style="padding:1rem 1.5rem;border-top:1px solid #f0f0f0;">
         <button type="submit" form="configure-form" class="button is-success is-fullwidth is-medium" style="font-weight:700;">
-          <span class="icon"><i class="fas fa-rocket"></i></span>
-          <span>Deploy VM</span>
+          <span class="icon"><i class="fas fa-plus-circle"></i></span>
+          <span>Create VM</span>
           <span class="icon"><i class="fas fa-arrow-right"></i></span>
         </button>
         <p style="text-align:center;font-size:0.75rem;color:#b5b5b5;margin-top:0.65rem;">
-          This will start the import pipeline
+          {% if job.source_type == 'iso' %}
+          This will upload the ISO and create the VM
+          {% else %}
+          This will create the blank VM on Proxmox
+          {% endif %}
         </p>
       </div>
     </div>
@@ -605,6 +658,18 @@
 
   // Init on load
   handleBiosChange(document.getElementById('bios-select').value);
+
+  // ── Windows VirtIO warning ────────────────────────────────────────────────
+  function checkWindowsVirtio() {
+    const osType = document.querySelector('[name=os_type]').value;
+    const diskBus = document.getElementById('disk-bus-select').value;
+    const warn = document.getElementById('virtio-windows-warning');
+    warn.style.display = (osType.startsWith('win') && diskBus === 'scsi') ? '' : 'none';
+  }
+
+  document.querySelector('[name=os_type]').addEventListener('change', checkWindowsVirtio);
+  document.getElementById('disk-bus-select').addEventListener('change', checkWindowsVirtio);
+  checkWindowsVirtio();
 
   // ── Extra disks ──────────────────────────────────────────────────────────
   const STORAGE_OPTIONS = [

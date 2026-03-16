@@ -1,0 +1,12 @@
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path("", views.create, name="vmcreator_create"),
+    path("<int:job_id>/configure/", views.configure, name="vmcreator_configure"),
+    path("<int:job_id>/progress/", views.progress, name="vmcreator_progress"),
+    path("<int:job_id>/status/", views.job_status, name="vmcreator_status"),
+    path("<int:job_id>/delete/", views.delete_job, name="vmcreator_delete_job"),
+    path("<int:job_id>/resume/", views.resume_job, name="vmcreator_resume_job"),
+]

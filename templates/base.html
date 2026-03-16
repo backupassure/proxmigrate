@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}ProxMigrate{% endblock %}</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/static/vendor/css/bulma.min.css">
+  <link rel="stylesheet" href="/static/vendor/css/all.min.css">
   <link rel="stylesheet" href="/static/css/proxmigrate.css">
   {% block extra_head %}{% endblock %}
 </head>
@@ -26,19 +26,28 @@
       </a>
 
       <div class="nav-label">Virtual Machines</div>
+      <a href="{% url 'vmcreator_create' %}" class="{% if 'vmcreator' in request.resolver_match.url_name %}is-active{% endif %}">
+        <i class="fas fa-plus-circle"></i> New VM
+      </a>
       <a href="{% url 'importer_upload' %}" class="{% if 'importer' in request.resolver_match.url_name %}is-active{% endif %}">
-        <i class="fas fa-upload"></i> Import VM
+        <i class="fas fa-upload"></i> Import Disk
       </a>
       <a href="{% url 'inventory' %}" class="{% if request.resolver_match.url_name == 'inventory' %}is-active{% endif %}">
         <i class="fas fa-server"></i> VM Inventory
       </a>
 
       <div class="nav-label">Settings</div>
+      <a href="{% url 'proxmox_settings' %}" class="{% if 'proxmox_settings' in request.resolver_match.url_name %}is-active{% endif %}">
+        <i class="fas fa-server"></i> Proxmox
+      </a>
       <a href="{% url 'auth_settings' %}" class="{% if 'auth' in request.resolver_match.url_name %}is-active{% endif %}">
         <i class="fas fa-shield-alt"></i> Authentication
       </a>
       <a href="{% url 'cert_settings' %}" class="{% if 'cert' in request.resolver_match.url_name %}is-active{% endif %}">
         <i class="fas fa-certificate"></i> Certificates
+      </a>
+      <a href="{% url 'storage_management' %}" class="{% if 'storage' in request.resolver_match.url_name %}is-active{% endif %}">
+        <i class="fas fa-hdd"></i> Storage
       </a>
 
       <div class="nav-label">Account</div>

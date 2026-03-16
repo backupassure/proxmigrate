@@ -24,6 +24,7 @@ def dashboard(request):
     import os
     from apps.wizard.models import ProxmoxConfig
     from apps.importer.models import ImportJob
+    from apps.vmcreator.models import VmCreateJob
     from apps.proxmox.api import ProxmoxAPIError
 
     config = ProxmoxConfig.objects.first()
@@ -52,7 +53,19 @@ def dashboard(request):
         except Exception:
             api_ok = False
 
-        recent_jobs = list(ImportJob.objects.order_by("-created_at")[:5])
+        import_jobs = list(ImportJob.objects.order_by("-created_at")[:8])
+        create_jobs = list(VmCreateJob.objects.order_by("-created_at")[:8])
+
+        # Tag each with job_type and normalise fields for the template
+        for j in import_jobs:
+            j.job_type = "import"
+            j.display_name = j.upload_filename or j.vm_name
+        for j in create_jobs:
+            j.job_type = "create"
+            j.display_name = j.iso_filename if j.source_type == VmCreateJob.SOURCE_ISO else "Blank VM"
+
+        combined = sorted(import_jobs + create_jobs, key=lambda j: j.created_at, reverse=True)
+        recent_jobs = combined[:10]
 
     context = {
         "wizard_complete": wizard_complete,

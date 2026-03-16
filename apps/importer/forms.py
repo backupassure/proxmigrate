@@ -231,6 +231,12 @@ class VMConfigForm(forms.Form):
         label="Emulate SSD",
     )
 
+    # Extra disks (JSON array serialized by JS: [{storage, size_gb}, ...])
+    extra_disks = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+
     # --- Network ---
     net_bridge = forms.ChoiceField(
         label="Network Bridge",

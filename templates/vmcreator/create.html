@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}New VM — ProxMigrate{% endblock %}
+{% block page_title %}New VM{% endblock %}
+{% block help_slug %}vmcreator-create{% endblock %}
+
+{% block content %}
+<div class="columns">
+  <div class="column is-7 is-offset-0">
+
+    <form method="post" enctype="multipart/form-data" id="create-form">
+      {% csrf_token %}
+      <input type="hidden" name="source_type" id="source-type-value" value="blank">
+
+      {# ===== Source type tabs ===== #}
+      <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
+        <div class="card-header">
+          <i class="fas fa-plus-circle" style="color:#3273dc;"></i> Choose VM Source
+        </div>
+        <div class="card-body">
+          <div style="display:flex;gap:1rem;margin-bottom:1.5rem;">
+
+            <div class="source-tab is-active" id="tab-iso" onclick="selectSource('iso')"
+              style="flex:1;border:2px solid #3273dc;border-radius:10px;padding:1.25rem;cursor:pointer;text-align:center;transition:all 0.15s;">
+              <i class="fas fa-compact-disc" style="font-size:1.75rem;color:#3273dc;display:block;margin-bottom:0.5rem;"></i>
+              <div style="font-weight:700;color:#1a1a2e;font-size:0.95rem;">Install from ISO</div>
+              <div style="font-size:0.78rem;color:#888;margin-top:0.25rem;">Upload an ISO and boot from it to install an OS</div>
+            </div>
+
+            <div class="source-tab" id="tab-blank" onclick="selectSource('blank')"
+              style="flex:1;border:2px solid #e8ecf0;border-radius:10px;padding:1.25rem;cursor:pointer;text-align:center;transition:all 0.15s;">
+              <i class="fas fa-server" style="font-size:1.75rem;color:#b5b5b5;display:block;margin-bottom:0.5rem;"></i>
+              <div style="font-weight:700;color:#1a1a2e;font-size:0.95rem;">Blank VM</div>
+              <div style="font-size:0.78rem;color:#888;margin-top:0.25rem;">Create an empty VM — attach media manually later</div>
+            </div>
+
+          </div>
+
+          {# ISO fields — shown only for ISO source #}
+          <div id="iso-fields">
+            <div class="field" style="margin-bottom:1rem;">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">ISO File</label>
+              <div class="control">
+                <input class="input {% if errors.iso_file %}is-danger{% endif %}"
+                  type="file" name="iso_file" accept=".iso" id="iso-file-input"
+                  style="height:auto;padding:0.5rem;">
+              </div>
+              {% if errors.iso_file %}<p class="help is-danger">{{ errors.iso_file }}</p>{% endif %}
+              <p class="field-hint">Upload an ISO image (e.g. Ubuntu, Windows, RouterOS). Large ISOs are streamed directly to Proxmox.</p>
+            </div>
+
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">ISO Storage Pool</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="iso_storage" class="{% if errors.iso_storage %}is-danger{% endif %}">
+                    <option value="">— Select ISO-capable storage —</option>
+                    {% for s in iso_storage_pools %}
+                      <option value="{{ s.storage }}" {% if post.iso_storage == s.storage %}selected{% endif %}>
+                        {{ s.storage }}
+                      </option>
+                    {% empty %}
+                      <option value="" disabled>No ISO-capable storage found on Proxmox</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              {% if errors.iso_storage %}<p class="help is-danger">{{ errors.iso_storage }}</p>{% endif %}
+              <p class="field-hint">Storage must have ISO content type enabled in Proxmox (Datacenter → Storage → Edit → Content).</p>
+            </div>
+          </div>
+
+          {# VM Name — always shown #}
+          <div class="field" style="margin-top:1.25rem;">
+            <label class="label" style="font-size:0.875rem;font-weight:600;">VM Name</label>
+            <div class="control">
+              <input class="input {% if errors.vm_name %}is-danger{% endif %}"
+                type="text" name="vm_name" value="{{ post.vm_name|default:'' }}"
+                placeholder="e.g. ubuntu-24-04">
+            </div>
+            {% if errors.vm_name %}<p class="help is-danger">{{ errors.vm_name }}</p>{% endif %}
+            <p class="field-hint">You can change this on the next screen.</p>
+          </div>
+
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;">
+        <button type="submit" class="button is-primary is-medium" id="btn-submit" style="font-weight:600;">
+          <span class="icon"><i class="fas fa-arrow-right"></i></span>
+          <span>Continue to Configure</span>
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+
+  {# Right column: guidance #}
+  <div class="column is-5">
+    <div class="proxmigrate-card">
+      <div class="card-header">
+        <i class="fas fa-info-circle" style="color:#3273dc;"></i> About New VM
+      </div>
+      <div class="card-body" style="font-size:0.85rem;color:#555;line-height:1.7;">
+        <p style="margin-bottom:0.75rem;">
+          <strong>Install from ISO</strong> — upload any bootable ISO (Linux, Windows, network OS, etc.). ProxMigrate transfers it to Proxmox ISO storage, creates the VM, attaches the ISO as a virtual CD-ROM, and boots from it. You complete the installation inside the VM console.
+        </p>
+        <p style="margin-bottom:0.75rem;">
+          <strong>Blank VM</strong> — creates a fully configured VM shell with no media attached. Useful when you want to attach an existing Proxmox ISO or disk manually after creation.
+        </p>
+        <p style="margin-bottom:0.75rem;">
+          <strong>Importing an existing disk image?</strong> Use <a href="{% url 'importer_upload' %}">Import Disk</a> instead — it handles qcow2, vmdk, vhd, vhdx, raw, img, and OVA.
+        </p>
+        <hr style="border:none;border-top:1px solid #e8ecf0;margin:0.75rem 0;">
+        <p style="font-size:0.78rem;color:#888;">
+          <i class="fas fa-hdd" style="margin-right:0.3rem;"></i>
+          ISO storage must have the <strong>iso</strong> content type enabled in Proxmox.
+          Go to Datacenter → Storage → select pool → Edit → Content.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+  function selectSource(type) {
+    document.getElementById('source-type-value').value = type;
+
+    const tabIso   = document.getElementById('tab-iso');
+    const tabBlank = document.getElementById('tab-blank');
+    const isoFields = document.getElementById('iso-fields');
+
+    if (type === 'iso') {
+      tabIso.style.borderColor   = '#3273dc';
+      tabIso.querySelector('i').style.color = '#3273dc';
+      tabBlank.style.borderColor = '#e8ecf0';
+      tabBlank.querySelector('i').style.color = '#b5b5b5';
+      isoFields.style.display = '';
+    } else {
+      tabBlank.style.borderColor = '#3273dc';
+      tabBlank.querySelector('i').style.color = '#3273dc';
+      tabIso.style.borderColor   = '#e8ecf0';
+      tabIso.querySelector('i').style.color  = '#b5b5b5';
+      isoFields.style.display = 'none';
+    }
+  }
+
+  // Init from POST value (on validation error redisplay)
+  const initialSource = "{{ post.source_type|default:'iso' }}";
+  selectSource(initialSource);
+
+  // Show file name in label when selected
+  document.getElementById('iso-file-input').addEventListener('change', function() {
+    const name = this.files[0] ? this.files[0].name : '';
+    const vm = document.querySelector('[name=vm_name]');
+    if (name && !vm.value) {
+      vm.value = name.replace(/\.iso$/i, '').replace(/[^a-zA-Z0-9_\-]/g, '-').toLowerCase();
+    }
+  });
+
+  // Upload progress indicator
+  document.getElementById('create-form').addEventListener('submit', function() {
+    const btn = document.getElementById('btn-submit');
+    const source = document.getElementById('source-type-value').value;
+    if (source === 'iso') {
+      btn.innerHTML = '<span class="spinner"></span> Uploading ISO…';
+      btn.disabled = true;
+    }
+  });
+</script>
+{% endblock %}
+{% endblock %}
