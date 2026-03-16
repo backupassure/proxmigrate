@@ -232,6 +232,38 @@ sudo ./uninstall.sh
 
 This removes all services, files, and the `proxmigrate` system user. The database and uploads under `/opt/proxmigrate/` are removed — back up anything you need first.
 
+## Roadmap
+
+### Phase 1 — Core VM Management (current)
+- [x] Disk image import — qcow2, vmdk, vhd, vhdx, raw, OVA with automatic format conversion
+- [x] New VM creation wizard — ISO install or blank disk, full hardware configuration
+- [x] VM inventory dashboard — live status, start/stop/shutdown/reboot
+- [x] In-browser VNC console with clipboard support
+- [x] First-run setup wizard — Proxmox API token, SSH key, environment discovery, defaults
+- [x] Authentication — local accounts, LDAP, Microsoft Entra ID (Azure AD) with group-based access control
+- [x] TLS certificate management — CSR workflow, upload, self-signed, port configuration
+- [x] VirtIO Windows driver ISO browser — automatically attach drivers to Windows VMs
+- [ ] SMTP configuration — outbound email for password reset and notifications
+- [ ] Forgotten password / self-service password reset
+- [ ] MFA — TOTP (authenticator app) for local and LDAP accounts
+
+### Phase 2 — VM Export & Portable Packages
+Export a complete VM (configuration + all disks) as a `.px` package — a tar.gz archive with a YAML manifest — that can be imported on any ProxMigrate server to recreate the VM identically.
+
+- [ ] VM export: capture `qm config`, export all disks via `qemu-img convert`, bundle into `.px` archive with YAML manifest
+- [ ] Package import: parse YAML, transfer disks, recreate VM configuration, re-attach disks
+
+### Phase 3 — Proxmox Monitoring & Alerting
+Turn ProxMigrate into a comprehensive Proxmox observability platform.
+
+- [ ] Cluster-wide dashboard — node CPU, RAM, storage, network I/O at a glance
+- [ ] Historical metrics collection and graphing (RRD or time-series store)
+- [ ] Alerting — threshold-based alerts (CPU, memory, disk) with email and webhook (Slack/Teams) delivery
+- [ ] VM resource modification — CPU/RAM/disk resize from the UI
+- [ ] Multi-cluster support
+
+---
+
 ## Architecture
 
 - **Backend:** Django 4.2 + Gunicorn
