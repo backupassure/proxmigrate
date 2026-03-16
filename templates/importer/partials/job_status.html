@@ -5,7 +5,7 @@ Uses id="pipeline-status" for HTMX swap targeting.
 {% endcomment %}
 
 <div id="pipeline-status"
-  {% if job.status != 'DONE' and job.status != 'FAILED' %}
+  {% if job.stage != 'DONE' and job.stage != 'FAILED' %}
     hx-get="/importer/{{ job.id }}/status/"
     hx-trigger="every 2s"
     hx-target="#pipeline-status"
@@ -16,7 +16,7 @@ Uses id="pipeline-status" for HTMX swap targeting.
   <div class="proxmigrate-card">
     <div class="card-header">
       <i class="fas fa-tasks" style="color:#7a7a7a;"></i> Import Pipeline
-      {% if job.status != 'DONE' and job.status != 'FAILED' %}
+      {% if job.stage != 'DONE' and job.stage != 'FAILED' %}
         <span style="margin-left:auto;font-size:0.75rem;color:#7a7a7a;font-weight:400;">
           <span class="spinner" style="margin-right:0.3rem;"></span>
           Auto-updating every 2s
@@ -107,9 +107,9 @@ Uses id="pipeline-status" for HTMX swap targeting.
         {% with done_count=stages|length %}
         <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;">
           <div style="font-size:0.8rem;color:#7a7a7a;">
-            {% if job.status == 'DONE' %}
+            {% if job.stage == 'DONE' %}
               All stages complete
-            {% elif job.status == 'FAILED' %}
+            {% elif job.stage == 'FAILED' %}
               Pipeline stopped due to error
             {% else %}
               Running...

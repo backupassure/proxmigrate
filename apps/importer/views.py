@@ -195,11 +195,16 @@ def job_status(request, job_id):
     job = get_object_or_404(ImportJob, pk=job_id)
     stage_order = IMPORT_STAGES_PROXMOX_SOURCE if job.proxmox_source_path else IMPORT_STAGES
     stages, stages_done_count = build_stages(job, stage_order)
-    return render(
+    response = render(
         request,
         "importer/partials/job_status.html",
         {"job": job, "stages": stages, "stages_done_count": stages_done_count},
     )
+    # When the job reaches a terminal state, tell HTMX to reload the full page
+    # so the success/failure card and header badge update correctly.
+    if job.stage in (ImportJob.STAGE_DONE, ImportJob.STAGE_FAILED):
+        response["HX-Refresh"] = "true"
+    return response
 
 
 @login_required

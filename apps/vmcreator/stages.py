@@ -71,7 +71,7 @@ def build_stages(job, stage_order):
 IMPORT_STAGES = [
     ("DETECTING",     "Detecting Format"),
     ("TRANSFERRING",  "Transferring to Proxmox"),
-    ("CONVERTING",    "Converting to qcow2"),
+    ("CONVERTING",    "Preparing Disk"),
     ("CREATING_VM",   "Creating VM"),
     ("IMPORTING_DISK","Importing Disk"),
     ("CONFIGURING",   "Configuring"),
@@ -80,7 +80,7 @@ IMPORT_STAGES = [
 ]
 
 IMPORT_STAGES_PROXMOX_SOURCE = [
-    ("CONVERTING",    "Converting to qcow2"),
+    ("CONVERTING",    "Preparing Disk"),
     ("CREATING_VM",   "Creating VM"),
     ("IMPORTING_DISK","Importing Disk"),
     ("CONFIGURING",   "Configuring"),

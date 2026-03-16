@@ -203,11 +203,14 @@ def job_status(request, job_id):
     job = get_object_or_404(VmCreateJob, pk=job_id)
     stage_order = CREATE_STAGES_ISO if job.source_type == VmCreateJob.SOURCE_ISO else CREATE_STAGES_BLANK
     stages, stages_done_count = build_stages(job, stage_order)
-    return render(request, "vmcreator/partials/job_status.html", {
+    response = render(request, "vmcreator/partials/job_status.html", {
         "job": job,
         "stages": stages,
         "stages_done_count": stages_done_count,
     })
+    if job.stage in (VmCreateJob.STAGE_DONE, VmCreateJob.STAGE_FAILED):
+        response["HX-Refresh"] = "true"
+    return response
 
 
 @login_required

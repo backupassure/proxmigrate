@@ -12,11 +12,11 @@
       <div class="card-body" style="padding:1.5rem;">
         <div style="display:flex;align-items:center;gap:1rem;">
           {# Status icon #}
-          {% if job.status == 'DONE' %}
+          {% if job.stage == 'DONE' %}
             <div style="width:52px;height:52px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
               <i class="fas fa-check-circle" style="font-size:1.5rem;color:#48c78e;"></i>
             </div>
-          {% elif job.status == 'FAILED' %}
+          {% elif job.stage == 'FAILED' %}
             <div style="width:52px;height:52px;border-radius:50%;background:#fff5f7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
               <i class="fas fa-times-circle" style="font-size:1.5rem;color:#f14668;"></i>
             </div>
@@ -38,9 +38,9 @@
           </div>
 
           <div style="margin-left:auto;">
-            {% if job.status == 'DONE' %}
+            {% if job.stage == 'DONE' %}
               <span class="status-badge vm-status-running">Complete</span>
-            {% elif job.status == 'FAILED' %}
+            {% elif job.stage == 'FAILED' %}
               <span class="status-badge vm-status-stopped">Failed</span>
             {% else %}
               <span class="status-badge" style="background:#3273dc;color:#fff;">In Progress</span>
@@ -54,7 +54,7 @@
     {% include "importer/partials/job_status.html" %}
 
     {# ===== Terminal state actions ===== #}
-    {% if job.status == 'DONE' %}
+    {% if job.stage == 'DONE' %}
       <div class="proxmigrate-card" style="margin-top:1.5rem;">
         <div class="card-body" style="padding:1.5rem;text-align:center;">
           <i class="fas fa-check-circle" style="font-size:2rem;color:#48c78e;margin-bottom:1rem;display:block;"></i>
@@ -76,7 +76,7 @@
         </div>
       </div>
 
-    {% elif job.status == 'FAILED' %}
+    {% elif job.stage == 'FAILED' %}
       <div class="proxmigrate-card" style="margin-top:1.5rem;border-left:4px solid #f14668;border-radius:0 10px 10px 0;">
         <div class="card-body" style="padding:1.5rem;">
           <h3 style="font-size:1rem;font-weight:700;color:#cc0f35;margin-bottom:0.75rem;">
