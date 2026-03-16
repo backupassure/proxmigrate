@@ -292,6 +292,7 @@ class VMConfigForm(forms.Form):
         required=False,
         label="Enable VM Protection (prevents accidental deletion)",
     )
+    attach_virtio_iso = forms.BooleanField(required=False)
 
     def __init__(
         self,

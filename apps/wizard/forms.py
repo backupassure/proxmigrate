@@ -101,6 +101,16 @@ class Step5Form(forms.Form):
         min_value=101,
         help_text="Highest VMID ProxMigrate will auto-assign.",
     )
+    virtio_iso = forms.CharField(
+        max_length=500,
+        required=False,
+        label="VirtIO Windows Drivers ISO",
+        help_text=(
+            "Proxmox storage reference to the VirtIO driver ISO "
+            "(e.g. data:iso/virtio-win-0.1.285.iso). "
+            "Leave blank to disable automatic VirtIO ISO attachment."
+        ),
+    )
 
     def __init__(self, *args, node_choices=None, storage_choices=None, bridge_choices=None, **kwargs):
         super().__init__(*args, **kwargs)

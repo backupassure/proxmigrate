@@ -1,0 +1,691 @@
+{% extends "base.html" %}
+{% block title %}Proxmox Settings — ProxMigrate{% endblock %}
+{% block page_title %}Proxmox Settings{% endblock %}
+{% block help_slug %}{{ help_slug }}{% endblock %}
+
+{% block content %}
+<div class="columns">
+  <div class="column is-7">
+
+    {# ===== Connection ===== #}
+    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
+      <div class="card-header">
+        <i class="fas fa-plug" style="color:#3273dc;"></i> Connection
+        {% if api_ok %}
+          <span class="tag is-success is-light" style="margin-left:0.75rem;">
+            <i class="fas fa-check-circle" style="margin-right:0.3rem;"></i> API reachable
+          </span>
+        {% elif config.host %}
+          <span class="tag is-danger is-light" style="margin-left:0.75rem;">
+            <i class="fas fa-times-circle" style="margin-right:0.3rem;"></i> API unreachable
+          </span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+
+        {% if success_section == "connection" %}
+          <div class="notification is-success is-light" style="font-size:0.875rem;margin-bottom:1.25rem;">
+            <button class="delete" onclick="this.parentElement.remove()"></button>
+            <i class="fas fa-check-circle" style="margin-right:0.4rem;"></i>
+            Connection settings saved.
+          </div>
+        {% endif %}
+
+        {% if errors.connection %}
+          <div class="notification is-danger is-light" style="font-size:0.875rem;margin-bottom:1.25rem;">
+            <button class="delete" onclick="this.parentElement.remove()"></button>
+            <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
+            Please correct the errors below.
+          </div>
+        {% endif %}
+
+        {% if api_error and not api_ok and config.host %}
+          <div class="notification is-warning is-light" style="font-size:0.875rem;margin-bottom:1.25rem;">
+            <button class="delete" onclick="this.parentElement.remove()"></button>
+            <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
+            <strong>API connection error:</strong> {{ api_error }}
+          </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'proxmox_settings' %}">
+          {% csrf_token %}
+          <input type="hidden" name="section" value="connection">
+
+          <div class="field" style="margin-bottom:1.25rem;">
+            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">
+              Proxmox Host
+            </label>
+            <div class="control has-icons-left">
+              <input
+                class="input {% if errors.connection.host %}is-danger{% endif %}"
+                type="text"
+                name="host"
+                value="{{ config.host|default:'' }}"
+                placeholder="192.168.1.10 or pve.example.com"
+                required
+              >
+              <span class="icon is-left"><i class="fas fa-server" style="color:#b5b5b5;"></i></span>
+            </div>
+            {% for err in errors.connection.host %}
+              <p class="help is-danger">{{ err }}</p>
+            {% endfor %}
+          </div>
+
+          <div class="columns">
+            <div class="column">
+              <div class="field">
+                <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">SSH Port</label>
+                <div class="control has-icons-left">
+                  <input
+                    class="input {% if errors.connection.ssh_port %}is-danger{% endif %}"
+                    type="number"
+                    name="ssh_port"
+                    value="{{ config.ssh_port|default:22 }}"
+                    min="1" max="65535"
+                    required
+                  >
+                  <span class="icon is-left"><i class="fas fa-terminal" style="color:#b5b5b5;"></i></span>
+                </div>
+                {% for err in errors.connection.ssh_port %}
+                  <p class="help is-danger">{{ err }}</p>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="column">
+              <div class="field">
+                <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">API Port</label>
+                <div class="control has-icons-left">
+                  <input
+                    class="input {% if errors.connection.api_port %}is-danger{% endif %}"
+                    type="number"
+                    name="api_port"
+                    value="{{ config.api_port|default:8006 }}"
+                    min="1" max="65535"
+                    required
+                  >
+                  <span class="icon is-left"><i class="fas fa-network-wired" style="color:#b5b5b5;"></i></span>
+                </div>
+                {% for err in errors.connection.api_port %}
+                  <p class="help is-danger">{{ err }}</p>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align:right;">
+            <button type="submit" class="button is-primary" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-save"></i></span>
+              <span>Save Connection</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {# ===== API Token ===== #}
+    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
+      <div class="card-header">
+        <i class="fas fa-id-badge" style="color:#f59e0b;"></i> API Token
+      </div>
+      <div class="card-body">
+
+        {% if success_section == "token" %}
+          <div class="notification is-success is-light" style="font-size:0.875rem;margin-bottom:1.25rem;">
+            <button class="delete" onclick="this.parentElement.remove()"></button>
+            <i class="fas fa-check-circle" style="margin-right:0.4rem;"></i>
+            API token settings saved.
+          </div>
+        {% endif %}
+
+        {% if errors.token %}
+          <div class="notification is-danger is-light" style="font-size:0.875rem;margin-bottom:1.25rem;">
+            <button class="delete" onclick="this.parentElement.remove()"></button>
+            <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
+            Please correct the errors below.
+          </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'proxmox_settings' %}">
+          {% csrf_token %}
+          <input type="hidden" name="section" value="token">
+
+          <div class="field" style="margin-bottom:1.25rem;">
+            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">
+              Token ID
+            </label>
+            <div class="control has-icons-left">
+              <input
+                class="input is-monospace {% if errors.token.api_token_id %}is-danger{% endif %}"
+                type="text"
+                name="api_token_id"
+                value="{{ config.api_token_id|default:'' }}"
+                placeholder="root@pam!proxmigrate"
+                required
+              >
+              <span class="icon is-left"><i class="fas fa-tag" style="color:#b5b5b5;"></i></span>
+            </div>
+            {% for err in errors.token.api_token_id %}
+              <p class="help is-danger">{{ err }}</p>
+            {% endfor %}
+            <p class="field-hint">Format: <code>user@realm!tokenid</code></p>
+          </div>
+
+          <div class="field" style="margin-bottom:1.25rem;">
+            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">
+              Token Secret
+            </label>
+            <div class="control has-icons-left">
+              <input
+                class="input {% if errors.token.api_token_secret %}is-danger{% endif %}"
+                type="password"
+                name="api_token_secret"
+                placeholder="Leave blank to keep current secret"
+                autocomplete="off"
+              >
+              <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+            </div>
+            {% for err in errors.token.api_token_secret %}
+              <p class="help is-danger">{{ err }}</p>
+            {% endfor %}
+            <p class="field-hint">
+              {% if config.api_token_id %}
+                A token secret is currently stored. Leave blank to keep it unchanged.
+              {% else %}
+                Enter the token secret shown by Proxmox when the token was created.
+              {% endif %}
+            </p>
+          </div>
+
+          <div style="text-align:right;">
+            <button type="submit" class="button is-warning" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-save"></i></span>
+              <span>Save Token</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {# ===== Server Settings ===== #}
+    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
+      <div class="card-header">
+        <i class="fas fa-hdd" style="color:#6366f1;"></i> Server Settings
+      </div>
+      <div class="card-body">
+
+        {% if success_section == "server" %}
+          <div class="notification is-success is-light" style="font-size:0.875rem;margin-bottom:1.25rem;">
+            <button class="delete" onclick="this.parentElement.remove()"></button>
+            <i class="fas fa-check-circle" style="margin-right:0.4rem;"></i>
+            Server settings saved and applied.
+          </div>
+        {% endif %}
+
+        {% if errors.server %}
+          <div class="notification is-danger is-light" style="font-size:0.875rem;margin-bottom:1.25rem;">
+            <button class="delete" onclick="this.parentElement.remove()"></button>
+            <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
+            {% for field, errs in errors.server.items %}{% for err in errs %}{{ err }}{% endfor %}{% endfor %}
+          </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'proxmox_settings' %}">
+          {% csrf_token %}
+          <input type="hidden" name="section" value="server">
+
+          <div class="field" style="margin-bottom:0.5rem;">
+            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">
+              Upload Temp Directory
+            </label>
+            <div class="control has-icons-left">
+              <input
+                class="input is-monospace"
+                type="text"
+                name="upload_temp_dir"
+                value="{{ config.upload_temp_dir|default:'' }}"
+                placeholder="Leave blank to use OS default (/tmp)"
+              >
+              <span class="icon is-left"><i class="fas fa-folder" style="color:#b5b5b5;"></i></span>
+            </div>
+            <p class="field-hint">
+              Where this server writes large upload temp files during HTTP transfer.
+              <strong>/tmp is often a small RAM-backed tmpfs</strong> — if you import images larger than your available RAM,
+              set this to a directory on a disk with enough free space (e.g. <code>/data/proxmigrate/tmp</code>).
+              The directory will be created automatically. Changes apply immediately without a restart.
+            </p>
+          </div>
+
+          <div style="text-align:right;margin-top:1rem;">
+            <button type="submit" class="button is-primary" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-save"></i></span>
+              <span>Save Server Settings</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="column is-5">
+
+    {# ===== SSH Key ===== #}
+    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
+      <div class="card-header">
+        <i class="fas fa-key" style="color:#48c78e;"></i> SSH Key
+      </div>
+      <div class="card-body">
+
+        {% if success_section == "ssh" %}
+          <div class="notification is-success is-light" style="font-size:0.875rem;margin-bottom:1.25rem;">
+            <button class="delete" onclick="this.parentElement.remove()"></button>
+            <i class="fas fa-check-circle" style="margin-right:0.4rem;"></i>
+            SSH key operation completed successfully.
+          </div>
+        {% endif %}
+
+        {% if errors.ssh %}
+          <div class="notification is-danger is-light" style="font-size:0.875rem;margin-bottom:1.25rem;">
+            <button class="delete" onclick="this.parentElement.remove()"></button>
+            <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
+            {% for field, errs in errors.ssh.items %}
+              {% for err in errs %}{{ err }}{% endfor %}
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div style="margin-bottom:1.25rem;">
+          <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">Public Key</label>
+          {% if pub_key %}
+            <pre style="font-size:0.7rem;background:#f5f7fa;border:1px solid #e8ecf0;border-radius:6px;padding:0.75rem;word-break:break-all;white-space:pre-wrap;margin:0;">{{ pub_key }}</pre>
+            <p class="field-hint" style="margin-top:0.5rem;">
+              Add this key to <code>/root/.ssh/authorized_keys</code> on your Proxmox host,
+              or use the re-copy button below.
+            </p>
+          {% else %}
+            <div class="notification is-warning is-light" style="font-size:0.85rem;">
+              <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
+              No SSH key found. Use the regenerate button below.
+            </div>
+          {% endif %}
+        </div>
+
+        <hr style="margin:1rem 0;border:none;border-top:1px solid #f0f0f0;">
+
+        {# Re-copy key #}
+        <div style="margin-bottom:1.25rem;">
+          <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;font-weight:600;margin-bottom:0.75rem;">
+            Re-copy Key to Proxmox
+          </div>
+          <form method="post" action="{% url 'proxmox_settings' %}">
+            {% csrf_token %}
+            <input type="hidden" name="section" value="ssh_recopy">
+            <div class="field" style="margin-bottom:0.75rem;">
+              <div class="control has-icons-left">
+                <input
+                  class="input"
+                  type="password"
+                  name="root_password"
+                  placeholder="Proxmox root password"
+                  autocomplete="off"
+                >
+                <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+              </div>
+            </div>
+            <button type="submit" class="button is-info is-fullwidth" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-copy"></i></span>
+              <span>Copy Key to Proxmox Host</span>
+            </button>
+          </form>
+          <p class="field-hint" style="margin-top:0.5rem;">
+            Uses the root password one time to install the SSH key. The password is not stored.
+          </p>
+        </div>
+
+        <hr style="margin:1rem 0;border:none;border-top:1px solid #f0f0f0;">
+
+        {# Regenerate key #}
+        <div>
+          <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;font-weight:600;margin-bottom:0.75rem;">
+            Regenerate SSH Key
+          </div>
+          <form method="post" action="{% url 'proxmox_settings' %}"
+            onsubmit="return confirm('Regenerating the SSH key will break existing key-based access to Proxmox until you re-copy the new key. Continue?')">
+            {% csrf_token %}
+            <input type="hidden" name="section" value="ssh_regenerate">
+            <button type="submit" class="button is-danger is-light is-fullwidth" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-sync-alt"></i></span>
+              <span>Generate New 4096-bit RSA Key</span>
+            </button>
+          </form>
+          <p class="field-hint" style="margin-top:0.5rem;">
+            After regenerating, use the re-copy form above to install the new key on Proxmox.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    {# ===== VM Defaults ===== #}
+    <div class="proxmigrate-card">
+      <div class="card-header">
+        <i class="fas fa-sliders-h" style="color:#9b59b6;"></i> VM Defaults
+      </div>
+      <div class="card-body">
+
+        {% if success_section == "defaults" %}
+          <div class="notification is-success is-light" style="font-size:0.875rem;margin-bottom:1.25rem;">
+            <button class="delete" onclick="this.parentElement.remove()"></button>
+            <i class="fas fa-check-circle" style="margin-right:0.4rem;"></i>
+            VM default settings saved.
+          </div>
+        {% endif %}
+
+        {% if errors.defaults %}
+          <div class="notification is-danger is-light" style="font-size:0.875rem;margin-bottom:1.25rem;">
+            <button class="delete" onclick="this.parentElement.remove()"></button>
+            <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
+            {% for field, errs in errors.defaults.items %}
+              {% for err in errs %}{{ err }}{% endfor %}
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'proxmox_settings' %}">
+          {% csrf_token %}
+          <input type="hidden" name="section" value="defaults">
+
+          {% if not api_ok and config.host %}
+            <div class="notification is-warning is-light" style="font-size:0.82rem;margin-bottom:1rem;padding:0.6rem 1rem;">
+              <i class="fas fa-plug" style="margin-right:0.4rem;"></i>
+              Proxmox API is not reachable — dropdowns show current saved values only.
+              Fix the connection settings above, then reload this page to see live options.
+            </div>
+          {% endif %}
+
+          <div class="field" style="margin-bottom:1rem;">
+            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.875rem;">Default Node</label>
+            <div class="control has-icons-left">
+              {% if nodes %}
+                <div class="select is-fullwidth">
+                  <select name="default_node">
+                    {% for node in nodes %}
+                      <option value="{{ node }}" {% if node == config.default_node %}selected{% endif %}>{{ node }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              {% else %}
+                <input class="input" type="text" name="default_node"
+                  value="{{ config.default_node|default:'' }}" placeholder="pve">
+                <span class="icon is-left"><i class="fas fa-server" style="color:#b5b5b5;"></i></span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="field" style="margin-bottom:1rem;">
+            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.875rem;">Default Storage</label>
+            <div class="control has-icons-left">
+              {% if storage_pools %}
+                <div class="select is-fullwidth">
+                  <select name="default_storage">
+                    {% for pool in storage_pools %}
+                      <option value="{{ pool }}" {% if pool == config.default_storage %}selected{% endif %}>{{ pool }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              {% else %}
+                <input class="input" type="text" name="default_storage"
+                  value="{{ config.default_storage|default:'' }}" placeholder="local-lvm">
+                <span class="icon is-left"><i class="fas fa-database" style="color:#b5b5b5;"></i></span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="field" style="margin-bottom:1rem;">
+            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.875rem;">Default Bridge</label>
+            <div class="control has-icons-left">
+              {% if networks %}
+                <div class="select is-fullwidth">
+                  <select name="default_bridge">
+                    {% for iface in networks %}
+                      <option value="{{ iface }}" {% if iface == config.default_bridge %}selected{% endif %}>{{ iface }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              {% else %}
+                <input class="input" type="text" name="default_bridge"
+                  value="{{ config.default_bridge|default:'' }}" placeholder="vmbr0">
+                <span class="icon is-left"><i class="fas fa-network-wired" style="color:#b5b5b5;"></i></span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="field" style="margin-bottom:1rem;">
+            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.875rem;">Proxmox Temp Directory</label>
+            <div class="control" style="display:flex;gap:0.5rem;align-items:center;">
+              <input class="input is-monospace" type="text" name="proxmox_temp_dir" id="temp-dir-input"
+                value="{{ config.proxmox_temp_dir|default:'/var/tmp/proxmigrate/' }}"
+                placeholder="/var/tmp/proxmigrate/" style="flex:1;">
+              {% if api_ok %}
+                <button type="button" class="button is-light is-small"
+                  hx-get="{% url 'wizard_step5_browse' %}?path={{ config.proxmox_temp_dir|default:'/var/tmp' }}&field=proxmox_temp_dir"
+                  hx-target="#dir-browser-body"
+                  onclick="document.getElementById('browse-modal').classList.add('is-active')">
+                  <span class="icon"><i class="fas fa-folder-open"></i></span>
+                  <span>Browse</span>
+                </button>
+              {% endif %}
+            </div>
+            <p class="field-hint">Staging directory on the Proxmox host for disk image transfers.</p>
+          </div>
+
+          <div class="columns" style="margin-bottom:0;">
+            <div class="column" style="padding-right:0.5rem;">
+              <div class="field" style="margin-bottom:1rem;">
+                <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.875rem;">CPU Cores</label>
+                <div class="control has-icons-left">
+                  <input class="input" type="number" name="default_cores"
+                    value="{{ config.default_cores|default:2 }}" min="1" max="128">
+                  <span class="icon is-left"><i class="fas fa-microchip" style="color:#b5b5b5;"></i></span>
+                </div>
+              </div>
+            </div>
+            <div class="column" style="padding-left:0.5rem;">
+              <div class="field" style="margin-bottom:1rem;">
+                <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.875rem;">RAM (MB)</label>
+                <div class="control has-icons-left">
+                  <input class="input" type="number" name="default_memory_mb"
+                    value="{{ config.default_memory_mb|default:2048 }}" min="256" step="256">
+                  <span class="icon is-left"><i class="fas fa-memory" style="color:#b5b5b5;"></i></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#f5f7fa;border:1px solid #e8ecf0;border-radius:8px;padding:0.875rem;margin-bottom:1rem;">
+            <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;font-weight:600;margin-bottom:0.75rem;">
+              VMID Pool Range
+            </div>
+            <div class="columns is-gapless">
+              <div class="column" style="padding-right:0.5rem;">
+                <div class="field">
+                  <label class="label" style="font-size:0.85rem;font-weight:600;color:#4a4a4a;">Pool Min</label>
+                  <div class="control">
+                    <input class="input" type="number" name="vmid_min"
+                      value="{{ config.vmid_min|default:100 }}" min="100" max="999999999">
+                  </div>
+                </div>
+              </div>
+              <div class="column" style="padding-left:0.5rem;">
+                <div class="field">
+                  <label class="label" style="font-size:0.85rem;font-weight:600;color:#4a4a4a;">Pool Max</label>
+                  <div class="control">
+                    <input class="input" type="number" name="vmid_max"
+                      value="{{ config.vmid_max|default:999 }}" min="100" max="999999999">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="field-hint" style="margin-top:0.25rem;">
+              ProxMigrate auto-selects VMIDs within this range when creating VMs.
+            </p>
+          </div>
+
+          <div class="field" style="margin-bottom:1rem;padding-top:0.75rem;border-top:1px solid #e8ecf0;">
+            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.875rem;">
+              VirtIO Windows Drivers ISO
+              <span style="font-weight:400;color:#7a7a7a;"> — optional</span>
+            </label>
+            <div class="control" style="display:flex;gap:0.5rem;align-items:center;">
+              <input class="input is-monospace" type="text" name="virtio_iso" id="settings-virtio-iso"
+                value="{{ config.virtio_iso|default:'' }}"
+                placeholder="data:iso/virtio-win-0.1.285.iso" style="flex:1;">
+              <button type="button" class="button is-light is-small" id="settings-virtio-scan-btn"
+                onclick="settingsScanVirtioIso()">
+                <span class="icon is-small"><i class="fas fa-search"></i></span>
+                <span>Scan</span>
+              </button>
+            </div>
+            <p class="field-hint">Auto-attached to Windows VMs as a second CD-ROM. Click Scan to detect from Proxmox.</p>
+            <div id="settings-virtio-scan-result" style="margin-top:0.3rem;"></div>
+          </div>
+
+          <div style="text-align:right;">
+            <button type="submit" class="button is-primary" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-save"></i></span>
+              <span>Save Defaults</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  {# ===== Right column: Re-run Wizard + tips ===== #}
+  <div class="column is-5">
+
+    {# Re-run Wizard card #}
+    <div class="proxmigrate-card" style="margin-bottom:1.5rem;border:1px solid rgba(245,158,11,0.3);">
+      <div class="card-header" style="background:rgba(245,158,11,0.08);">
+        <i class="fas fa-redo" style="color:#f59e0b;"></i> Re-run Setup Wizard
+      </div>
+      <div class="card-body">
+        <p style="font-size:0.875rem;color:#555;margin-bottom:1rem;line-height:1.6;">
+          If you have changed your Proxmox server, credentials, or network configuration,
+          re-running the wizard will walk you through every step again — re-copying the SSH key,
+          re-testing the API token, and re-discovering nodes, storage, and networks.
+        </p>
+        <p style="font-size:0.82rem;color:#888;margin-bottom:1.25rem;line-height:1.5;">
+          Your existing VMs and import history are not affected.
+          The app will be inaccessible until the wizard is completed again.
+        </p>
+        <form method="post" action="{% url 'proxmox_settings' %}"
+          onsubmit="return confirm('This will reset the setup wizard. The app will redirect to the wizard until it is completed. Continue?');">
+          {% csrf_token %}
+          <input type="hidden" name="section" value="rerun_wizard">
+          <button type="submit" class="button is-warning is-fullwidth" style="font-weight:600;">
+            <span class="icon"><i class="fas fa-redo"></i></span>
+            <span>Re-run Setup Wizard</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    {# Quick status card #}
+    <div class="proxmigrate-card">
+      <div class="card-header">
+        <i class="fas fa-info-circle" style="color:#3273dc;"></i> Current Status
+      </div>
+      <div class="card-body" style="padding:1rem 1.5rem;">
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Proxmox Host</div>
+          <div class="cert-detail-value">{{ config.host|default:"Not configured" }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">API Status</div>
+          <div class="cert-detail-value">
+            {% if api_ok %}
+              <span style="color:#48c78e;"><i class="fas fa-check-circle"></i> Connected</span>
+            {% elif config.host %}
+              <span style="color:#f14668;"><i class="fas fa-times-circle"></i> Unreachable</span>
+            {% else %}
+              <span style="color:#b5b5b5;">—</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Default Node</div>
+          <div class="cert-detail-value">{{ config.default_node|default:"—" }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Default Storage</div>
+          <div class="cert-detail-value">{{ config.default_storage|default:"—" }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Default Bridge</div>
+          <div class="cert-detail-value">{{ config.default_bridge|default:"—" }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">VMID Pool</div>
+          <div class="cert-detail-value">{{ config.vmid_min }} – {{ config.vmid_max }}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{# Browse modal for temp directory #}
+<div class="modal" id="browse-modal">
+  <div class="modal-background" onclick="document.getElementById('browse-modal').classList.remove('is-active')"></div>
+  <div class="modal-card" style="max-width:540px;">
+    <header class="modal-card-head" style="background:#1a1a2e;border-bottom:1px solid #2a2a4a;">
+      <p class="modal-card-title" style="color:#e0e0e0;font-size:1rem;">
+        <i class="fas fa-folder-open" style="margin-right:0.5rem;color:#48c78e;"></i>Browse Proxmox Directory
+      </p>
+      <button class="delete" onclick="document.getElementById('browse-modal').classList.remove('is-active')"></button>
+    </header>
+    <section class="modal-card-body" style="background:#0f0f1a;padding:1rem;" id="dir-browser-body">
+      <p style="color:#888;font-size:0.875rem;">Loading…</p>
+    </section>
+  </div>
+</div>
+
+<script>
+  function selectDir(path) {
+    document.getElementById('temp-dir-input').value = path;
+    document.getElementById('browse-modal').classList.remove('is-active');
+  }
+
+  // Also handle data-pick-dir attribute clicks (fallback)
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-pick-dir]');
+    if (btn) {
+      selectDir(btn.dataset.pickDir);
+    }
+  });
+
+  function settingsScanVirtioIso() {
+    const btn = document.getElementById('settings-virtio-scan-btn');
+    const result = document.getElementById('settings-virtio-scan-result');
+    btn.classList.add('is-loading');
+    result.innerHTML = '';
+    fetch('{% url "wizard_virtio_scan" %}', {credentials: 'same-origin'})
+      .then(r => r.json())
+      .then(data => {
+        btn.classList.remove('is-loading');
+        if (data.found) {
+          document.getElementById('settings-virtio-iso').value = data.found;
+          result.innerHTML = '<p class="help is-success"><i class="fas fa-check-circle"></i> Found: ' + data.found + '</p>';
+        } else {
+          result.innerHTML = '<p class="help is-warning"><i class="fas fa-exclamation-triangle"></i> ' + (data.error || 'No VirtIO ISO found.') + '</p>';
+        }
+      })
+      .catch(() => {
+        btn.classList.remove('is-loading');
+        result.innerHTML = '<p class="help is-danger">Scan failed.</p>';
+      });
+  }
+</script>
+{% endblock %}

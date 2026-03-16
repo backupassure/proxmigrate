@@ -7,6 +7,15 @@ from django.dispatch import receiver
 class UserProfile(models.Model):
     """One-to-one extension of the built-in User model."""
 
+    AUTH_SOURCE_LOCAL = "local"
+    AUTH_SOURCE_LDAP = "ldap"
+    AUTH_SOURCE_ENTRA = "entra"
+    AUTH_SOURCE_CHOICES = [
+        (AUTH_SOURCE_LOCAL, "Local"),
+        (AUTH_SOURCE_LDAP, "LDAP"),
+        (AUTH_SOURCE_ENTRA, "Entra ID"),
+    ]
+
     user = models.OneToOneField(
         get_user_model(),
         on_delete=models.CASCADE,
@@ -15,6 +24,11 @@ class UserProfile(models.Model):
     must_change_password = models.BooleanField(
         default=False,
         help_text="Force the user to set a new password on next login.",
+    )
+    auth_source = models.CharField(
+        max_length=20,
+        choices=AUTH_SOURCE_CHOICES,
+        default=AUTH_SOURCE_LOCAL,
     )
 
     def __str__(self):

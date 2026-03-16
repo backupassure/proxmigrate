@@ -95,6 +95,7 @@ def auth_settings_save(request, auth_type):
         config.tenant_id = request.POST.get("tenant_id", "").strip()
         config.client_id = request.POST.get("client_id", "").strip()
         config.allowed_domains = request.POST.get("allowed_domains", "").strip()
+        config.require_group_id = request.POST.get("require_group_id", "").strip()
         config.admin_group_id = request.POST.get("admin_group_id", "").strip()
         new_secret = request.POST.get("client_secret", "").strip()
         if new_secret:
@@ -179,6 +180,7 @@ def auth_settings_test(request, auth_type):
         import ldap
         import tempfile
 
+        ldap.set_option(ldap.OPT_REFERRALS, 0)
         if skip_cert_verify:
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
             ldap.set_option(ldap.OPT_X_TLS_NEWCTX, 0)

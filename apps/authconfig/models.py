@@ -101,6 +101,12 @@ class EntraIDConfig(models.Model):
         verbose_name="Allowed Domains",
         help_text="Comma-separated list of allowed email domains. Leave blank to allow any Microsoft account.",
     )
+    require_group_id = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Required Group Object ID",
+        help_text="Azure AD group Object ID required for login. Leave blank to allow all tenant users (or only the Admin Group if one is set).",
+    )
     admin_group_id = models.CharField(
         max_length=200,
         blank=True,

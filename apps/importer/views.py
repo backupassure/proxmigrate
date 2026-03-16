@@ -170,6 +170,7 @@ def configure(request, job_id):
             "storage_pools": storage_pools,
             "network_bridges": network_bridges,
             "suggested_vmid": suggested_vmid,
+            "virtio_iso_configured": bool(config.virtio_iso),
         },
     )
 

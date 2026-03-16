@@ -210,6 +210,36 @@
 
         </div>
       </div>
+      {# VirtIO Windows Drivers ISO #}
+      <div class="field" style="margin-top:0.75rem;padding-top:1.25rem;border-top:1px solid #e8ecf0;">
+        <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">
+          VirtIO Windows Drivers ISO
+          <span style="font-weight:400;color:#7a7a7a;"> — optional</span>
+        </label>
+        <div class="control" style="display:flex;gap:0.5rem;align-items:center;">
+          <div class="control has-icons-left" style="flex:1;">
+            <input
+              class="input is-monospace"
+              type="text"
+              name="virtio_iso"
+              id="id_virtio_iso"
+              value="{{ form.virtio_iso.value|default:'' }}"
+              placeholder="data:iso/virtio-win-0.1.285.iso"
+            >
+            <span class="icon is-left"><i class="fas fa-compact-disc" style="color:#b5b5b5;"></i></span>
+          </div>
+          <button type="button" class="button is-light" id="virtio-scan-btn" onclick="scanVirtioIso()">
+            <span class="icon"><i class="fas fa-search"></i></span>
+            <span>Scan</span>
+          </button>
+        </div>
+        <p class="field-hint">
+          Proxmox storage reference to the VirtIO Windows driver ISO. Click <strong>Scan</strong> to
+          auto-detect it from your storage pools. When set, Windows VMs get this disc automatically
+          attached so drivers are ready at first boot.
+        </p>
+        <div id="virtio-scan-result" style="margin-top:0.4rem;"></div>
+      </div>
     </form>
   </div>
 
@@ -250,6 +280,28 @@
 </div>
 
 <script>
+  function scanVirtioIso() {
+    const btn = document.getElementById('virtio-scan-btn');
+    const result = document.getElementById('virtio-scan-result');
+    btn.classList.add('is-loading');
+    result.innerHTML = '';
+    fetch('{% url "wizard_virtio_scan" %}', {credentials: 'same-origin'})
+      .then(r => r.json())
+      .then(data => {
+        btn.classList.remove('is-loading');
+        if (data.found) {
+          document.getElementById('id_virtio_iso').value = data.found;
+          result.innerHTML = '<p class="help is-success"><i class="fas fa-check-circle"></i> Found: ' + data.found + '</p>';
+        } else {
+          result.innerHTML = '<p class="help is-warning"><i class="fas fa-exclamation-triangle"></i> ' + (data.error || 'No VirtIO ISO found.') + '</p>';
+        }
+      })
+      .catch(() => {
+        btn.classList.remove('is-loading');
+        result.innerHTML = '<p class="help is-danger">Scan failed — check Proxmox SSH connectivity.</p>';
+      });
+  }
+
   function openDirBrowser() {
     const modal = document.getElementById('dir-browser-modal');
     modal.style.display = 'flex';

@@ -7,6 +7,7 @@ import posixpath
 
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
+from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.shortcuts import render
 
@@ -360,6 +361,7 @@ def step5(request):
             config.default_memory_mb = form.cleaned_data["default_memory_mb"]
             config.vmid_min = form.cleaned_data["vmid_min"]
             config.vmid_max = form.cleaned_data["vmid_max"]
+            config.virtio_iso = form.cleaned_data.get("virtio_iso", "").strip()
             config.wizard_step = 6
             config.is_configured = True
             config.save()
@@ -374,6 +376,7 @@ def step5(request):
             "default_memory_mb": config.default_memory_mb,
             "vmid_min": config.vmid_min,
             "vmid_max": config.vmid_max,
+            "virtio_iso": config.virtio_iso,
         }
         form = Step5Form(
             initial=initial,
@@ -524,6 +527,7 @@ def proxmox_settings(request):
                 config.default_memory_mb = int(data.get("default_memory_mb", 2048))
                 config.vmid_min = int(data.get("vmid_min", 100))
                 config.vmid_max = int(data.get("vmid_max", 999))
+                config.virtio_iso = data.get("virtio_iso", "").strip()
                 if config.vmid_min >= config.vmid_max:
                     raise ValueError("VMID minimum must be less than VMID maximum.")
                 config.save()
@@ -617,3 +621,45 @@ def step6(request):
         "wizard/step6.html",
         {"config": config, "env": env, "step": 6},
     )
+
+
+@login_required
+def virtio_scan(request):
+    """Scan Proxmox storage pools for a VirtIO Windows driver ISO.
+
+    Returns JSON: {"found": "data:iso/virtio-win-0.1.285.iso"} or {"found": "", "error": "..."}.
+    """
+    config = _get_or_create_config()
+    if not config.host:
+        return JsonResponse({"found": "", "error": "Proxmox not configured yet."})
+
+    storage_list = []
+    try:
+        env = DiscoveredEnvironment.objects.get(config=config)
+        storage_list = [s["storage"] for s in env.storage_pools]
+    except DiscoveredEnvironment.DoesNotExist:
+        pass
+
+    if not storage_list:
+        return JsonResponse({"found": "", "error": "No storage pools discovered. Complete the wizard first."})
+
+    found = ""
+    try:
+        with config.get_ssh_client() as ssh:
+            for storage in storage_list:
+                out, _err, rc = ssh.run(["pvesm", "list", storage, "--content", "iso"])
+                if rc != 0:
+                    continue
+                for line in out.splitlines():
+                    parts = line.split()
+                    if parts and "virtio-win" in parts[0].lower() and parts[0].startswith(storage):
+                        found = parts[0]
+                        break
+                if found:
+                    break
+    except Exception as exc:
+        return JsonResponse({"found": "", "error": str(exc)})
+
+    if found:
+        return JsonResponse({"found": found})
+    return JsonResponse({"found": "", "error": "No VirtIO ISO found in any storage pool."})

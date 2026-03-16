@@ -118,6 +118,17 @@
             </div>
           </div>
         </div>
+        {% if virtio_iso_configured %}
+        <div class="field" id="virtio-iso-row" style="display:none;">
+          <label class="checkbox">
+            <input type="checkbox" name="attach_virtio_iso" id="attach_virtio_iso" checked>
+            &nbsp;<strong>Attach VirtIO Windows Drivers ISO</strong>
+          </label>
+          <p class="field-hint" style="margin-left:1.5rem;">
+            Attaches the VirtIO driver disc as a second CD-ROM (ide3) so drivers are ready to install from the Proxmox console.
+          </p>
+        </div>
+        {% endif %}
         <div class="field">
           <label class="checkbox">
             <input type="checkbox" name="start_after_create" {% if form.start_after_create.value %}checked{% endif %}>
@@ -670,6 +681,17 @@
   document.querySelector('[name=os_type]').addEventListener('change', checkWindowsVirtio);
   document.getElementById('disk-bus-select').addEventListener('change', checkWindowsVirtio);
   checkWindowsVirtio();
+
+  {% if virtio_iso_configured %}
+  // Show/hide VirtIO ISO checkbox based on OS type
+  function updateVirtioIsoRow() {
+    const osType = document.querySelector('[name=os_type]').value;
+    const row = document.getElementById('virtio-iso-row');
+    if (row) row.style.display = osType.startsWith('win') ? '' : 'none';
+  }
+  document.querySelector('[name=os_type]').addEventListener('change', updateVirtioIsoRow);
+  updateVirtioIsoRow();
+  {% endif %}
 
   // ── Extra disks ──────────────────────────────────────────────────────────
   const STORAGE_OPTIONS = [

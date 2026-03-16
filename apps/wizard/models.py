@@ -22,6 +22,17 @@ class ProxmoxConfig(models.Model):
     default_storage = models.CharField(max_length=100, blank=True)
     default_bridge = models.CharField(max_length=100, blank=True)
     proxmox_temp_dir = models.CharField(max_length=500, default="/var/tmp/proxmigrate/")
+    virtio_iso = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        verbose_name="VirtIO Windows Drivers ISO",
+        help_text=(
+            "Proxmox storage reference to the VirtIO Windows driver ISO "
+            "(e.g. data:iso/virtio-win-0.1.285.iso). "
+            "When set, Windows VMs automatically get this ISO attached as a second CD-ROM."
+        ),
+    )
     upload_temp_dir = models.CharField(
         max_length=500,
         blank=True,

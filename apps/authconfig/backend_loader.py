@@ -53,21 +53,28 @@ def load_auth_backends_from_db():
 def _configure_ldap(config):
     try:
         import ldap
-        from django_auth_ldap.config import LDAPSearch
+        from django_auth_ldap.config import ActiveDirectoryGroupType, LDAPSearch
     except ImportError:
         logger.warning("_configure_ldap: django-auth-ldap / python-ldap not installed")
         return
 
     # TLS options must be set at the module level BEFORE any ldap.initialize()
-    # call — AUTH_LDAP_GLOBAL_OPTIONS alone is applied too late for ldaps://
-    # because TLS negotiation happens at connect time. OPT_X_TLS_NEWCTX forces
-    # OpenLDAP to create a fresh TLS context with the updated settings.
+    # call — ldaps:// TLS negotiation happens at connect time.
+    # OPT_X_TLS_NEWCTX forces OpenLDAP to create a fresh TLS context NOW.
+    # IMPORTANT: do NOT include OPT_X_TLS_NEWCTX in AUTH_LDAP_GLOBAL_OPTIONS —
+    # django-auth-ldap re-applies that dict before every connection, and
+    # re-triggering a TLS context rebuild mid-session drops the authenticated
+    # bind state, causing OPERATIONS_ERROR on the subsequent search.
+    # AD frequently sends LDAP referrals; following them unauthenticated causes
+    # OPERATIONS_ERROR on the search. Disable referral chasing globally.
+    ldap.set_option(ldap.OPT_REFERRALS, 0)
+
     if config.skip_cert_verify:
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
         ldap.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
         settings.AUTH_LDAP_GLOBAL_OPTIONS = {
+            ldap.OPT_REFERRALS: 0,
             ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER,
-            ldap.OPT_X_TLS_NEWCTX: 0,
         }
     elif config.ca_cert:
         # Write the CA cert PEM to disk so OpenLDAP can load it
@@ -78,11 +85,15 @@ def _configure_ldap(config):
             ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, _LDAP_CA_CERT_PATH)
             ldap.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
             settings.AUTH_LDAP_GLOBAL_OPTIONS = {
+                ldap.OPT_REFERRALS: 0,
                 ldap.OPT_X_TLS_CACERTFILE: _LDAP_CA_CERT_PATH,
-                ldap.OPT_X_TLS_NEWCTX: 0,
             }
         except Exception as exc:
             logger.warning("_configure_ldap: failed to write CA cert: %s", exc)
+    else:
+        settings.AUTH_LDAP_GLOBAL_OPTIONS = {
+            ldap.OPT_REFERRALS: 0,
+        }
 
     settings.AUTH_LDAP_SERVER_URI = config.server_uri
     settings.AUTH_LDAP_BIND_DN = config.bind_dn or ""
@@ -95,21 +106,44 @@ def _configure_ldap(config):
     settings.AUTH_LDAP_ALWAYS_UPDATE_USER = True
 
     # STARTTLS only applies to plain ldap:// — ldaps:// is already TLS
-    if config.use_tls and not config.server_uri.lower().startswith("ldaps://"):
-        settings.AUTH_LDAP_START_TLS = True
+    settings.AUTH_LDAP_START_TLS = (
+        config.use_tls and not config.server_uri.lower().startswith("ldaps://")
+    )
 
-    if config.require_group:
-        settings.AUTH_LDAP_REQUIRE_GROUP = config.require_group
+    if config.require_group or config.admin_group:
+        # GROUP_TYPE and GROUP_SEARCH are required whenever group checks are configured.
+        # Use the same base DN as the user search so all groups in the domain are visible.
+        settings.AUTH_LDAP_GROUP_TYPE = ActiveDirectoryGroupType()
+        settings.AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
+            config.user_search_base or "",
+            ldap.SCOPE_SUBTREE,
+            "(objectClass=group)",
+        )
+
+    # Always set/clear these so stale values don't persist after config changes.
+    # If admin_group is set but require_group is blank, restrict login to admin
+    # group members only — it makes no sense to allow arbitrary LDAP users in
+    # when you only want admins.
+    effective_require = config.require_group or config.admin_group
+    settings.AUTH_LDAP_REQUIRE_GROUP = effective_require or None
 
     if config.admin_group:
         settings.AUTH_LDAP_USER_FLAGS_BY_GROUP = {
             "is_staff": config.admin_group,
             "is_superuser": config.admin_group,
         }
+    else:
+        settings.AUTH_LDAP_USER_FLAGS_BY_GROUP = {}
 
 
 def _configure_entra(config):
     providers = getattr(settings, "SOCIALACCOUNT_PROVIDERS", {})
+    # Request GroupMember.Read.All whenever either group field is configured so
+    # the pre_social_login handler can check group membership via the Graph API.
+    scopes = ["User.Read"]
+    require_group_id = getattr(config, "require_group_id", "")
+    if (require_group_id or "").strip() or (config.admin_group_id or "").strip():
+        scopes.append("GroupMember.Read.All")
     providers["microsoft"] = {
         "APP": {
             "client_id": config.client_id,
@@ -118,6 +152,6 @@ def _configure_entra(config):
                 "tenant": config.tenant_id or "common",
             },
         },
-        "SCOPE": ["User.Read"],
+        "SCOPE": scopes,
     }
     settings.SOCIALACCOUNT_PROVIDERS = providers

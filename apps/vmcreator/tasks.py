@@ -254,6 +254,23 @@ def run_create_pipeline(self, job_id):
 
             ssh.run_checked(["qm", "set", str(vmid), "--boot", f"order={boot_order}"])
 
+            # VirtIO Windows driver ISO — attach as ide3 when creating a Windows VM.
+            # This puts the drivers disc in the guest before first boot so the user
+            # can install them from the Proxmox console without hunting for the ISO.
+            if (
+                os_type.startswith("win")
+                and vm_config.get("attach_virtio_iso")
+                and config.virtio_iso
+            ):
+                ssh.run_checked([
+                    "qm", "set", str(vmid),
+                    "--ide3", f"{config.virtio_iso},media=cdrom",
+                ])
+                logger.info(
+                    "VmCreateJob %d: attached VirtIO ISO %s to ide3",
+                    job.pk, config.virtio_iso,
+                )
+
             # Memory ballooning
             if vm_config.get("ballooning"):
                 balloon_args = ["qm", "set", str(vmid)]

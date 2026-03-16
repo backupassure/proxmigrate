@@ -99,9 +99,22 @@ def login_view(request):
             error = "Invalid username or password."
             logger.warning("Failed login attempt for username: %s", username)
 
+    entra_enabled = False
+    ldap_enabled = False
+    try:
+        from apps.authconfig.models import EntraIDConfig, LDAPConfig
+        ldap_cfg = LDAPConfig.objects.first()
+        entra_cfg = EntraIDConfig.objects.first()
+        ldap_enabled = bool(ldap_cfg and ldap_cfg.is_enabled)
+        entra_enabled = bool(entra_cfg and entra_cfg.is_enabled)
+    except Exception:
+        pass
+
     context = {
         "error": error,
         "next": request.GET.get("next", "/"),
+        "entra_enabled": entra_enabled,
+        "ldap_enabled": ldap_enabled,
     }
     return render(request, "core/login.html", context)
 

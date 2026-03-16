@@ -75,14 +75,9 @@
             <div style="font-weight:600;color:#1a1a2e;">Enable LDAP Authentication</div>
             <div style="font-size:0.82rem;color:#7a7a7a;margin-top:0.2rem;">Allow users to sign in with LDAP/Active Directory credentials.</div>
           </div>
-          <label class="switch" style="position:relative;display:inline-block;width:44px;height:24px;">
-            <input type="checkbox" id="ldap-enable-toggle"
-              {% if ldap_enabled %}checked{% endif %}
-              hx-post="{% url 'auth_settings_toggle' 'ldap' %}"
-              hx-include="#ldap-enable-toggle"
-              hx-target="#ldap-toggle-result">
-            <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:{% if ldap_enabled %}#48c78e{% else %}#dbdbdb{% endif %};border-radius:24px;transition:0.3s;"></span>
-          </label>
+          <input type="checkbox" {% if ldap_enabled %}checked{% endif %}
+            hx-post="{% url 'auth_settings_toggle' 'ldap' %}"
+            hx-target="#ldap-toggle-result">
         </div>
         <div id="ldap-toggle-result"></div>
 
@@ -177,7 +172,7 @@
                     value="{{ ldap_config.require_group|default:'' }}"
                     placeholder="CN=ProxMigrateUsers,OU=Groups,DC=example,DC=com">
                 </div>
-                <p class="field-hint">Only allow users who are members of this group. Leave blank to allow all LDAP users.</p>
+                <p class="field-hint">Only allow users who are members of this group. Leave blank to allow all LDAP users (or only the Admin Group if one is set).</p>
               </div>
             </div>
             <div class="column">
@@ -304,6 +299,37 @@
               <li>
                 <div class="step-guide-num">4</div>
                 <div class="step-guide-text">
+                  Go to <strong>API permissions</strong> &rarr; <strong>Add a permission</strong> &rarr; <strong>Microsoft Graph</strong> &rarr; <strong>Delegated permissions</strong> and confirm the following are present:
+                  <table style="margin-top:0.6rem;font-size:0.8rem;border-collapse:collapse;width:100%;">
+                    <thead>
+                      <tr style="background:#f0f4f8;">
+                        <th style="padding:0.35rem 0.6rem;text-align:left;border:1px solid #dde3ea;">Permission</th>
+                        <th style="padding:0.35rem 0.6rem;text-align:left;border:1px solid #dde3ea;">Type</th>
+                        <th style="padding:0.35rem 0.6rem;text-align:left;border:1px solid #dde3ea;">Admin consent</th>
+                        <th style="padding:0.35rem 0.6rem;text-align:left;border:1px solid #dde3ea;">Purpose</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;font-family:monospace;">User.Read</td>
+                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;">Delegated</td>
+                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;"><span class="tag is-success is-light" style="font-size:0.72rem;">Not required</span></td>
+                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;">Sign in, read user profile &amp; email — added by default</td>
+                      </tr>
+                      <tr style="background:#fafafa;">
+                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;font-family:monospace;">GroupMember.Read.All</td>
+                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;">Delegated</td>
+                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;"><span class="tag is-warning is-light" style="font-size:0.72rem;">Required</span></td>
+                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;">Check group membership — required if Require Group ID or Admin Group ID is set</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <p style="margin-top:0.5rem;color:#6b7280;">After adding permissions, click <strong>Grant admin consent for &lt;your tenant&gt;</strong> to activate the <code>GroupMember.Read.All</code> permission.</p>
+                </div>
+              </li>
+              <li>
+                <div class="step-guide-num">5</div>
+                <div class="step-guide-text">
                   Go to <strong>Certificates &amp; secrets</strong> &rarr; <strong>New client secret</strong>. Copy the secret <strong>Value</strong> (shown once only).
                 </div>
               </li>
@@ -363,14 +389,29 @@
             </div>
           </div>
 
-          <div class="field">
-            <label class="label" style="font-size:0.875rem;font-weight:600;">Admin Group Object ID (optional)</label>
-            <div class="control">
-              <input class="input is-monospace" type="text" name="admin_group_id"
-                value="{{ entra_config.admin_group_id|default:'' }}"
-                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+          <div class="columns">
+            <div class="column">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">Require Group Object ID (optional)</label>
+                <div class="control">
+                  <input class="input is-monospace" type="text" name="require_group_id"
+                    value="{{ entra_config.require_group_id|default:'' }}"
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                </div>
+                <p class="field-hint">Only members of this Azure group can log in. Leave blank to allow all tenant users (or only Admin Group members if one is set).</p>
+              </div>
             </div>
-            <p class="field-hint">Members of this Azure group will be granted ProxMigrate admin access automatically.</p>
+            <div class="column">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">Admin Group Object ID (optional)</label>
+                <div class="control">
+                  <input class="input is-monospace" type="text" name="admin_group_id"
+                    value="{{ entra_config.admin_group_id|default:'' }}"
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                </div>
+                <p class="field-hint">Members of this Azure group receive admin access automatically. If set without a Require Group, only admin group members can log in.</p>
+              </div>
+            </div>
           </div>
 
           <div style="margin-top:1rem;">

@@ -321,6 +321,29 @@ def _create_vm_and_import(job, config, remote_qcow2_path, job_id):
                     f"--{slot}", f"{extra_storage}:{size_gb}",
                 ])
 
+    # VirtIO Windows driver ISO — attach as ide2 when importing a Windows VM.
+    # There is no install ISO slot in the importer, so ide2 is free. Having the
+    # driver disc already attached lets the user install VirtIO drivers from the
+    # Proxmox console immediately after the VM boots.
+    os_type = vm_config.get("os_type", "l26")
+    if (
+        os_type.startswith("win")
+        and vm_config.get("attach_virtio_iso")
+        and config.virtio_iso
+    ):
+        try:
+            with config.get_ssh_client() as ssh:
+                ssh.run_checked([
+                    "qm", "set", str(vmid),
+                    "--ide2", f"{config.virtio_iso},media=cdrom",
+                ])
+            logger.info(
+                "ImportJob %d: attached VirtIO ISO %s to ide2",
+                job_id, config.virtio_iso,
+            )
+        except Exception as exc:
+            logger.warning("ImportJob %d: failed to attach VirtIO ISO: %s", job_id, exc)
+
     # ── 7. STARTING ──────────────────────────────────────────────────────────
     if vm_config.get("start_after_import"):
         job.set_stage(ImportJob.STAGE_STARTING, "Starting VM...")
