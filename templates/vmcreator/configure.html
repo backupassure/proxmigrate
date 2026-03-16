@@ -347,7 +347,7 @@
               <label class="label" style="font-size:0.875rem;font-weight:600;">Disk Bus</label>
               <div class="control">
                 <div class="select is-fullwidth">
-                  <select name="disk_bus">
+                  <select name="disk_bus" id="disk-bus-select">
                     {% for val, label in form.disk_bus.field.choices %}
                       <option value="{{ val }}" {% if form.disk_bus.value == val %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
@@ -355,6 +355,12 @@
                 </div>
               </div>
               <p class="field-hint">VirtIO-SCSI recommended for best performance.</p>
+              <p id="virtio-windows-warning" class="help is-warning" style="display:none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                The Windows installer has no VirtIO drivers — it won't see the disk.
+                ProxMigrate will automatically use <strong>SATA</strong> during installation.
+                You can switch to VirtIO-SCSI after installing the VirtIO driver package inside the guest.
+              </p>
             </div>
           </div>
           <div class="column">
@@ -652,6 +658,18 @@
 
   // Init on load
   handleBiosChange(document.getElementById('bios-select').value);
+
+  // ── Windows VirtIO warning ────────────────────────────────────────────────
+  function checkWindowsVirtio() {
+    const osType = document.querySelector('[name=os_type]').value;
+    const diskBus = document.getElementById('disk-bus-select').value;
+    const warn = document.getElementById('virtio-windows-warning');
+    warn.style.display = (osType.startsWith('win') && diskBus === 'scsi') ? '' : 'none';
+  }
+
+  document.querySelector('[name=os_type]').addEventListener('change', checkWindowsVirtio);
+  document.getElementById('disk-bus-select').addEventListener('change', checkWindowsVirtio);
+  checkWindowsVirtio();
 
   // ── Extra disks ──────────────────────────────────────────────────────────
   const STORAGE_OPTIONS = [

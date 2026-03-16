@@ -133,9 +133,7 @@ In Proxmox go to Datacenter → Storage → select the pool → Edit → Content
 ProxMigrate sets the boot order to `disk first, CD-ROM second`. On the first boot the disk is blank so the firmware falls through to the ISO and the installer runs. Once the OS is installed the disk becomes bootable and takes priority automatically — the VM boots from disk on every subsequent start without any manual change. If you ever need to reinstall, move the CD-ROM above the disk in Proxmox (VM → Options → Boot Order).
 
 **VirtIO disk and network drivers during Windows installation.**
-The Windows installer does not include VirtIO drivers. If you select VirtIO-SCSI as the disk bus, the installer will not see the disk. Either:
-- Switch the disk bus to **SATA** for the installation, then change it to VirtIO-SCSI after installing the drivers; or
-- Attach the VirtIO driver ISO as a second CD-ROM before starting the install, and load the drivers from there when the installer asks where to install Windows.
+The Windows installer does not include VirtIO drivers. ProxMigrate detects when a Windows OS type is selected and automatically uses **SATA** as the disk bus so the installer can see the disk. After the OS is installed, install the [VirtIO driver package](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win-gt-x64.msi) inside the guest to get VirtIO network and storage drivers, then you can switch the disk bus to VirtIO-SCSI in the VM hardware settings for better performance.
 
 ## Replacing the TLS Certificate
 

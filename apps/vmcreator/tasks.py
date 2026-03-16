@@ -186,6 +186,14 @@ def run_create_pipeline(self, job_id):
         storage_pool = vm_config.get("storage_pool", config.default_storage)
         disk_bus = vm_config.get("disk_bus", "scsi")
         disk_cache = vm_config.get("disk_cache", "none")
+
+        # Windows installer has no VirtIO drivers — force SATA so the disk
+        # is visible during installation. User can switch to VirtIO-SCSI
+        # after installing the VirtIO driver package inside the guest.
+        os_type = vm_config.get("os_type", "l26")
+        if os_type.startswith("win") and disk_bus == "scsi":
+            disk_bus = "sata"
+            logger.info("VmCreateJob %d: Windows OS selected, overriding disk bus to SATA", job.pk)
         primary_disk_size = max(1, int(vm_config.get("primary_disk_size", 50)))
 
         with config.get_ssh_client() as ssh:
