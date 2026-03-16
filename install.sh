@@ -75,94 +75,153 @@ if [[ "${EUID}" -ne 0 ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# OS detection
+# Package manager detection
 # ---------------------------------------------------------------------------
 
-echo "==> Detecting operating system..."
+echo "==> Detecting package manager..."
 
-if [[ ! -f /etc/os-release ]]; then
-    echo "ERROR: /etc/os-release not found. Cannot detect OS." >&2
+PKG_MANAGER=""
+if command -v apt-get &>/dev/null; then
+    PKG_MANAGER="apt"
+    echo "    Found: apt (Debian/Ubuntu family)"
+elif command -v dnf &>/dev/null; then
+    PKG_MANAGER="dnf"
+    echo "    Found: dnf (RHEL/Fedora family)"
+elif command -v yum &>/dev/null; then
+    PKG_MANAGER="yum"
+    echo "    Found: yum (older RHEL/CentOS family)"
+elif command -v zypper &>/dev/null; then
+    PKG_MANAGER="zypper"
+    echo "    Found: zypper (SUSE/openSUSE family)"
+else
+    echo ""
+    echo "ERROR: No supported package manager found (apt-get, dnf, yum, zypper)." >&2
+    echo ""
+    echo "ProxMigrate requires the following packages to be installed manually:"
+    echo "  - Python 3 with pip and venv"
+    echo "  - python3-dev (or python3-devel)"
+    echo "  - gcc"
+    echo "  - LDAP development headers (libldap-dev or openldap-devel)"
+    echo "  - SASL development headers (libsasl2-dev or cyrus-sasl-devel)"
+    echo "  - OpenSSL development headers (libssl-dev or openssl-devel)"
+    echo "  - nginx"
+    echo "  - redis"
+    echo "  - openssl, openssh-client (or openssh), rsync, wget"
+    echo ""
+    echo "After installing the above, re-run this script."
     exit 1
 fi
 
-# shellcheck source=/dev/null
-source /etc/os-release
+# ---------------------------------------------------------------------------
+# Distro-specific variables
+# ---------------------------------------------------------------------------
 
-OS_ID="${ID:-unknown}"
-OS_VERSION="${VERSION_ID:-unknown}"
-
-case "${OS_ID}" in
-    ubuntu)
-        case "${OS_VERSION}" in
-            22.04|24.04)
-                echo "    Detected: Ubuntu ${OS_VERSION} — supported."
-                ;;
-            *)
-                echo "WARNING: Ubuntu ${OS_VERSION} is not officially supported." >&2
-                echo "         Supported versions: 22.04, 24.04"
-                echo "         Proceeding anyway — things may not work correctly."
-                ;;
-        esac
-        ;;
-    debian)
-        case "${OS_VERSION}" in
-            12)
-                echo "    Detected: Debian 12 (Bookworm) — supported."
-                ;;
-            13)
-                echo "    Detected: Debian 13 (Trixie) — supported."
-                ;;
-            *)
-                echo "WARNING: Debian ${OS_VERSION} is not officially supported." >&2
-                echo "         Supported versions: 12 (Bookworm), 13 (Trixie)"
-                echo "         Proceeding anyway — things may not work correctly."
-                ;;
-        esac
-        ;;
-    *)
-        echo "ERROR: Unsupported OS '${OS_ID}'. ProxMigrate supports Ubuntu 22.04/24.04 and Debian 12/13." >&2
-        exit 1
-        ;;
-esac
+if [[ "${PKG_MANAGER}" == "apt" ]]; then
+    REDIS_SVC="redis-server"
+    NGINX_CONF_DIR="/etc/nginx/sites-available"
+    NGINX_ENABLED_DIR="/etc/nginx/sites-enabled"
+else
+    REDIS_SVC="redis"
+    NGINX_CONF_DIR="/etc/nginx/conf.d"
+    NGINX_ENABLED_DIR=""
+fi
 
 # ---------------------------------------------------------------------------
 # System packages
 # ---------------------------------------------------------------------------
 
 echo "==> Installing system packages..."
-apt-get update -qq
-PKGS=(
-    python3
-    python3-pip
-    python3-venv
-    python3-dev
-    gcc
-    libldap-dev
-    libsasl2-dev
-    libssl-dev
-    nginx
-    redis-server
-    openssl
-    openssh-client
-    rsync
-)
 
-# Detect if running on a Proxmox VE host.
-# If so, skip qemu-utils (pve-qemu-kvm provides qemu-img already)
-# and warn the user that they should ideally run ProxMigrate on a separate server.
-if [[ -f /usr/bin/pveversion ]]; then
-    echo ""
-    echo "  NOTE: Proxmox VE detected on this host."
-    echo "  ProxMigrate is designed to run on a SEPARATE server that connects to Proxmox"
-    echo "  via SSH and REST API. Installing here is supported but not recommended."
-    echo "  qemu-utils install skipped — pve-qemu-kvm already provides qemu-img."
-    echo ""
-    # pve-qemu-kvm provides qemu-img, no need to install qemu-utils
-else
-    PKGS+=(qemu-utils)
-fi
+case "${PKG_MANAGER}" in
+    apt)
+        apt-get update -qq
 
-apt-get install -y "${PKGS[@]}"
+        APT_PKGS=(
+            python3
+            python3-pip
+            python3-venv
+            python3-dev
+            gcc
+            libldap-dev
+            libsasl2-dev
+            libssl-dev
+            nginx
+            redis-server
+            openssl
+            openssh-client
+            rsync
+            wget
+        )
+
+        # qemu-utils is optional — disk conversion runs on Proxmox via SSH.
+        # We install it on apt-based systems (when not on Proxmox itself) as a bonus
+        # for local format detection.
+        if [[ -f /usr/bin/pveversion ]]; then
+            echo ""
+            echo "  NOTE: Proxmox VE detected on this host."
+            echo "  ProxMigrate is designed to run on a SEPARATE server that connects to Proxmox"
+            echo "  via SSH and REST API. Installing here is supported but not recommended."
+            echo ""
+        else
+            APT_PKGS+=(qemu-utils)
+        fi
+
+        apt-get install -y "${APT_PKGS[@]}" 2>/dev/null || true
+        ;;
+
+    dnf|yum)
+        if [[ -f /usr/bin/pveversion ]]; then
+            echo ""
+            echo "  NOTE: Proxmox VE detected on this host."
+            echo "  ProxMigrate is designed to run on a SEPARATE server that connects to Proxmox"
+            echo "  via SSH and REST API. Installing here is supported but not recommended."
+            echo ""
+        fi
+
+        "${PKG_MANAGER}" install -y epel-release 2>/dev/null || true
+        "${PKG_MANAGER}" install -y \
+            python3 \
+            python3-pip \
+            python3-devel \
+            gcc \
+            openldap-devel \
+            cyrus-sasl-devel \
+            openssl-devel \
+            nginx \
+            redis \
+            openssl \
+            openssh-clients \
+            rsync \
+            wget \
+            2>/dev/null || true
+        ;;
+
+    zypper)
+        if [[ -f /usr/bin/pveversion ]]; then
+            echo ""
+            echo "  NOTE: Proxmox VE detected on this host."
+            echo "  ProxMigrate is designed to run on a SEPARATE server that connects to Proxmox"
+            echo "  via SSH and REST API. Installing here is supported but not recommended."
+            echo ""
+        fi
+
+        zypper install -y \
+            python3 \
+            python3-pip \
+            python3-devel \
+            gcc \
+            openldap2-devel \
+            cyrus-sasl-devel \
+            libopenssl-devel \
+            nginx \
+            redis \
+            openssl \
+            openssh \
+            rsync \
+            wget \
+            2>/dev/null || true
+        ;;
+esac
 
 # ---------------------------------------------------------------------------
 # System user
@@ -210,7 +269,16 @@ fi
 
 echo "==> Installing Python dependencies..."
 "${PIP}" install --quiet --upgrade pip
-"${PIP}" install --quiet -r "${APP_HOME}/requirements.txt"
+
+# Air-gap support: if vendor/ directory is present and non-empty, install offline
+if [[ -d "${SCRIPT_DIR}/vendor" ]] && [[ -n "$(ls -A "${SCRIPT_DIR}/vendor/" 2>/dev/null)" ]]; then
+    echo "    Vendor directory detected — installing in offline mode."
+    "${PIP}" install --quiet --no-index \
+        --find-links "${SCRIPT_DIR}/vendor/" \
+        -r "${APP_HOME}/requirements.txt"
+else
+    "${PIP}" install --quiet -r "${APP_HOME}/requirements.txt"
+fi
 
 # ---------------------------------------------------------------------------
 # Directories
@@ -299,6 +367,12 @@ UPLOAD_ROOT=${UPLOAD_ROOT}
 FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
 CELERY_BROKER_URL=redis://127.0.0.1:6379/0
 CELERY_RESULT_BACKEND=redis://127.0.0.1:6379/0
+# UPLOAD_TEMP_DIR=
+# Where Django writes upload temp files during HTTP transfer.
+# /tmp is often a small RAM-backed tmpfs — if you import large disk images
+# (e.g. 15 GB qcow2) set this to a path on a disk with sufficient free space.
+# The directory must exist and be writable by the proxmigrate user.
+# Example: UPLOAD_TEMP_DIR=/data/proxmigrate/tmp
 EOF
     chmod 600 "${ENV_FILE}"
     chown "${APP_USER}:${APP_USER}" "${ENV_FILE}"
@@ -312,26 +386,56 @@ fi
 # ---------------------------------------------------------------------------
 
 echo "==> Configuring Nginx..."
-NGINX_AVAILABLE="/etc/nginx/sites-available/proxmigrate"
-NGINX_ENABLED="/etc/nginx/sites-enabled/proxmigrate"
 
-sed \
-    -e "s|{{ WEB_PORT }}|${PORT}|g" \
-    -e "s|{{ UPLOAD_ROOT }}|${UPLOAD_ROOT}|g" \
-    "${APP_HOME}/deploy/nginx.conf.template" \
-    > "${NGINX_AVAILABLE}"
+if [[ "${PKG_MANAGER}" == "apt" ]]; then
+    # apt-based: sites-available + sites-enabled symlink
+    NGINX_CONF_FILE="${NGINX_CONF_DIR}/proxmigrate"
 
-if [[ ! -L "${NGINX_ENABLED}" ]]; then
-    ln -s "${NGINX_AVAILABLE}" "${NGINX_ENABLED}"
-fi
+    sed \
+        -e "s|{{ WEB_PORT }}|${PORT}|g" \
+        -e "s|{{ UPLOAD_ROOT }}|${UPLOAD_ROOT}|g" \
+        "${APP_HOME}/deploy/nginx.conf.template" \
+        > "${NGINX_CONF_FILE}"
 
-# Remove default nginx site if it conflicts on port 80/443
-if [[ -L "/etc/nginx/sites-enabled/default" ]]; then
-    rm -f "/etc/nginx/sites-enabled/default"
-    echo "    Removed default nginx site."
+    if [[ ! -L "${NGINX_ENABLED_DIR}/proxmigrate" ]]; then
+        ln -s "${NGINX_CONF_FILE}" "${NGINX_ENABLED_DIR}/proxmigrate"
+    fi
+
+    # Remove default nginx site if it conflicts on port 80/443
+    if [[ -L "${NGINX_ENABLED_DIR}/default" ]]; then
+        rm -f "${NGINX_ENABLED_DIR}/default"
+        echo "    Removed default nginx site."
+    fi
+else
+    # dnf/yum/zypper: write directly to conf.d (no symlink needed)
+    NGINX_CONF_FILE="${NGINX_CONF_DIR}/proxmigrate.conf"
+
+    sed \
+        -e "s|{{ WEB_PORT }}|${PORT}|g" \
+        -e "s|{{ UPLOAD_ROOT }}|${UPLOAD_ROOT}|g" \
+        "${APP_HOME}/deploy/nginx.conf.template" \
+        > "${NGINX_CONF_FILE}"
 fi
 
 nginx -t 2>/dev/null && echo "    Nginx config valid."
+
+# Allow proxmigrate user to reload nginx without a password (needed for VM console WebSocket proxy)
+SUDOERS_FILE="/etc/sudoers.d/proxmigrate-nginx"
+cat > "${SUDOERS_FILE}" <<EOF
+${APP_USER} ALL=(ALL) NOPASSWD: /usr/sbin/nginx -s reload
+${APP_USER} ALL=(ALL) NOPASSWD: /usr/sbin/nginx -t
+${APP_USER} ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/nginx/sites-available/proxmigrate
+${APP_USER} ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/nginx/conf.d/proxmigrate.conf
+EOF
+chmod 440 "${SUDOERS_FILE}"
+echo "    Sudoers rule written: ${SUDOERS_FILE}"
+
+# Note for RHEL-based installs: SELinux may block nginx from proxying to gunicorn
+if [[ "${PKG_MANAGER}" =~ ^(dnf|yum)$ ]]; then
+    echo "    NOTE: If nginx fails to start on SELinux-enforcing systems, run:"
+    echo "    setsebool -P httpd_can_network_connect 1"
+    echo "    semanage port -a -t http_port_t -p tcp ${PORT} (if port is non-standard)"
+fi
 
 # ---------------------------------------------------------------------------
 # Systemd units
@@ -364,6 +468,61 @@ sudo -u "${APP_USER}" \
     DJANGO_SETTINGS_MODULE=proxmigrate.settings.production \
     "${PYTHON}" "${APP_HOME}/manage.py" collectstatic --noinput \
     --settings=proxmigrate.settings.production
+
+# ---------------------------------------------------------------------------
+# Frontend vendor assets (Bulma CSS + FontAwesome)
+# ---------------------------------------------------------------------------
+
+echo "==> Downloading frontend assets..."
+VENDOR_STATIC="${APP_HOME}/static/vendor"
+mkdir -p "${VENDOR_STATIC}/css" "${VENDOR_STATIC}/webfonts"
+
+# Bulma
+if [[ ! -f "${VENDOR_STATIC}/css/bulma.min.css" ]]; then
+    if wget -q --timeout=30 \
+        "https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" \
+        -O "${VENDOR_STATIC}/css/bulma.min.css" 2>/dev/null; then
+        echo "    Downloaded Bulma CSS."
+    else
+        echo "    WARNING: Could not download Bulma CSS (no internet?)"
+        echo "    For air-gapped installs: place bulma.min.css at ${VENDOR_STATIC}/css/"
+        # Write minimal placeholder so the app doesn't 404
+        echo "/* Bulma not downloaded - place bulma.min.css here */" \
+            > "${VENDOR_STATIC}/css/bulma.min.css"
+    fi
+fi
+
+# FontAwesome
+FA_VER="6.5.1"
+FA_BASE="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/${FA_VER}"
+if [[ ! -f "${VENDOR_STATIC}/css/all.min.css" ]]; then
+    if wget -q --timeout=30 "${FA_BASE}/css/all.min.css" \
+        -O "${VENDOR_STATIC}/css/all.min.css" 2>/dev/null; then
+        for font in fa-brands-400 fa-regular-400 fa-solid-900 fa-v4compatibility; do
+            wget -q --timeout=30 \
+                "${FA_BASE}/webfonts/${font}.woff2" \
+                -O "${VENDOR_STATIC}/webfonts/${font}.woff2" 2>/dev/null || true
+        done
+        # Fix CSS to reference local webfonts path
+        sed -i 's|../webfonts/|/static/vendor/webfonts/|g' \
+            "${VENDOR_STATIC}/css/all.min.css"
+        echo "    Downloaded FontAwesome."
+    else
+        echo "    WARNING: Could not download FontAwesome (no internet?)"
+        echo "    For air-gapped installs: place FA files at ${VENDOR_STATIC}/"
+        echo "/* FontAwesome not downloaded - place all.min.css here */" \
+            > "${VENDOR_STATIC}/css/all.min.css"
+    fi
+fi
+
+chown -R "${APP_USER}:${APP_USER}" "${VENDOR_STATIC}"
+
+# Re-run collectstatic to pick up vendor assets
+sudo -u "${APP_USER}" \
+    DJANGO_SETTINGS_MODULE=proxmigrate.settings.production \
+    "${PYTHON}" "${APP_HOME}/manage.py" collectstatic --noinput \
+    --settings=proxmigrate.settings.production \
+    2>&1 | tail -2
 
 # ---------------------------------------------------------------------------
 # Admin superuser
@@ -433,7 +592,7 @@ fi
 echo "==> Enabling and starting services..."
 systemctl daemon-reload
 
-for SVC in redis-server nginx proxmigrate-gunicorn proxmigrate-celery; do
+for SVC in "${REDIS_SVC}" nginx proxmigrate-gunicorn proxmigrate-celery; do
     systemctl enable "${SVC}" 2>/dev/null || true
     systemctl restart "${SVC}" 2>/dev/null || systemctl start "${SVC}" 2>/dev/null || true
     echo "    ${SVC}: $(systemctl is-active "${SVC}" 2>/dev/null || echo 'unknown')"

@@ -100,6 +100,28 @@ def _parse_nic(interface, raw_value):
     }
 
 
+_OSTYPE_LABELS = {
+    "other": "Other",
+    "wxp": "Windows XP",
+    "w2k": "Windows 2000",
+    "w2k3": "Windows 2003",
+    "w2k8": "Windows 2008",
+    "wvista": "Windows Vista",
+    "win7": "Windows 7",
+    "win8": "Windows 8 / 2012",
+    "win10": "Windows 10 / 2016 / 2019",
+    "win11": "Windows 11 / 2022",
+    "l24": "Linux 2.4",
+    "l26": "Linux 2.6 / 3.x / 4.x / 5.x+",
+    "solaris": "Solaris",
+}
+
+_BIOS_LABELS = {
+    "seabios": "SeaBIOS",
+    "ovmf": "OVMF (UEFI)",
+}
+
+
 def _build_vm(raw_config, vm_status, node, vmid):
     """Build a flat vm dict for the template from raw Proxmox config + status."""
     sockets = int(raw_config.get("sockets", 1))
@@ -138,12 +160,12 @@ def _build_vm(raw_config, vm_status, node, vmid):
         "uptime_human": _uptime_human(vm_status.get("uptime", 0)),
         # General
         "description": raw_config.get("description", ""),
-        "ostype": raw_config.get("ostype", ""),
+        "ostype": _OSTYPE_LABELS.get(raw_config.get("ostype", ""), raw_config.get("ostype", "")),
         "onboot": bool(raw_config.get("onboot", 0)),
         "protection": bool(raw_config.get("protection", 0)),
         "boot": raw_config.get("boot", ""),
         # Firmware
-        "bios": raw_config.get("bios", "seabios"),
+        "bios": _BIOS_LABELS.get(raw_config.get("bios", "seabios"), raw_config.get("bios", "SeaBIOS")),
         "efidisk0": raw_config.get("efidisk0", ""),
         "tpmstate0": raw_config.get("tpmstate0", ""),
         # CPU

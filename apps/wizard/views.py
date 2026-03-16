@@ -436,6 +436,167 @@ def step5_browse(request):
 
 
 @login_required
+def proxmox_settings(request):
+    """Edit Proxmox connection settings, API token, SSH key, and VM defaults."""
+    config = _get_or_create_config()
+
+    success_section = None
+    errors = {}
+
+    if request.method == "POST":
+        section = request.POST.get("section")
+
+        if section == "connection":
+            form = Step1Form(request.POST)
+            if form.is_valid():
+                config.host = form.cleaned_data["host"]
+                config.ssh_port = form.cleaned_data["ssh_port"]
+                config.api_port = form.cleaned_data["api_port"]
+                config.save()
+                success_section = "connection"
+            else:
+                errors["connection"] = form.errors
+
+        elif section == "token":
+            form = Step3Form(request.POST)
+            if form.is_valid():
+                config.api_token_id = form.cleaned_data["api_token_id"]
+                # Only update secret if a new value was provided
+                new_secret = form.cleaned_data["api_token_secret"].strip()
+                if new_secret:
+                    config.api_token_secret = new_secret
+                config.save()
+                success_section = "token"
+            else:
+                errors["token"] = form.errors
+
+        elif section == "ssh_recopy":
+            root_password = request.POST.get("root_password", "")
+            pub_key, pub_key_path = _read_public_key()
+            if not pub_key:
+                errors["ssh"] = {"key": ["No SSH public key found. Please regenerate the key first."]}
+            elif not root_password:
+                errors["ssh"] = {"root_password": ["Root password is required to copy the key."]}
+            else:
+                try:
+                    ssh = ProxmoxSSH(
+                        host=config.host,
+                        port=config.ssh_port,
+                        key_path=pub_key_path.replace(".pub", ""),
+                    )
+                    ssh.copy_public_key(
+                        host=config.host,
+                        port=config.ssh_port,
+                        username="root",
+                        password=root_password,
+                        public_key_content=pub_key,
+                    )
+                    root_password = None  # clear from memory
+                    success_section = "ssh"
+                except Exception as exc:
+                    errors["ssh"] = {"root_password": [f"Failed to copy key: {exc}"]}
+
+        elif section == "ssh_regenerate":
+            key_path = "/opt/proxmigrate/.ssh/id_rsa"
+            try:
+                import subprocess
+                subprocess.run(
+                    ["ssh-keygen", "-t", "rsa", "-b", "4096", "-N", "",
+                     "-C", f"proxmigrate@{socket.gethostname()}",
+                     "-f", key_path],
+                    check=True, capture_output=True,
+                )
+                # Fix permissions
+                os.chmod(key_path, 0o600)
+                os.chmod(key_path + ".pub", 0o644)
+                success_section = "ssh"
+            except Exception as exc:
+                errors["ssh"] = {"key": [f"Failed to regenerate key: {exc}"]}
+
+        elif section == "defaults":
+            data = request.POST
+            try:
+                config.default_node = data.get("default_node", "").strip()
+                config.default_storage = data.get("default_storage", "").strip()
+                config.default_bridge = data.get("default_bridge", "").strip()
+                config.proxmox_temp_dir = data.get("proxmox_temp_dir", "/var/tmp/proxmigrate/").strip()
+                config.default_cores = int(data.get("default_cores", 2))
+                config.default_memory_mb = int(data.get("default_memory_mb", 2048))
+                config.vmid_min = int(data.get("vmid_min", 100))
+                config.vmid_max = int(data.get("vmid_max", 999))
+                if config.vmid_min >= config.vmid_max:
+                    raise ValueError("VMID minimum must be less than VMID maximum.")
+                config.save()
+                success_section = "defaults"
+            except (ValueError, TypeError) as exc:
+                errors["defaults"] = {"__all__": [str(exc)]}
+
+        elif section == "server":
+            upload_temp = request.POST.get("upload_temp_dir", "").strip()
+            try:
+                from apps.wizard.models import apply_upload_temp_dir
+                config.upload_temp_dir = upload_temp
+                config.save(update_fields=["upload_temp_dir", "updated_at"])
+                apply_upload_temp_dir(upload_temp)
+                success_section = "server"
+            except Exception as exc:
+                errors["server"] = {"upload_temp_dir": [str(exc)]}
+
+        elif section == "rerun_wizard":
+            # Reset wizard state so the middleware forces the wizard flow again
+            config.is_configured = False
+            config.wizard_step = 1
+            config.save()
+            return redirect("/wizard/step/1/")
+
+    pub_key, _ = _read_public_key()
+
+    # Test API connectivity and fetch live Proxmox data for defaults dropdowns
+    api_ok = False
+    api_error = ""
+    nodes = []
+    storage_pools = []
+    networks = []
+
+    if config.host and config.api_token_id:
+        try:
+            api = config.get_api_client()
+            raw_nodes = api.get_nodes()
+            api_ok = True
+            nodes = [n["node"] for n in raw_nodes if "node" in n]
+
+            # Get storage and networks from the first available node
+            node_name = config.default_node or (nodes[0] if nodes else None)
+            if node_name:
+                try:
+                    raw_storage = api.get_storage(node_name)
+                    storage_pools = [s["storage"] for s in raw_storage if "storage" in s]
+                except Exception:
+                    pass
+                try:
+                    raw_nets = api.get_networks(node_name)
+                    networks = [n["iface"] for n in raw_nets
+                                if n.get("type") in ("bridge", "bond", "vlan") and "iface" in n]
+                except Exception:
+                    pass
+        except Exception as exc:
+            api_error = str(exc)
+
+    return render(request, "wizard/settings.html", {
+        "config": config,
+        "pub_key": pub_key,
+        "api_ok": api_ok,
+        "api_error": api_error,
+        "nodes": nodes,
+        "storage_pools": storage_pools,
+        "networks": networks,
+        "success_section": success_section,
+        "errors": errors,
+        "help_slug": "proxmox-settings",
+    })
+
+
+@login_required
 def step6(request):
     """Step 6: Summary and final confirmation."""
     config = _get_or_create_config()

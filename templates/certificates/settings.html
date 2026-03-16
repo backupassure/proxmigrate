@@ -4,45 +4,56 @@
 {% block help_slug %}settings-certificates{% endblock %}
 
 {% block content %}
-<div class="columns">
-  <div class="column is-7">
 
-    {# ===== Current Certificate ===== #}
+{% if messages %}
+  {% for message in messages %}
+    <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% elif message.tags == 'warning' %}is-warning{% else %}is-info{% endif %} is-light"
+         style="font-size:0.875rem;margin-bottom:1rem;border-radius:8px;">
+      <button class="delete" onclick="this.parentElement.remove()"></button>
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="columns">
+
+  {# ===== Left column: current cert info + pending CSR ===== #}
+  <div class="column is-5">
+
+    {# Current Certificate #}
     <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
       <div class="card-header">
         <i class="fas fa-certificate" style="color:#3273dc;"></i> Current TLS Certificate
       </div>
       <div class="card-body">
 
-        {% if cert_info %}
-          {# Expiry status #}
+        {% if cert_info and not cert_info.error %}
+          {# Expiry banner #}
           <div class="notification
-            {% if cert_days_remaining > 30 %}is-success is-light cert-expiry-good
-            {% elif cert_days_remaining > 0 %}is-warning is-light cert-expiry-warning
-            {% else %}is-danger is-light cert-expiry-danger
+            {% if cert_days_remaining > 30 %}is-success is-light
+            {% elif cert_days_remaining > 0 %}is-warning is-light
+            {% else %}is-danger is-light
             {% endif %}"
-            style="padding:0.75rem 1rem;margin-bottom:1.25rem;border-radius:8px;font-size:0.875rem;">
-
+            style="padding:0.6rem 0.9rem;margin-bottom:1.25rem;border-radius:6px;font-size:0.82rem;">
             {% if cert_days_remaining > 30 %}
               <i class="fas fa-check-circle" style="margin-right:0.4rem;"></i>
-              Certificate is valid for <strong>{{ cert_days_remaining }} more days</strong> (expires {{ cert_info.not_after|date:"N j, Y" }}).
+              Valid for <strong>{{ cert_days_remaining }} more days</strong> — expires {{ cert_info.not_after|date:"N j, Y" }}.
             {% elif cert_days_remaining > 0 %}
               <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
-              <strong>Certificate expires soon</strong> — only {{ cert_days_remaining }} days remaining. Consider replacing it.
+              <strong>Expires soon</strong> — {{ cert_days_remaining }} days remaining.
             {% else %}
               <i class="fas fa-times-circle" style="margin-right:0.4rem;"></i>
-              <strong>Certificate has expired!</strong> Users will see security warnings. Replace it immediately.
+              <strong>Certificate has expired!</strong> Replace it immediately.
             {% endif %}
           </div>
 
-          {# Certificate details #}
           <div class="cert-detail-row">
             <div class="cert-detail-label">Subject</div>
-            <div class="cert-detail-value">{{ cert_info.subject|default:"—" }}</div>
+            <div class="cert-detail-value" style="word-break:break-all;">{{ cert_info.subject|default:"—" }}</div>
           </div>
           <div class="cert-detail-row">
             <div class="cert-detail-label">Issuer</div>
-            <div class="cert-detail-value">{{ cert_info.issuer|default:"—" }}</div>
+            <div class="cert-detail-value" style="word-break:break-all;">{{ cert_info.issuer|default:"—" }}</div>
           </div>
           <div class="cert-detail-row">
             <div class="cert-detail-label">Valid From</div>
@@ -59,12 +70,12 @@
             </div>
           </div>
           <div class="cert-detail-row">
-            <div class="cert-detail-label">Serial Number</div>
-            <div class="cert-detail-value">{{ cert_info.serial|default:"—" }}</div>
+            <div class="cert-detail-label">Serial</div>
+            <div class="cert-detail-value" style="font-family:monospace;font-size:0.78rem;word-break:break-all;">{{ cert_info.serial|default:"—" }}</div>
           </div>
           <div class="cert-detail-row">
             <div class="cert-detail-label">Alt Names</div>
-            <div class="cert-detail-value">{{ cert_info.san|default:"—" }}</div>
+            <div class="cert-detail-value" style="font-size:0.82rem;word-break:break-all;">{{ cert_info.san|default:"—" }}</div>
           </div>
           <div class="cert-detail-row">
             <div class="cert-detail-label">Type</div>
@@ -77,123 +88,407 @@
             </div>
           </div>
 
+        {% elif cert_info.error %}
+          <div class="info-box is-warning">
+            <div class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div>Could not parse certificate: {{ cert_info.error }}</div>
+          </div>
         {% else %}
           <div class="info-box is-warning">
             <div class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
-            <div>No TLS certificate information available. ProxMigrate may be using a self-signed certificate generated at install time.</div>
+            <div>No certificate found. Install one using the options on the right.</div>
           </div>
         {% endif %}
 
+        {# File paths #}
+        <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid #f0f0f0;">
+          <div style="font-size:0.75rem;color:#7a7a7a;margin-bottom:0.3rem;">Certificate location:</div>
+          <code style="font-size:0.75rem;color:#4a4a4a;">{{ cert_file }}</code>
+          <div style="font-size:0.75rem;color:#7a7a7a;margin-top:0.5rem;margin-bottom:0.3rem;">Private key location:</div>
+          <code style="font-size:0.75rem;color:#4a4a4a;">{{ key_file }}</code>
+        </div>
+
+      </div>
+    </div>
+
+    {# Pending CSR #}
+    {% if pending_csr %}
+    <div class="proxmigrate-card" style="margin-bottom:1.5rem;border-left:4px solid #3273dc;border-radius:0 10px 10px 0;">
+      <div class="card-header">
+        <i class="fas fa-file-alt" style="color:#3273dc;"></i> Pending CSR
+      </div>
+      <div class="card-body">
+        <div class="info-box" style="margin-bottom:1rem;">
+          <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+          <div style="font-size:0.82rem;">
+            A CSR was generated and the private key is stored on this server. Submit the CSR below to your Certificate Authority, then upload the signed certificate using the <strong>Upload Signed Cert</strong> tab.
+          </div>
+        </div>
+        <textarea class="textarea is-small" style="font-family:monospace;font-size:0.72rem;resize:vertical;height:12rem;" readonly>{{ pending_csr }}</textarea>
+        <p style="font-size:0.75rem;color:#7a7a7a;margin-top:0.4rem;">Copy this CSR and submit it to your Certificate Authority.</p>
+      </div>
+    </div>
+    {% endif %}
+
+    {# HTTPS Port #}
+    <div class="proxmigrate-card">
+      <div class="card-header">
+        <i class="fas fa-network-wired" style="color:#7a7a7a;"></i> HTTPS Port
+      </div>
+      <div class="card-body">
+        <p style="font-size:0.82rem;color:#4a4a4a;margin-bottom:1rem;">
+          ProxMigrate is currently accessible on port <strong>{{ current_port }}</strong>.
+          Changing this will update the nginx configuration and redirect your browser to the new port.
+        </p>
+        <form method="post" action="{% url 'cert_change_port' %}">
+          {% csrf_token %}
+          <div class="field has-addons">
+            <div class="control is-expanded">
+              <input class="input" type="number" name="web_port"
+                     value="{{ current_port }}" min="1" max="65535"
+                     style="font-family:monospace;font-weight:600;">
+            </div>
+            <div class="control">
+              <button type="submit" class="button is-info" style="font-weight:600;">
+                <span class="icon"><i class="fas fa-save"></i></span>
+                <span>Apply</span>
+              </button>
+            </div>
+          </div>
+          <p class="field-hint">
+            <i class="fas fa-exclamation-triangle" style="color:#f59e0b;margin-right:0.3rem;"></i>
+            Your browser will redirect to the new URL after the change is applied.
+          </p>
+        </form>
       </div>
     </div>
 
   </div>
 
-  <div class="column is-5">
+  {# ===== Right column: certificate operations ===== #}
+  <div class="column is-7">
 
-    {# ===== Replace Certificate ===== #}
-    <div class="proxmigrate-card">
-      <div class="card-header">
-        <i class="fas fa-exchange-alt" style="color:#f59e0b;"></i> Replace Certificate
-      </div>
-      <div class="card-body">
+    {# Tabs #}
+    <div class="tabs is-boxed" id="cert-tabs" style="margin-bottom:0;border-bottom:none;">
+      <ul>
+        <li class="is-active" data-tab="generate-csr">
+          <a onclick="switchCertTab('generate-csr')">
+            <span class="icon is-small"><i class="fas fa-file-signature"></i></span>
+            <span>Generate CSR</span>
+          </a>
+        </li>
+        <li data-tab="upload-signed">
+          <a onclick="switchCertTab('upload-signed')">
+            <span class="icon is-small"><i class="fas fa-upload"></i></span>
+            <span>Upload Signed Cert</span>
+            {% if pending_csr %}<span class="tag is-info is-light" style="margin-left:0.4rem;font-size:0.65rem;">Pending</span>{% endif %}
+          </a>
+        </li>
+        <li data-tab="upload-own">
+          <a onclick="switchCertTab('upload-own')">
+            <span class="icon is-small"><i class="fas fa-key"></i></span>
+            <span>Upload Cert + Key</span>
+          </a>
+        </li>
+        <li data-tab="self-signed">
+          <a onclick="switchCertTab('self-signed')">
+            <span class="icon is-small"><i class="fas fa-magic"></i></span>
+            <span>Self-Signed</span>
+          </a>
+        </li>
+      </ul>
+    </div>
 
-        <div class="info-box" style="margin-bottom:1.5rem;">
-          <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
-          <div style="font-size:0.82rem;">
-            Upload your own certificate and private key. The files must be in <strong>PEM format</strong>.
-            ProxMigrate will restart Nginx after the certificate is installed.
-          </div>
+    {# ===== Tab: Generate CSR ===== #}
+    <div class="tab-pane is-active" id="tab-generate-csr">
+      <div class="proxmigrate-card" style="border-radius:0 10px 10px 10px;">
+        <div class="card-header">
+          <i class="fas fa-file-signature" style="color:#3273dc;"></i> Generate a Certificate Signing Request
         </div>
+        <div class="card-body">
 
-        {% if messages %}
-          {% for message in messages %}
-            <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% else %}is-warning{% endif %} is-light" style="font-size:0.875rem;margin-bottom:1rem;">
-              <button class="delete" onclick="this.parentElement.remove()"></button>
-              {{ message }}
+          <div class="info-box" style="margin-bottom:1.25rem;">
+            <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+            <div style="font-size:0.82rem;">
+              ProxMigrate will generate an RSA 2048-bit private key and CSR. The private key stays on this server.
+              Submit the CSR to your Certificate Authority, then upload the signed certificate using the <strong>Upload Signed Cert</strong> tab.
             </div>
-          {% endfor %}
-        {% endif %}
-
-        <form method="post" action="{% url 'cert_upload' %}" enctype="multipart/form-data">
-          {% csrf_token %}
-
-          <div class="field" style="margin-bottom:1.25rem;">
-            <label class="label" style="font-size:0.875rem;font-weight:600;">
-              Certificate File (.pem / .crt)
-            </label>
-            <div class="control">
-              <div class="file has-name is-fullwidth">
-                <label class="file-label">
-                  <input class="file-input" type="file" name="cert_file"
-                    accept=".pem,.crt,.cer"
-                    onchange="this.nextElementSibling.querySelector('.file-name').textContent = this.files[0].name">
-                  <span class="file-cta">
-                    <span class="file-icon"><i class="fas fa-upload"></i></span>
-                    <span class="file-label">Choose file</span>
-                  </span>
-                  <span class="file-name">No file selected</span>
-                </label>
-              </div>
-            </div>
-            <p class="field-hint">Must contain the full certificate chain (server cert + intermediates).</p>
           </div>
 
-          <div class="field" style="margin-bottom:1.5rem;">
-            <label class="label" style="font-size:0.875rem;font-weight:600;">
-              Private Key File (.pem / .key)
-            </label>
-            <div class="control">
-              <div class="file has-name is-fullwidth">
-                <label class="file-label">
-                  <input class="file-input" type="file" name="key_file"
-                    accept=".pem,.key"
-                    onchange="this.nextElementSibling.querySelector('.file-name').textContent = this.files[0].name">
-                  <span class="file-cta">
-                    <span class="file-icon"><i class="fas fa-key"></i></span>
-                    <span class="file-label">Choose file</span>
-                  </span>
-                  <span class="file-name">No file selected</span>
-                </label>
-              </div>
-            </div>
-            <p class="field-hint">RSA or ECDSA private key. Must not be password-protected.</p>
-          </div>
-
+          {% if has_csr_key %}
           <div class="info-box is-warning" style="margin-bottom:1.25rem;">
             <div class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
-            <div style="font-size:0.8rem;">
-              <strong>Warning:</strong> Uploading a new certificate will restart the web server.
-              You may need to reload the page after a few seconds.
+            <div style="font-size:0.82rem;">
+              A pending CSR key already exists on this server. Generating a new CSR will replace it, and you will need to re-submit the new CSR to your CA.
+            </div>
+          </div>
+          {% endif %}
+
+          <form method="post" action="{% url 'cert_generate_csr' %}">
+            {% csrf_token %}
+
+            <div class="columns">
+              <div class="column">
+                <div class="field">
+                  <label class="label form-label">Common Name (CN) <span style="color:#f14668;">*</span></label>
+                  <div class="control">
+                    <input class="input" type="text" name="cn" placeholder="proxmigrate.example.com"
+                           required maxlength="64" style="font-family:monospace;">
+                  </div>
+                  <p class="field-hint">Hostname or IP used to reach ProxMigrate.</p>
+                </div>
+              </div>
+              <div class="column">
+                <div class="field">
+                  <label class="label form-label">Organization (O)</label>
+                  <div class="control">
+                    <input class="input" type="text" name="org" placeholder="Acme Corp" maxlength="64">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="field" style="max-width:8rem;margin-bottom:1.25rem;">
+              <label class="label form-label">Country (C)</label>
+              <div class="control">
+                <input class="input" type="text" name="country" placeholder="US" maxlength="2"
+                       style="font-family:monospace;text-transform:uppercase;">
+              </div>
+              <p class="field-hint">2-letter ISO code.</p>
+            </div>
+
+            <hr style="margin:1rem 0;border:none;border-top:1px solid #f0f0f0;">
+            <div style="font-size:0.85rem;font-weight:600;color:#1a1a2e;margin-bottom:0.75rem;">
+              Subject Alternative Names (SANs)
+            </div>
+
+            <div class="columns">
+              <div class="column">
+                <div class="field">
+                  <label class="label form-label">DNS SANs</label>
+                  <div class="control">
+                    <textarea class="textarea is-small" name="dns_sans" rows="3"
+                      placeholder="proxmigrate.example.com&#10;pm.internal.local"
+                      style="font-family:monospace;font-size:0.82rem;resize:vertical;"></textarea>
+                  </div>
+                  <p class="field-hint">One hostname per line (or comma-separated). The CN is added automatically.</p>
+                </div>
+              </div>
+              <div class="column">
+                <div class="field">
+                  <label class="label form-label">IP SANs</label>
+                  <div class="control">
+                    <textarea class="textarea is-small" name="ip_sans" rows="3"
+                      placeholder="192.168.1.10&#10;10.0.0.5"
+                      style="font-family:monospace;font-size:0.82rem;resize:vertical;"></textarea>
+                  </div>
+                  <p class="field-hint">One IP address per line (or comma-separated).</p>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="button is-primary is-fullwidth" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-file-signature"></i></span>
+              <span>Generate CSR</span>
+            </button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+    {# ===== Tab: Upload Signed Cert ===== #}
+    <div class="tab-pane" id="tab-upload-signed" style="display:none;">
+      <div class="proxmigrate-card" style="border-radius:0 10px 10px 10px;">
+        <div class="card-header">
+          <i class="fas fa-upload" style="color:#3273dc;"></i> Upload CA-Signed Certificate
+        </div>
+        <div class="card-body">
+
+          {% if not has_csr_key %}
+          <div class="info-box is-warning" style="margin-bottom:1.25rem;">
+            <div class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div style="font-size:0.82rem;">
+              No pending CSR private key found on this server. Generate a CSR first using the <strong>Generate CSR</strong> tab, then upload the signed certificate here.
+            </div>
+          </div>
+          {% else %}
+          <div class="info-box is-success" style="margin-bottom:1.25rem;">
+            <div class="info-box-icon"><i class="fas fa-check-circle"></i></div>
+            <div style="font-size:0.82rem;">
+              A CSR private key is stored on this server. Upload the signed certificate from your CA and ProxMigrate will verify it matches the key before installing.
+            </div>
+          </div>
+          {% endif %}
+
+          <form method="post" action="{% url 'cert_upload_signed' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="field" style="margin-bottom:1.5rem;">
+              <label class="label form-label">Signed Certificate (.pem / .crt)</label>
+              <div class="control">
+                <div class="file has-name is-fullwidth">
+                  <label class="file-label">
+                    <input class="file-input" type="file" name="signed_cert"
+                      accept=".pem,.crt,.cer"
+                      onchange="this.closest('.file').querySelector('.file-name').textContent = this.files[0].name">
+                    <span class="file-cta">
+                      <span class="file-icon"><i class="fas fa-upload"></i></span>
+                      <span class="file-label">Choose file</span>
+                    </span>
+                    <span class="file-name">No file selected</span>
+                  </label>
+                </div>
+              </div>
+              <p class="field-hint">Include the full chain (server cert + intermediates) in PEM format.</p>
+            </div>
+
+            <div class="info-box is-warning" style="margin-bottom:1.25rem;">
+              <div class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
+              <div style="font-size:0.8rem;">
+                Installing the certificate will reload nginx. You may need to refresh the page after a few seconds.
+              </div>
+            </div>
+
+            <button type="submit" class="button is-primary is-fullwidth" style="font-weight:600;"
+              {% if not has_csr_key %}disabled{% endif %}>
+              <span class="icon"><i class="fas fa-certificate"></i></span>
+              <span>Install Signed Certificate</span>
+            </button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+    {# ===== Tab: Upload Cert + Key ===== #}
+    <div class="tab-pane" id="tab-upload-own" style="display:none;">
+      <div class="proxmigrate-card" style="border-radius:0 10px 10px 10px;">
+        <div class="card-header">
+          <i class="fas fa-key" style="color:#3273dc;"></i> Upload Certificate &amp; Private Key
+        </div>
+        <div class="card-body">
+
+          <div class="info-box" style="margin-bottom:1.25rem;">
+            <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+            <div style="font-size:0.82rem;">
+              Upload a certificate and private key you manage yourself. Both files must be in <strong>PEM format</strong> and the key must not be password-protected. ProxMigrate will verify the cert and key match before installing.
             </div>
           </div>
 
-          <button type="submit" class="button is-warning is-fullwidth" style="font-weight:600;">
-            <span class="icon"><i class="fas fa-certificate"></i></span>
-            <span>Install Certificate</span>
-          </button>
-        </form>
-
-        {# Generate self-signed cert #}
-        <hr style="margin:1.5rem 0;border:none;border-top:1px solid #f0f0f0;">
-
-        <div style="text-align:center;">
-          <p style="font-size:0.82rem;color:#7a7a7a;margin-bottom:0.75rem;">
-            Or generate a new self-signed certificate:
-          </p>
-          <form method="post" action="{% url 'cert_generate' %}">
+          <form method="post" action="{% url 'cert_upload' %}" enctype="multipart/form-data">
             {% csrf_token %}
-            <button type="submit" class="button is-light is-small" style="font-weight:500;">
-              <span class="icon is-small"><i class="fas fa-magic"></i></span>
-              <span>Generate Self-Signed Certificate</span>
+
+            <div class="field" style="margin-bottom:1.25rem;">
+              <label class="label form-label">Certificate File (.pem / .crt)</label>
+              <div class="control">
+                <div class="file has-name is-fullwidth">
+                  <label class="file-label">
+                    <input class="file-input" type="file" name="cert_file"
+                      accept=".pem,.crt,.cer"
+                      onchange="this.closest('.file').querySelector('.file-name').textContent = this.files[0].name">
+                    <span class="file-cta">
+                      <span class="file-icon"><i class="fas fa-upload"></i></span>
+                      <span class="file-label">Choose file</span>
+                    </span>
+                    <span class="file-name">No file selected</span>
+                  </label>
+                </div>
+              </div>
+              <p class="field-hint">Include the full chain (server cert + intermediates).</p>
+            </div>
+
+            <div class="field" style="margin-bottom:1.5rem;">
+              <label class="label form-label">Private Key File (.pem / .key)</label>
+              <div class="control">
+                <div class="file has-name is-fullwidth">
+                  <label class="file-label">
+                    <input class="file-input" type="file" name="key_file"
+                      accept=".pem,.key"
+                      onchange="this.closest('.file').querySelector('.file-name').textContent = this.files[0].name">
+                    <span class="file-cta">
+                      <span class="file-icon"><i class="fas fa-key"></i></span>
+                      <span class="file-label">Choose file</span>
+                    </span>
+                    <span class="file-name">No file selected</span>
+                  </label>
+                </div>
+              </div>
+              <p class="field-hint">RSA or ECDSA private key. Must not be password-protected.</p>
+            </div>
+
+            <div class="info-box is-warning" style="margin-bottom:1.25rem;">
+              <div class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
+              <div style="font-size:0.8rem;">
+                Installing the certificate will reload nginx. You may need to refresh the page after a few seconds.
+              </div>
+            </div>
+
+            <button type="submit" class="button is-warning is-fullwidth" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-certificate"></i></span>
+              <span>Install Certificate</span>
             </button>
           </form>
-        </div>
 
+        </div>
+      </div>
+    </div>
+
+    {# ===== Tab: Self-Signed ===== #}
+    <div class="tab-pane" id="tab-self-signed" style="display:none;">
+      <div class="proxmigrate-card" style="border-radius:0 10px 10px 10px;">
+        <div class="card-header">
+          <i class="fas fa-magic" style="color:#7a7a7a;"></i> Generate Self-Signed Certificate
+        </div>
+        <div class="card-body">
+
+          <div class="info-box" style="margin-bottom:1.25rem;">
+            <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+            <div style="font-size:0.82rem;">
+              Generates a new RSA 2048-bit self-signed certificate valid for <strong>10 years</strong>.
+              This is suitable for internal use where you trust the server directly. Browsers will show a security warning.
+            </div>
+          </div>
+
+          <div class="info-box is-warning" style="margin-bottom:1.5rem;">
+            <div class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div style="font-size:0.82rem;">
+              This will replace the current certificate immediately. If you have a CA-signed certificate installed, this will overwrite it.
+            </div>
+          </div>
+
+          <form method="post" action="{% url 'cert_generate' %}">
+            {% csrf_token %}
+            <button type="submit" class="button is-light is-fullwidth" style="font-weight:600;"
+              onclick="return confirm('Replace the current certificate with a new self-signed certificate?')">
+              <span class="icon"><i class="fas fa-magic"></i></span>
+              <span>Generate New Self-Signed Certificate</span>
+            </button>
+          </form>
+
+        </div>
       </div>
     </div>
 
   </div>
 </div>
+
+<script>
+function switchCertTab(name) {
+  document.querySelectorAll('#cert-tabs li').forEach(li => {
+    li.classList.toggle('is-active', li.dataset.tab === name);
+  });
+  document.querySelectorAll('.tab-pane').forEach(pane => {
+    pane.style.display = pane.id === 'tab-' + name ? '' : 'none';
+  });
+}
+
+// Auto-switch to upload-signed if there is a pending CSR
+{% if pending_csr %}
+  document.addEventListener('DOMContentLoaded', function() {
+    switchCertTab('upload-signed');
+  });
+{% endif %}
+</script>
 
 {% endblock %}

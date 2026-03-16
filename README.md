@@ -135,20 +135,42 @@ ProxMigrate sets the boot order to `disk first, CD-ROM second`. On the first boo
 **VirtIO disk and network drivers during Windows installation.**
 The Windows installer does not include VirtIO drivers. ProxMigrate detects when a Windows OS type is selected and automatically uses **SATA** as the disk bus so the installer can see the disk. After the OS is installed, install the [VirtIO driver package](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win-gt-x64.msi) inside the guest to get VirtIO network and storage drivers, then you can switch the disk bus to VirtIO-SCSI in the VM hardware settings for better performance.
 
-## Replacing the TLS Certificate
+## TLS Certificate Management
 
-Place your certificate and key at:
+ProxMigrate includes a full certificate management UI at **Settings → Certificates**. Three workflows are supported:
+
+### Option 1 — Generate a CSR (recommended for CA-signed certs)
+
+1. Go to **Settings → Certificates → Generate CSR**.
+2. Fill in the Common Name (e.g. `proxmigrate.example.com`), optional Organization and Country, and any DNS or IP Subject Alternative Names.
+3. Click **Generate CSR** — ProxMigrate creates an RSA 2048 private key (stored on the server) and a CSR.
+4. Copy the CSR from the **Pending CSR** panel and submit it to your Certificate Authority.
+5. Once your CA returns the signed certificate, go to **Upload Signed Cert** and upload it. ProxMigrate verifies the cert matches the stored key before installing.
+
+### Option 2 — Upload a certificate and private key
+
+If you already have a cert/key pair, go to **Settings → Certificates → Upload Cert + Key** and upload both files (PEM format, unencrypted private key).
+
+### Option 3 — Generate a self-signed certificate
+
+Go to **Settings → Certificates → Self-Signed** and click **Generate New Self-Signed Certificate**. This creates a 10-year self-signed cert. Browsers will show a security warning.
+
+### Replacing manually
+
+You can also place files directly and reload nginx:
 
 ```
 /opt/proxmigrate/certs/proxmigrate.crt
 /opt/proxmigrate/certs/proxmigrate.key
 ```
 
-Then reload nginx:
-
 ```bash
 sudo nginx -s reload
 ```
+
+### Changing the HTTPS port
+
+The default port is `8443`. To change it after install, go to **Settings → Certificates** and use the **HTTPS Port** card. ProxMigrate will update the nginx configuration, validate it, and redirect your browser to the new port automatically.
 
 ## Services
 
