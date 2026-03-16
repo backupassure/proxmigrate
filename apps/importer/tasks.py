@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import shlex
 import uuid
 
@@ -234,12 +235,36 @@ def _create_vm_and_import(job, config, remote_qcow2_path, job_id):
         )
         logger.info("ImportJob %d: importdisk output: %s", job_id, import_output[:500])
 
+        # Parse the actual disk reference from importdisk output.
+        # Output format: "Successfully imported disk as 'unused0:local-lvm:vm-100-disk-0'"
+        # We need the part after "unused0:" to use in qm set.
+        disk_ref = None
+        match = re.search(r"unused\d+:(\S+)", import_output)
+        if match:
+            disk_ref = match.group(1).strip("'\"")
+            logger.info("ImportJob %d: parsed disk_ref from importdisk: %s", job_id, disk_ref)
+
+        if not disk_ref:
+            # Fallback: query VM config for the unused disk Proxmox created
+            config_out, _, _ = ssh.run(["qm", "config", str(vmid)])
+            for line in config_out.splitlines():
+                if line.startswith("unused"):
+                    disk_ref = line.split(":", 1)[1].strip()
+                    logger.info("ImportJob %d: got disk_ref from qm config: %s", job_id, disk_ref)
+                    break
+
+        if not disk_ref:
+            # Last-resort fallback (directory-type storage naming convention)
+            disk_ref = f"{storage_pool}:vm-{vmid}-disk-0"
+            logger.warning("ImportJob %d: could not parse disk_ref, using fallback: %s",
+                           job_id, disk_ref)
+
     # ── 6. CONFIGURING ───────────────────────────────────────────────────────
     job.set_stage(ImportJob.STAGE_CONFIGURING, "Configuring VM disk and options...")
     disk_bus = vm_config.get("disk_bus", "scsi")
     disk_cache = vm_config.get("disk_cache", "none")
 
-    disk_options = f"{storage_pool}:vm-{vmid}-disk-0,cache={disk_cache}"
+    disk_options = f"{disk_ref},cache={disk_cache}"
     if vm_config.get("disk_iothread") and disk_bus == "scsi":
         disk_options += ",iothread=1"
     if vm_config.get("disk_discard"):
