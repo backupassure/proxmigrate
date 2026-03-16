@@ -95,7 +95,26 @@ The wizard walks through:
 2. **API token** — create a token in Proxmox (`Datacenter → Permissions → API Tokens`) with `VM.Allocate`, `VM.Console`, `Datastore.AllocateSpace`, and `Sys.Audit` privileges
 3. **SSH key** — ProxMigrate generates a key pair and copies the public key to Proxmox for `qm importdisk` operations
 4. **Environment discovery** — nodes, storage pools, networks, and existing VMIDs
-5. **Defaults** — default node, storage, bridge, CPU, memory, and VMID range
+5. **Defaults** — default node, storage, bridge, CPU, memory, VMID range, and VirtIO Windows Drivers ISO
+
+## Windows VMs and VirtIO Drivers
+
+Windows requires VirtIO drivers to use Proxmox's paravirtual SCSI controller and network adapter at full performance. ProxMigrate has built-in support for automatically attaching the driver disc to any Windows VM.
+
+### Setting up the VirtIO ISO
+
+1. Download the latest `virtio-win-*.iso` from the **[Fedora virtio-win archive](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/?C=M;O=D)** (sorted newest first).
+2. Upload it to an ISO-capable storage pool on your Proxmox host (e.g. `data`).
+3. In ProxMigrate go to **Proxmox Settings → VM Defaults** and click **Scan** next to the VirtIO Windows Drivers ISO field. It will auto-detect the ISO and fill in the storage reference (e.g. `data:iso/virtio-win-0.1.285.iso`). Save.
+
+### How it works
+
+Once configured, any time you create or import a Windows VM (OS type = win*), the configure form shows an **"Attach VirtIO Windows Drivers ISO as second CD-ROM"** checkbox (pre-checked). When ticked:
+
+- **New VM from ISO** — the driver disc is attached as `ide3`; the Windows install ISO stays on `ide2`. After Windows installs, open the driver disc in Explorer and run the relevant installers.
+- **Imported disk image** — the driver disc is attached as `ide2`. Boot the VM and install drivers from the Proxmox console.
+
+When a new VirtIO ISO version is released, upload the new ISO to Proxmox, update the path in **Proxmox Settings → VM Defaults**, and all subsequent Windows VMs will use it. No code change needed.
 
 ## Known Gotchas
 
@@ -119,7 +138,7 @@ The EFI disk stores NVRAM boot entries between reboots. Without it, OVMF re-scan
 Tick all three options in the Firmware & Boot section. The "Enroll Secure Boot Keys" option pre-loads the Microsoft keys so Windows 11 passes Secure Boot validation without needing to enroll them manually in the UEFI shell.
 
 **VirtIO drivers are not included in Windows images.**
-If you import a Windows disk image and the VM boots but has no network or the disk is very slow, the VirtIO drivers are missing. Download the [VirtIO driver ISO](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso) from the Fedora project, upload it to Proxmox ISO storage, and attach it as a second CD-ROM in the VM hardware settings. Install the drivers from inside the guest, then remove the CD-ROM.
+If you import a Windows disk image and the VM boots but has no network or the disk is very slow, the VirtIO drivers are missing. See the [Windows VMs and VirtIO Drivers](#windows-vms-and-virtio-drivers) section above — ProxMigrate can attach the driver disc automatically. Alternatively, download the ISO from the [Fedora virtio-win archive](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/?C=M;O=D) and attach it manually in Proxmox.
 
 **OVA files — single-disk only.**
 OVA import extracts the first VMDK found inside the archive. Multi-disk OVAs (multiple `.vmdk` files) will only import the first disk. Attach additional disks manually in Proxmox after import.
@@ -133,7 +152,7 @@ In Proxmox go to Datacenter → Storage → select the pool → Edit → Content
 ProxMigrate sets the boot order to `disk first, CD-ROM second`. On the first boot the disk is blank so the firmware falls through to the ISO and the installer runs. Once the OS is installed the disk becomes bootable and takes priority automatically — the VM boots from disk on every subsequent start without any manual change. If you ever need to reinstall, move the CD-ROM above the disk in Proxmox (VM → Options → Boot Order).
 
 **VirtIO disk and network drivers during Windows installation.**
-The Windows installer does not include VirtIO drivers. ProxMigrate detects when a Windows OS type is selected and automatically uses **SATA** as the disk bus so the installer can see the disk. After the OS is installed, install the [VirtIO driver package](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win-gt-x64.msi) inside the guest to get VirtIO network and storage drivers, then you can switch the disk bus to VirtIO-SCSI in the VM hardware settings for better performance.
+The Windows installer does not include VirtIO drivers. ProxMigrate detects when a Windows OS type is selected and automatically uses **SATA** as the disk bus so the installer can see the disk. If the VirtIO ISO is configured (see [Windows VMs and VirtIO Drivers](#windows-vms-and-virtio-drivers)), ProxMigrate attaches it automatically as a second CD-ROM — open it from inside the installer or after first boot to install the drivers. Download the latest ISO from the [Fedora virtio-win archive](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/?C=M;O=D).
 
 ## TLS Certificate Management
 
