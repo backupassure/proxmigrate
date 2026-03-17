@@ -292,6 +292,7 @@ class VMConfigForm(forms.Form):
         required=False,
         label="Enable VM Protection (prevents accidental deletion)",
     )
+    start_after_import = forms.BooleanField(required=False)
     virtio_iso_ref = forms.CharField(required=False, max_length=500)
 
     def __init__(

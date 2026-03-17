@@ -110,6 +110,11 @@
                 &nbsp;Start on boot
               </label>
               &nbsp;&nbsp;
+              <label class="checkbox">
+                <input type="checkbox" name="start_after_import" {% if form.start_after_import.value %}checked{% endif %}>
+                &nbsp;Start VM after import
+              </label>
+              &nbsp;&nbsp;
               <label class="checkbox" title="Protects the VM from accidental deletion in Proxmox. Must be disabled before the VM can be deleted.">
                 <input type="checkbox" name="protection" {% if form.protection.value %}checked{% endif %}>
                 &nbsp;Protection
@@ -682,7 +687,7 @@
   }
 
   document.getElementById('btn-add-disk').addEventListener('click', addExtraDisk);
-  document.querySelector('form').addEventListener('submit', serializeExtraDisks);
+  document.getElementById('configure-form').addEventListener('submit', serializeExtraDisks);
 
   // Show/hide VirtIO ISO picker based on OS type; trigger HTMX load on first reveal
   let virtioIsoLoaded = false;
