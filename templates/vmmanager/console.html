@@ -399,17 +399,39 @@
     // Normalise line endings so we don't send Enter twice for \r\n
     const text = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
+    // Characters that require Shift on a US keyboard — maps shifted char to base keysym
+    const SHIFT_MAP = {
+      '!':0x31, '@':0x32, '#':0x33, '$':0x34, '%':0x35,
+      '^':0x36, '&':0x37, '*':0x38, '(':0x39, ')':0x30,
+      '_':0x2d, '+':0x3d, '{':0x5b, '}':0x5d, '|':0x5c,
+      ':':0x3b, '"':0x27, '<':0x2c, '>':0x2e, '?':0x2f, '~':0x60,
+    };
+    const XK_Shift_L = 0xffe1;
+
     for (const char of text) {
       let keysym;
+      let needShift = false;
+
       if (char === '\n') {
         keysym = 0xff0d; // Return/Enter
       } else if (char === '\t') {
         keysym = 0xff09; // Tab
+      } else if (SHIFT_MAP[char] !== undefined) {
+        // Symbol that requires Shift — send base key + Shift
+        keysym = SHIFT_MAP[char];
+        needShift = true;
+      } else if (char >= 'A' && char <= 'Z') {
+        // Uppercase letter — send lowercase keysym + Shift
+        keysym = char.codePointAt(0) + 32;
+        needShift = true;
       } else {
         keysym = char.codePointAt(0);
       }
+
+      if (needShift) rfb.sendKey(XK_Shift_L, 'ShiftLeft', true);
       rfb.sendKey(keysym, null, true);
       rfb.sendKey(keysym, null, false);
+      if (needShift) rfb.sendKey(XK_Shift_L, 'ShiftLeft', false);
       // Small yield so we don't flood the WebSocket buffer
       await new Promise(r => setTimeout(r, 5));
     }
