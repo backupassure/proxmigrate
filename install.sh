@@ -134,6 +134,13 @@ echo "==> Installing system packages..."
 
 case "${PKG_MANAGER}" in
     apt)
+        # Remove CD-ROM apt source if present — common on fresh Debian installs
+        # where the installer adds the install media as a repository.
+        if grep -q '^deb cdrom:' /etc/apt/sources.list 2>/dev/null; then
+            sed -i 's|^deb cdrom:|# deb cdrom:|g' /etc/apt/sources.list
+            echo "    Disabled CD-ROM apt source in /etc/apt/sources.list"
+        fi
+
         apt-get update -qq
 
         APT_PKGS=(
