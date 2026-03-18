@@ -14,6 +14,7 @@ from apps.vmcreator.models import VmCreateJob
 from apps.vmcreator.stages import (
     CREATE_STAGES_BLANK,
     CREATE_STAGES_ISO,
+    CREATE_STAGES_ISO_PROXMOX,
     build_stages,
 )
 from apps.wizard.models import DiscoveredEnvironment, ProxmoxConfig
@@ -100,6 +101,15 @@ def create(request):
                 iso_filename = iso_file.name
                 logger.info("Saved ISO %s to %s", iso_filename, dest_path)
 
+        elif source_type == VmCreateJob.SOURCE_ISO_PROXMOX:
+            # ISO already on Proxmox — iso_filename holds the full volume ref
+            iso_proxmox_ref = request.POST.get("iso_proxmox_ref", "").strip()
+            iso_storage = request.POST.get("iso_proxmox_storage", "").strip()
+            if not iso_proxmox_ref:
+                errors["iso_proxmox_ref"] = "Please select an ISO from the browser."
+            else:
+                iso_filename = iso_proxmox_ref
+
         if not errors:
             job = VmCreateJob.objects.create(
                 source_type=source_type,
@@ -183,12 +193,19 @@ def configure(request, job_id):
     })
 
 
+def _get_stage_order(job):
+    if job.source_type == VmCreateJob.SOURCE_ISO:
+        return CREATE_STAGES_ISO
+    if job.source_type == VmCreateJob.SOURCE_ISO_PROXMOX:
+        return CREATE_STAGES_ISO_PROXMOX
+    return CREATE_STAGES_BLANK
+
+
 @login_required
 def progress(request, job_id):
     """Progress page — shows live pipeline status."""
     job = get_object_or_404(VmCreateJob, pk=job_id)
-    stage_order = CREATE_STAGES_ISO if job.source_type == VmCreateJob.SOURCE_ISO else CREATE_STAGES_BLANK
-    stages, stages_done_count = build_stages(job, stage_order)
+    stages, stages_done_count = build_stages(job, _get_stage_order(job))
     return render(request, "vmcreator/progress.html", {
         "job": job,
         "stages": stages,
@@ -201,8 +218,7 @@ def progress(request, job_id):
 def job_status(request, job_id):
     """HTMX polling endpoint — returns pipeline stage partial."""
     job = get_object_or_404(VmCreateJob, pk=job_id)
-    stage_order = CREATE_STAGES_ISO if job.source_type == VmCreateJob.SOURCE_ISO else CREATE_STAGES_BLANK
-    stages, stages_done_count = build_stages(job, stage_order)
+    stages, stages_done_count = build_stages(job, _get_stage_order(job))
     response = render(request, "vmcreator/partials/job_status.html", {
         "job": job,
         "stages": stages,
@@ -240,3 +256,41 @@ def resume_job(request, job_id):
     """Resume a stopped VM create job by returning to the configure page."""
     job = get_object_or_404(VmCreateJob, pk=job_id)
     return redirect("vmcreator_configure", job_id=job.pk)
+
+
+@login_required
+def iso_browser(request):
+    """HTMX endpoint: list ISOs on a given Proxmox storage pool."""
+    config = ProxmoxConfig.get_config()
+    storage = (request.GET.get("storage") or request.GET.get("iso_proxmox_storage", "")).strip()
+
+    isos = []
+    error = None
+
+    if storage:
+        try:
+            with config.get_ssh_client() as ssh:
+                out, _err, rc = ssh.run(["pvesm", "list", storage, "--content", "iso"])
+                if rc != 0:
+                    error = f"Could not list ISOs on storage '{storage}'."
+                else:
+                    for line in out.splitlines():
+                        parts = line.split()
+                        if not parts:
+                            continue
+                        vol_id = parts[0]
+                        if not vol_id.startswith(storage + ":"):
+                            continue
+                        if not vol_id.lower().endswith(".iso"):
+                            continue
+                        filename = vol_id.split("/")[-1] if "/" in vol_id else vol_id.split(":")[-1]
+                        isos.append({"vol_id": vol_id, "filename": filename})
+        except Exception as exc:
+            error = str(exc)
+            logger.warning("vmcreator iso_browser: %s", exc)
+
+    return render(request, "vmcreator/partials/iso_browser.html", {
+        "isos": isos,
+        "error": error,
+        "storage": storage,
+    })

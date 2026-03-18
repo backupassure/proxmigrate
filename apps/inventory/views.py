@@ -90,6 +90,14 @@ ACTION_LABELS = {
     "reboot": "Rebooting",
 }
 
+# The stable status we wait for before replacing the pending row
+ACTION_TARGET_STATUS = {
+    "start": "running",
+    "stop": "stopped",
+    "shutdown": "stopped",
+    "reboot": "running",
+}
+
 
 @login_required
 @require_POST
@@ -133,15 +141,25 @@ def vm_action(request, vmid, action):
     return render(
         request,
         "inventory/partials/vm_row_pending.html",
-        {"vmid": vmid, "vm_name": vm_name, "action_label": ACTION_LABELS.get(action, "Working")},
+        {
+            "vmid": vmid,
+            "vm_name": vm_name,
+            "action_label": ACTION_LABELS.get(action, "Working"),
+            "action": action,
+        },
     )
 
 
 @login_required
 def vm_row_status(request, vmid):
-    """Poll endpoint: return the current vm_row partial for a single VM."""
+    """Poll endpoint: return the current vm_row partial for a single VM.
+
+    If an 'action' query param is present, keep returning the pending row until
+    the VM reaches the expected target status for that action.
+    """
     config = ProxmoxConfig.get_config()
     node = config.default_node
+    action = request.GET.get("action", "")
 
     try:
         api = config.get_api_client()
@@ -155,6 +173,20 @@ def vm_row_status(request, vmid):
             request,
             "inventory/partials/vm_row_error.html",
             {"vmid": vmid, "error": exc.message},
+        )
+
+    # If we know what state we're waiting for, keep the pending row until we get there
+    target_status = ACTION_TARGET_STATUS.get(action)
+    if target_status and vm.get("status") != target_status:
+        return render(
+            request,
+            "inventory/partials/vm_row_pending.html",
+            {
+                "vmid": vmid,
+                "vm_name": vm.get("name", str(vmid)),
+                "action_label": ACTION_LABELS.get(action, "Working"),
+                "action": action,
+            },
         )
 
     return render(request, "inventory/partials/vm_row.html", {"vm": vm})
@@ -180,6 +212,43 @@ def vm_stats(request):
         "total": total,
         "running": running,
         "stopped": stopped,
+    })
+
+
+@login_required
+def vm_detail_status(request, vmid):
+    """HTMX polling endpoint for the detail page status banner.
+
+    Returns the banner partial with current VM status. Called every 5s by the
+    banner's self-poll, and immediately after an action button is clicked.
+    If 'action' query param is present, keep returning a pending banner until
+    the target status is reached.
+    """
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    action = request.GET.get("action", "")
+
+    try:
+        api = config.get_api_client()
+        vm = api.get_vm_status(node, vmid)
+        vm["node"] = node
+        vm["cpu_pct"] = round((vm.get("cpu") or 0) * 100, 1)
+        vm["uptime_human"] = _uptime_human(vm.get("uptime", 0))
+    except ProxmoxAPIError as exc:
+        logger.warning("vm_detail_status vmid %s: %s", vmid, exc)
+        return HttpResponse(
+            f'<div id="vm-status-banner" style="padding:1rem;color:#f14668;">'
+            f'<i class="fas fa-exclamation-triangle"></i> Could not load VM status: {exc.message}</div>'
+        )
+
+    target_status = ACTION_TARGET_STATUS.get(action)
+    transitioning = target_status and vm.get("status") != target_status
+
+    return render(request, "inventory/partials/vm_detail_banner.html", {
+        "vm": vm,
+        "action": action,
+        "action_label": ACTION_LABELS.get(action, "Working"),
+        "transitioning": transitioning,
     })
 
 

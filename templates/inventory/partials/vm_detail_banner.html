@@ -1,0 +1,67 @@
+{# Status banner for the VM detail page — self-polls every 5s (2s when transitioning) #}
+<div id="vm-status-banner"
+     hx-get="/inventory/{{ vm.vmid }}/detail-status/{% if transitioning %}?action={{ action }}{% endif %}"
+     hx-trigger="every {% if transitioning %}2s{% else %}5s{% endif %}"
+     hx-swap="outerHTML"
+     style="margin-bottom:1.5rem;border-radius:10px;overflow:hidden;border:1px solid #e8ecf0;background:#fff;">
+  <div style="padding:1.25rem 1.5rem;
+    {% if transitioning %}background:linear-gradient(135deg,#eff6ff,#dbeafe);border-bottom:3px solid #3273dc;
+    {% elif vm.status == 'running' %}background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-bottom:3px solid #48c78e;
+    {% elif vm.status == 'stopped' %}background:linear-gradient(135deg,#fff5f7,#ffe4e6);border-bottom:3px solid #f14668;
+    {% elif vm.status == 'paused' %}background:linear-gradient(135deg,#fffbeb,#fef9c3);border-bottom:3px solid #f59e0b;
+    {% else %}background:#f5f7fa;border-bottom:3px solid #b5b5b5;
+    {% endif %}
+    display:flex;align-items:center;gap:1.5rem;">
+
+    <div style="font-size:2rem;
+      {% if transitioning %}color:#3273dc;
+      {% elif vm.status == 'running' %}color:#48c78e;
+      {% elif vm.status == 'stopped' %}color:#f14668;
+      {% elif vm.status == 'paused' %}color:#f59e0b;
+      {% else %}color:#b5b5b5;{% endif %}">
+      {% if transitioning %}
+        <span class="spinner" style="width:1.75rem;height:1.75rem;border-width:3px;display:inline-block;vertical-align:middle;"></span>
+      {% elif vm.status == 'running' %}<i class="fas fa-play-circle"></i>
+      {% elif vm.status == 'stopped' %}<i class="fas fa-stop-circle"></i>
+      {% elif vm.status == 'paused' %}<i class="fas fa-pause-circle"></i>
+      {% else %}<i class="fas fa-question-circle"></i>{% endif %}
+    </div>
+
+    <div>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <span style="font-size:1.1rem;font-weight:700;color:#1a1a2e;">{{ vm.name }}</span>
+        {% if transitioning %}
+          <span class="status-badge" style="background:#dbeafe;color:#1d4ed8;">{{ action_label }}…</span>
+        {% elif vm.status == 'running' %}
+          <span class="status-badge vm-status-running">Running</span>
+        {% elif vm.status == 'stopped' %}
+          <span class="status-badge vm-status-stopped">Stopped</span>
+        {% elif vm.status == 'paused' %}
+          <span class="status-badge vm-status-paused">Paused</span>
+        {% else %}
+          <span class="status-badge vm-status-unknown">{{ vm.status }}</span>
+        {% endif %}
+      </div>
+      <div style="font-size:0.82rem;color:#7a7a7a;margin-top:0.3rem;">
+        VMID <strong>{{ vm.vmid }}</strong>
+        &bull; Node <strong>{{ vm.node }}</strong>
+        {% if vm.status == 'running' and vm.uptime_human %}
+          &bull; Uptime <strong>{{ vm.uptime_human }}</strong>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if vm.status == 'running' and not transitioning %}
+    <div style="margin-left:auto;display:flex;gap:2rem;">
+      <div style="text-align:center;">
+        <div style="font-size:1.25rem;font-weight:700;color:#1a1a2e;">{{ vm.cpu_pct|floatformat:1 }}%</div>
+        <div style="font-size:0.72rem;color:#7a7a7a;text-transform:uppercase;letter-spacing:0.5px;">CPU</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:1.25rem;font-weight:700;color:#1a1a2e;">{{ vm.mem_human|default:"—" }}</div>
+        <div style="font-size:0.72rem;color:#7a7a7a;text-transform:uppercase;letter-spacing:0.5px;">RAM Used</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>

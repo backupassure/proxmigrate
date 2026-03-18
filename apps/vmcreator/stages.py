@@ -100,3 +100,10 @@ CREATE_STAGES_BLANK = [
     ("CONFIGURING",   "Configuring"),
     ("STARTING",      "Starting VM"),
 ]
+
+# Proxmox-hosted ISO — no upload stage needed
+CREATE_STAGES_ISO_PROXMOX = [
+    ("CREATING_VM",   "Creating VM"),
+    ("CONFIGURING",   "Configuring"),
+    ("STARTING",      "Starting VM"),
+]

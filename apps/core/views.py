@@ -53,8 +53,8 @@ def dashboard(request):
         except Exception:
             api_ok = False
 
-        import_jobs = list(ImportJob.objects.order_by("-created_at")[:8])
-        create_jobs = list(VmCreateJob.objects.order_by("-created_at")[:8])
+        import_jobs = list(ImportJob.objects.order_by("-created_at")[:5])
+        create_jobs = list(VmCreateJob.objects.order_by("-created_at")[:5])
 
         # Tag each with job_type and normalise fields for the template
         for j in import_jobs:
@@ -65,7 +65,7 @@ def dashboard(request):
             j.display_name = j.iso_filename if j.source_type == VmCreateJob.SOURCE_ISO else "Blank VM"
 
         combined = sorted(import_jobs + create_jobs, key=lambda j: j.created_at, reverse=True)
-        recent_jobs = combined[:10]
+        recent_jobs = combined[:8]
 
     context = {
         "wizard_complete": wizard_complete,

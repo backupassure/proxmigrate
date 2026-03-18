@@ -16,45 +16,44 @@
   </a>
   &nbsp;
   {% endif %}
-  {# Power action buttons based on status #}
   {% if vm.status == 'running' %}
     <button class="button is-warning is-small"
             hx-post="/inventory/{{ vm.vmid }}/action/shutdown/"
             hx-confirm="Gracefully shut down {{ vm.name }}?"
-            hx-target="#vm-status-banner"
-            hx-swap="outerHTML">
+            hx-swap="none"
+            hx-on::after-request="htmx.ajax('GET','/inventory/{{ vm.vmid }}/detail-status/?action=shutdown',{target:'#vm-status-banner',swap:'outerHTML'})">
       <span class="icon is-small"><i class="fas fa-power-off"></i></span>
       <span>Shutdown</span>
     </button>
     <button class="button is-danger is-small"
             hx-post="/inventory/{{ vm.vmid }}/action/stop/"
             hx-confirm="Force stop {{ vm.name }}? Unsaved data may be lost."
-            hx-target="#vm-status-banner"
-            hx-swap="outerHTML">
+            hx-swap="none"
+            hx-on::after-request="htmx.ajax('GET','/inventory/{{ vm.vmid }}/detail-status/?action=stop',{target:'#vm-status-banner',swap:'outerHTML'})">
       <span class="icon is-small"><i class="fas fa-stop"></i></span>
       <span>Force Stop</span>
     </button>
     <button class="button is-info is-small"
             hx-post="/inventory/{{ vm.vmid }}/action/reboot/"
             hx-confirm="Reboot {{ vm.name }}?"
-            hx-target="#vm-status-banner"
-            hx-swap="outerHTML">
+            hx-swap="none"
+            hx-on::after-request="htmx.ajax('GET','/inventory/{{ vm.vmid }}/detail-status/?action=reboot',{target:'#vm-status-banner',swap:'outerHTML'})">
       <span class="icon is-small"><i class="fas fa-redo"></i></span>
       <span>Reboot</span>
     </button>
   {% elif vm.status == 'stopped' %}
     <button class="button is-success is-small"
             hx-post="/inventory/{{ vm.vmid }}/action/start/"
-            hx-target="#vm-status-banner"
-            hx-swap="outerHTML">
+            hx-swap="none"
+            hx-on::after-request="htmx.ajax('GET','/inventory/{{ vm.vmid }}/detail-status/?action=start',{target:'#vm-status-banner',swap:'outerHTML'})">
       <span class="icon is-small"><i class="fas fa-play"></i></span>
       <span>Start</span>
     </button>
   {% elif vm.status == 'paused' %}
     <button class="button is-warning is-small"
             hx-post="/inventory/{{ vm.vmid }}/action/resume/"
-            hx-target="#vm-status-banner"
-            hx-swap="outerHTML">
+            hx-swap="none"
+            hx-on::after-request="htmx.ajax('GET','/inventory/{{ vm.vmid }}/detail-status/?action=resume',{target:'#vm-status-banner',swap:'outerHTML'})">
       <span class="icon is-small"><i class="fas fa-play"></i></span>
       <span>Resume</span>
     </button>
@@ -63,64 +62,8 @@
 
 {% block content %}
 
-{# ===== Status Banner ===== #}
-<div id="vm-status-banner" style="margin-bottom:1.5rem;border-radius:10px;overflow:hidden;border:1px solid #e8ecf0;background:#fff;">
-  <div style="padding:1.25rem 1.5rem;
-    {% if vm.status == 'running' %}background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-bottom:3px solid #48c78e;
-    {% elif vm.status == 'stopped' %}background:linear-gradient(135deg,#fff5f7,#ffe4e6);border-bottom:3px solid #f14668;
-    {% elif vm.status == 'paused' %}background:linear-gradient(135deg,#fffbeb,#fef9c3);border-bottom:3px solid #f59e0b;
-    {% else %}background:#f5f7fa;border-bottom:3px solid #b5b5b5;
-    {% endif %}
-    display:flex;align-items:center;gap:1.5rem;">
-
-    {# Status icon #}
-    <div style="font-size:2rem;
-      {% if vm.status == 'running' %}color:#48c78e;
-      {% elif vm.status == 'stopped' %}color:#f14668;
-      {% elif vm.status == 'paused' %}color:#f59e0b;
-      {% else %}color:#b5b5b5;{% endif %}">
-      {% if vm.status == 'running' %}<i class="fas fa-play-circle"></i>
-      {% elif vm.status == 'stopped' %}<i class="fas fa-stop-circle"></i>
-      {% elif vm.status == 'paused' %}<i class="fas fa-pause-circle"></i>
-      {% else %}<i class="fas fa-question-circle"></i>{% endif %}
-    </div>
-
-    <div>
-      <div style="display:flex;align-items:center;gap:0.75rem;">
-        <span style="font-size:1.1rem;font-weight:700;color:#1a1a2e;">{{ vm.name }}</span>
-        {% if vm.status == 'running' %}
-          <span class="status-badge vm-status-running">Running</span>
-        {% elif vm.status == 'stopped' %}
-          <span class="status-badge vm-status-stopped">Stopped</span>
-        {% elif vm.status == 'paused' %}
-          <span class="status-badge vm-status-paused">Paused</span>
-        {% else %}
-          <span class="status-badge vm-status-unknown">{{ vm.status }}</span>
-        {% endif %}
-      </div>
-      <div style="font-size:0.82rem;color:#7a7a7a;margin-top:0.3rem;">
-        VMID <strong>{{ vm.vmid }}</strong>
-        &bull; Node <strong>{{ vm.node }}</strong>
-        {% if vm.status == 'running' and vm.uptime_human %}
-          &bull; Uptime <strong>{{ vm.uptime_human }}</strong>
-        {% endif %}
-      </div>
-    </div>
-
-    {% if vm.status == 'running' %}
-    <div style="margin-left:auto;display:flex;gap:2rem;">
-      <div style="text-align:center;">
-        <div style="font-size:1.25rem;font-weight:700;color:#1a1a2e;">{{ vm.cpu_pct|floatformat:1 }}%</div>
-        <div style="font-size:0.72rem;color:#7a7a7a;text-transform:uppercase;letter-spacing:0.5px;">CPU</div>
-      </div>
-      <div style="text-align:center;">
-        <div style="font-size:1.25rem;font-weight:700;color:#1a1a2e;">{{ vm.mem_human|default:"—" }}</div>
-        <div style="font-size:0.72rem;color:#7a7a7a;text-transform:uppercase;letter-spacing:0.5px;">RAM Used</div>
-      </div>
-    </div>
-    {% endif %}
-  </div>
-</div>
+{# ===== Status Banner — rendered via partial so it self-polls every 5s #}
+{% include "inventory/partials/vm_detail_banner.html" with vm=vm action="" action_label="" transitioning=False %}
 
 {# ===== Config Cards Grid ===== #}
 <div class="columns is-multiline">

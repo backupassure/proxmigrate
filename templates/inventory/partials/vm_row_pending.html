@@ -1,7 +1,7 @@
-{# Pending row shown immediately after an action — polls itself until status settles #}
+{# Pending row shown immediately after an action — polls itself until target status is reached #}
 <tr id="vm-row-{{ vmid }}"
-    hx-get="/inventory/{{ vmid }}/status/"
-    hx-trigger="load delay:2s, every 4s"
+    hx-get="/inventory/{{ vmid }}/status/{% if action %}?action={{ action }}{% endif %}"
+    hx-trigger="load delay:2s, every 3s"
     hx-target="#vm-row-{{ vmid }}"
     hx-swap="outerHTML">
   <td class="vmid-col">{{ vmid }}</td>

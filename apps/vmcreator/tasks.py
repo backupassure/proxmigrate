@@ -8,6 +8,7 @@ from celery import shared_task
 from django.conf import settings
 
 from apps.proxmox.api import ProxmoxAPIError
+from apps.proxmox.cloud_init import apply_cloud_init
 from apps.proxmox.ssh import SSHCommandError
 from apps.vmcreator.models import VmCreateJob
 from apps.wizard.models import ProxmoxConfig
@@ -251,6 +252,11 @@ def run_create_pipeline(self, job_id):
                 # the disk has nothing bootable (fresh install), and after
                 # install the disk boots automatically without any manual change.
                 boot_order = f"{disk_bus}0;ide2"
+            elif job.source_type == VmCreateJob.SOURCE_ISO_PROXMOX:
+                # iso_filename holds the full Proxmox volume reference (e.g. local:iso/ubuntu.iso)
+                cdrom_str = f"{job.iso_filename},media=cdrom"
+                ssh.run_checked(["qm", "set", str(vmid), "--ide2", cdrom_str])
+                boot_order = f"{disk_bus}0;ide2"
             else:
                 boot_order = f"{disk_bus}0"
 
@@ -271,14 +277,21 @@ def run_create_pipeline(self, job_id):
                 )
 
             # Memory ballooning
-            if vm_config.get("ballooning"):
-                balloon_args = ["qm", "set", str(vmid)]
-                balloon_min = vm_config.get("balloon_min_mb")
-                if balloon_min:
-                    balloon_args += ["--balloon", str(balloon_min)]
-                ssh.run_checked(balloon_args)
+            balloon_min = vm_config.get("balloon_min_mb")
+            if not vm_config.get("ballooning"):
+                ssh.run_checked(["qm", "set", str(vmid), "--balloon", "0"])
+            elif balloon_min:
+                ssh.run_checked(["qm", "set", str(vmid), "--balloon", str(balloon_min)])
 
-        # ── 4. STARTING ──────────────────────────────────────────────────────
+        # ── 4. CLOUD-INIT ────────────────────────────────────────────────────
+        if vm_config.get("cloud_init_enabled"):
+            try:
+                with config.get_ssh_client() as ssh:
+                    apply_cloud_init(vmid, vm_config, config, ssh)
+            except Exception as exc:
+                logger.warning("VmCreateJob %d: cloud-init setup failed (non-fatal): %s", job.pk, exc)
+
+        # ── 5. STARTING ──────────────────────────────────────────────────────
         if vm_config.get("start_after_create"):
             job.set_stage(VmCreateJob.STAGE_STARTING, "Starting VM...")
             try:

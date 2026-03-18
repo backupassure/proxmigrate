@@ -37,36 +37,88 @@
 
           {# ISO fields — shown only for ISO source #}
           <div id="iso-fields">
-            <div class="field" style="margin-bottom:1rem;">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">ISO File</label>
-              <div class="control">
-                <input class="input {% if errors.iso_file %}is-danger{% endif %}"
-                  type="file" name="iso_file" accept=".iso" id="iso-file-input"
-                  style="height:auto;padding:0.5rem;">
+
+            {# ISO source sub-tabs: Upload vs Browse Proxmox #}
+            <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+              <div id="iso-sub-tab-upload" onclick="selectIsoSub('upload')"
+                style="flex:1;border:2px solid #3273dc;border-radius:8px;padding:0.75rem;cursor:pointer;text-align:center;transition:all 0.15s;background:#f0f7ff;">
+                <i class="fas fa-upload" style="color:#3273dc;margin-right:0.4rem;"></i>
+                <span style="font-weight:600;font-size:0.88rem;color:#1a1a2e;">Upload from computer</span>
               </div>
-              {% if errors.iso_file %}<p class="help is-danger">{{ errors.iso_file }}</p>{% endif %}
-              <p class="field-hint">Upload an ISO image (e.g. Ubuntu, Windows, RouterOS). Large ISOs are streamed directly to Proxmox.</p>
+              <div id="iso-sub-tab-proxmox" onclick="selectIsoSub('proxmox')"
+                style="flex:1;border:2px solid #e8ecf0;border-radius:8px;padding:0.75rem;cursor:pointer;text-align:center;transition:all 0.15s;">
+                <i class="fas fa-server" style="color:#b5b5b5;margin-right:0.4rem;"></i>
+                <span style="font-weight:600;font-size:0.88rem;color:#1a1a2e;">Browse Proxmox</span>
+              </div>
             </div>
 
-            <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">ISO Storage Pool</label>
-              <div class="control">
-                <div class="select is-fullwidth">
-                  <select name="iso_storage" class="{% if errors.iso_storage %}is-danger{% endif %}">
-                    <option value="">— Select ISO-capable storage —</option>
-                    {% for s in iso_storage_pools %}
-                      <option value="{{ s.storage }}" {% if post.iso_storage == s.storage %}selected{% endif %}>
-                        {{ s.storage }}
-                      </option>
-                    {% empty %}
-                      <option value="" disabled>No ISO-capable storage found on Proxmox</option>
-                    {% endfor %}
-                  </select>
+            {# Upload panel #}
+            <div id="iso-upload-panel">
+              <div class="field" style="margin-bottom:1rem;">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">ISO File</label>
+                <div class="control">
+                  <input class="input {% if errors.iso_file %}is-danger{% endif %}"
+                    type="file" name="iso_file" accept=".iso" id="iso-file-input"
+                    style="height:auto;padding:0.5rem;">
+                </div>
+                {% if errors.iso_file %}<p class="help is-danger">{{ errors.iso_file }}</p>{% endif %}
+                <p class="field-hint">Upload an ISO image (e.g. Ubuntu, Windows, RouterOS). Large ISOs are streamed directly to Proxmox.</p>
+              </div>
+
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">ISO Storage Pool</label>
+                <div class="control">
+                  <div class="select is-fullwidth">
+                    <select name="iso_storage" class="{% if errors.iso_storage %}is-danger{% endif %}">
+                      <option value="">— Select ISO-capable storage —</option>
+                      {% for s in iso_storage_pools %}
+                        <option value="{{ s.storage }}" {% if post.iso_storage == s.storage %}selected{% endif %}>
+                          {{ s.storage }}
+                        </option>
+                      {% empty %}
+                        <option value="" disabled>No ISO-capable storage found on Proxmox</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                {% if errors.iso_storage %}<p class="help is-danger">{{ errors.iso_storage }}</p>{% endif %}
+                <p class="field-hint">Storage must have ISO content type enabled in Proxmox (Datacenter → Storage → Edit → Content).</p>
+              </div>
+            </div>
+
+            {# Browse Proxmox panel #}
+            <div id="iso-proxmox-panel" style="display:none;">
+              <div class="field" style="margin-bottom:0.75rem;">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">Storage Pool</label>
+                <div class="control">
+                  <div class="select is-fullwidth">
+                    <select name="iso_proxmox_storage" id="iso-proxmox-storage-select"
+                      hx-get="{% url 'vmcreator_iso_browser' %}"
+                      hx-target="#proxmox-iso-list"
+                      hx-include="#iso-proxmox-storage-select"
+                      hx-trigger="change"
+                      class="{% if errors.iso_proxmox_ref %}is-danger{% endif %}">
+                      <option value="">— Select storage pool —</option>
+                      {% for s in iso_storage_pools %}
+                        <option value="{{ s.storage }}" {% if post.iso_proxmox_storage == s.storage %}selected{% endif %}>
+                          {{ s.storage }}
+                        </option>
+                      {% empty %}
+                        <option value="" disabled>No ISO-capable storage found on Proxmox</option>
+                      {% endfor %}
+                    </select>
+                  </div>
                 </div>
               </div>
-              {% if errors.iso_storage %}<p class="help is-danger">{{ errors.iso_storage }}</p>{% endif %}
-              <p class="field-hint">Storage must have ISO content type enabled in Proxmox (Datacenter → Storage → Edit → Content).</p>
+
+              <div id="proxmox-iso-list">
+                <div style="color:#9ca3af;font-size:0.83rem;padding:0.4rem 0;">
+                  Select a storage pool above to browse ISOs.
+                </div>
+              </div>
+              {% if errors.iso_proxmox_ref %}<p class="help is-danger" style="margin-top:0.4rem;">{{ errors.iso_proxmox_ref }}</p>{% endif %}
             </div>
+
           </div>
 
           {# VM Name — always shown #}
@@ -125,19 +177,20 @@
 {% block extra_scripts %}
 <script>
   function selectSource(type) {
-    document.getElementById('source-type-value').value = type;
-
     const tabIso   = document.getElementById('tab-iso');
     const tabBlank = document.getElementById('tab-blank');
     const isoFields = document.getElementById('iso-fields');
 
-    if (type === 'iso') {
+    if (type === 'iso' || type === 'iso_proxmox') {
       tabIso.style.borderColor   = '#3273dc';
       tabIso.querySelector('i').style.color = '#3273dc';
       tabBlank.style.borderColor = '#e8ecf0';
       tabBlank.querySelector('i').style.color = '#b5b5b5';
       isoFields.style.display = '';
+      // Set sub-tab state
+      selectIsoSub(type === 'iso_proxmox' ? 'proxmox' : 'upload');
     } else {
+      document.getElementById('source-type-value').value = 'blank';
       tabBlank.style.borderColor = '#3273dc';
       tabBlank.querySelector('i').style.color = '#3273dc';
       tabIso.style.borderColor   = '#e8ecf0';
@@ -146,18 +199,50 @@
     }
   }
 
+  function selectIsoSub(sub) {
+    const uploadPanel  = document.getElementById('iso-upload-panel');
+    const proxmoxPanel = document.getElementById('iso-proxmox-panel');
+    const subUpload    = document.getElementById('iso-sub-tab-upload');
+    const subProxmox   = document.getElementById('iso-sub-tab-proxmox');
+
+    if (sub === 'proxmox') {
+      document.getElementById('source-type-value').value = 'iso_proxmox';
+      uploadPanel.style.display  = 'none';
+      proxmoxPanel.style.display = '';
+      subProxmox.style.borderColor = '#3273dc';
+      subProxmox.style.background  = '#f0f7ff';
+      subProxmox.querySelector('i').style.color = '#3273dc';
+      subUpload.style.borderColor  = '#e8ecf0';
+      subUpload.style.background   = '';
+      subUpload.querySelector('i').style.color = '#b5b5b5';
+    } else {
+      document.getElementById('source-type-value').value = 'iso';
+      uploadPanel.style.display  = '';
+      proxmoxPanel.style.display = 'none';
+      subUpload.style.borderColor = '#3273dc';
+      subUpload.style.background  = '#f0f7ff';
+      subUpload.querySelector('i').style.color = '#3273dc';
+      subProxmox.style.borderColor = '#e8ecf0';
+      subProxmox.style.background  = '';
+      subProxmox.querySelector('i').style.color = '#b5b5b5';
+    }
+  }
+
   // Init from POST value (on validation error redisplay)
   const initialSource = "{{ post.source_type|default:'iso' }}";
   selectSource(initialSource);
 
-  // Show file name in label when selected
-  document.getElementById('iso-file-input').addEventListener('change', function() {
-    const name = this.files[0] ? this.files[0].name : '';
-    const vm = document.querySelector('[name=vm_name]');
-    if (name && !vm.value) {
-      vm.value = name.replace(/\.iso$/i, '').replace(/[^a-zA-Z0-9_\-]/g, '-').toLowerCase();
-    }
-  });
+  // Auto-fill VM name from ISO filename
+  const isoFileInput = document.getElementById('iso-file-input');
+  if (isoFileInput) {
+    isoFileInput.addEventListener('change', function() {
+      const name = this.files[0] ? this.files[0].name : '';
+      const vm = document.querySelector('[name=vm_name]');
+      if (name && !vm.value) {
+        vm.value = name.replace(/\.iso$/i, '').replace(/[^a-zA-Z0-9_\-]/g, '-').toLowerCase();
+      }
+    });
+  }
 
   // Upload progress indicator
   document.getElementById('create-form').addEventListener('submit', function() {

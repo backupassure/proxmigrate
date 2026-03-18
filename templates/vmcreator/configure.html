@@ -114,7 +114,10 @@
                 <input type="checkbox" name="protection" {% if form.protection.value %}checked{% endif %}>
                 &nbsp;Protection
               </label>
-              <p class="field-hint">Protection prevents accidental deletion in Proxmox. Must be disabled to delete the VM.</p>
+              <p class="field-hint">
+                <strong>Start on boot</strong> tells Proxmox to automatically start this VM whenever the Proxmox host itself starts or reboots — it has no effect right now.
+                Protection prevents accidental deletion in Proxmox. Must be disabled to delete the VM.
+              </p>
             </div>
           </div>
         </div>
@@ -139,11 +142,11 @@
             &nbsp;<strong>Start VM after creation</strong>
           </label>
           <p class="field-hint" style="margin-left:1.5rem;">
-            {% if job.source_type == 'iso' %}
-            VM will boot from the ISO immediately — you can connect via the Proxmox console to begin installation.
-            {% else %}
-            Powers on the blank VM after creation.
+            Powers on the VM immediately once ProxMigrate finishes creating it — independent of the "Start on boot" setting above.
+            {% if job.source_type == 'iso' or job.source_type == 'iso_proxmox' %}
+            The VM will boot from the ISO so you can connect via the Proxmox console and begin installation.
             {% endif %}
+            You can enable both: "Start on boot" keeps the VM running across host reboots, while this option starts it right now.
           </p>
         </div>
       </div>
@@ -302,24 +305,29 @@
             </div>
           </div>
           <div class="column">
-            <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">Balloon Minimum (MB)</label>
-              <div class="control">
-                <input class="input" type="number" name="balloon_min_mb"
-                  value="{{ form.balloon_min_mb.value|default:0 }}" min="0"
-                  {% if not form.ballooning.value %}disabled{% endif %}>
+            <div id="balloon-min-field" {% if not form.ballooning.value %}style="display:none;"{% endif %}>
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">Balloon Minimum (MB)</label>
+                <div class="control">
+                  <input class="input" type="number" name="balloon_min_mb"
+                    value="{{ form.balloon_min_mb.value|default:0 }}" min="0">
+                </div>
+                <p class="field-hint">Minimum memory floor. 0 = no minimum.</p>
               </div>
-              <p class="field-hint">Minimum memory floor when ballooning is active. 0 = no minimum.</p>
             </div>
           </div>
-          <div class="column is-3" style="display:flex;align-items:flex-end;padding-bottom:1.5rem;">
+          <div class="column is-5">
             <div class="field">
               <label class="checkbox">
-                <input type="checkbox" name="ballooning"
+                <input type="checkbox" name="ballooning" id="ballooning-check"
                   {% if form.ballooning.value %}checked{% endif %}
-                  onchange="document.querySelector('[name=balloon_min_mb]').disabled = !this.checked">
-                &nbsp;Enable ballooning
+                  onchange="document.getElementById('balloon-min-field').style.display = this.checked ? '' : 'none'">
+                &nbsp;<strong>Enable Memory Ballooning</strong>
               </label>
+              <p class="field-hint" style="margin-left:1.5rem;">
+                Lets Proxmox dynamically shrink/grow the VM's memory between a minimum and its configured max.
+                Leave off for appliances and production servers that need predictable, stable memory.
+              </p>
             </div>
           </div>
         </div>
@@ -531,9 +539,9 @@
           <div class="section-icon"><i class="fas fa-desktop"></i></div>
           Display &amp; Agent
         </div>
-        <i class="fas fa-chevron-down section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+        <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
       </div>
-      <div class="form-section-body">
+      <div class="form-section-body is-open">
         <div class="columns">
           <div class="column">
             <div class="field">
@@ -577,6 +585,155 @@
               </label>
               <p class="field-hint" style="margin-left:1.5rem;">Improves VNC pointer sync.</p>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ---- SECTION: Cloud-Init ---- #}
+    <div class="form-section">
+      <div class="form-section-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon"><i class="fas fa-cloud"></i></div>
+          Cloud-Init
+        </div>
+        <i class="fas fa-chevron-down section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+      </div>
+      <div class="form-section-body" id="cloud-init-body">
+        <div class="field" style="margin-bottom:1rem;">
+          <label class="checkbox">
+            <input type="checkbox" name="cloud_init_enabled" id="ci-enabled-check"
+              {% if form.cloud_init_enabled.value %}checked{% endif %}
+              onchange="toggleCloudInit(this.checked)">
+            &nbsp;<strong>Enable Proxmox Cloud-Init</strong>
+          </label>
+          <p class="field-hint" style="margin-left:1.5rem;">
+            Injects configuration (user, SSH keys, IP, user-data) on first boot. Requires a cloud-init-capable image.
+          </p>
+        </div>
+
+        <div id="cloud-init-fields" style="display:none;">
+          <div class="columns">
+            <div class="column is-6">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">Cloud-Init Storage</label>
+                <div class="control">
+                  <div class="select is-fullwidth">
+                    <select name="ci_storage">
+                      {% for val, label in form.ci_storage.field.choices %}
+                        <option value="{{ val }}" {% if form.ci_storage.value == val %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <p class="field-hint">Storage for the cloud-init drive. Must support the <code>snippets</code> content type if using custom user-data.</p>
+              </div>
+            </div>
+            <div class="column is-6">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">IP Configuration</label>
+                <div class="control">
+                  <div class="select is-fullwidth">
+                    <select name="ci_ip_config" id="ci-ip-config-select" onchange="toggleCiIpFields(this.value)">
+                      <option value="dhcp" {% if form.ci_ip_config.value == 'dhcp' or not form.ci_ip_config.value %}selected{% endif %}>DHCP</option>
+                      <option value="static" {% if form.ci_ip_config.value == 'static' %}selected{% endif %}>Static</option>
+                      <option value="none" {% if form.ci_ip_config.value == 'none' %}selected{% endif %}>None (manual)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="ci-static-fields" style="display:none;">
+            <div class="columns">
+              <div class="column">
+                <div class="field">
+                  <label class="label" style="font-size:0.875rem;font-weight:600;">IP Address / CIDR</label>
+                  <div class="control">
+                    <input class="input" type="text" name="ci_ip_address"
+                      value="{{ form.ci_ip_address.value|default:'' }}"
+                      placeholder="192.168.1.100/24">
+                  </div>
+                </div>
+              </div>
+              <div class="column">
+                <div class="field">
+                  <label class="label" style="font-size:0.875rem;font-weight:600;">Gateway</label>
+                  <div class="control">
+                    <input class="input" type="text" name="ci_gateway"
+                      value="{{ form.ci_gateway.value|default:'' }}"
+                      placeholder="192.168.1.1">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="columns">
+            <div class="column">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">Default User</label>
+                <div class="control">
+                  <input class="input" type="text" name="ci_user"
+                    value="{{ form.ci_user.value|default:'' }}"
+                    placeholder="ubuntu / root / admin">
+                </div>
+              </div>
+            </div>
+            <div class="column">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">Password</label>
+                <div class="control">
+                  <input class="input" type="password" name="ci_password"
+                    value="{{ form.ci_password.value|default:'' }}"
+                    placeholder="Leave blank to skip">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="columns">
+            <div class="column">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">DNS Nameserver</label>
+                <div class="control">
+                  <input class="input" type="text" name="ci_nameserver"
+                    value="{{ form.ci_nameserver.value|default:'' }}"
+                    placeholder="8.8.8.8">
+                </div>
+              </div>
+            </div>
+            <div class="column">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">Search Domain</label>
+                <div class="control">
+                  <input class="input" type="text" name="ci_search_domain"
+                    value="{{ form.ci_search_domain.value|default:'' }}"
+                    placeholder="example.com">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label" style="font-size:0.875rem;font-weight:600;">SSH Public Keys</label>
+            <div class="control">
+              <textarea class="textarea is-small" name="ci_ssh_keys" rows="3"
+                placeholder="ssh-rsa AAAA... user@host&#10;ssh-ed25519 AAAA... user@host">{{ form.ci_ssh_keys.value|default:'' }}</textarea>
+            </div>
+            <p class="field-hint">One key per line.</p>
+          </div>
+
+          <div class="field">
+            <label class="label" style="font-size:0.875rem;font-weight:600;">Custom User-Data <span style="font-weight:400;color:#888;">(optional YAML)</span></label>
+            <div class="control">
+              <textarea class="textarea is-family-monospace is-small" name="ci_user_data" rows="8"
+                placeholder="#cloud-config&#10;packages:&#10;  - nginx&#10;runcmd:&#10;  - systemctl enable nginx">{{ form.ci_user_data.value|default:'' }}</textarea>
+            </div>
+            <p class="field-hint">
+              Paste your <code>cloud-config</code> YAML here. Requires the CI storage to have <strong>snippets</strong> content type enabled in Proxmox.
+            </p>
           </div>
         </div>
       </div>
@@ -791,5 +948,18 @@
 
   document.getElementById('btn-add-disk').addEventListener('click', addExtraDisk);
   document.getElementById('configure-form').addEventListener('submit', serializeExtraDisks);
+
+  // ── Cloud-Init visibility ────────────────────────────────────────────────
+  function toggleCloudInit(enabled) {
+    document.getElementById('cloud-init-fields').style.display = enabled ? '' : 'none';
+    if (enabled) {
+      toggleCiIpFields(document.getElementById('ci-ip-config-select').value);
+    }
+  }
+  function toggleCiIpFields(value) {
+    document.getElementById('ci-static-fields').style.display = value === 'static' ? '' : 'none';
+  }
+  // Init on load
+  toggleCloudInit(document.getElementById('ci-enabled-check').checked);
 </script>
 {% endblock %}

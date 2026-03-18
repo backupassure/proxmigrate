@@ -10,6 +10,7 @@ from django.conf import settings
 
 from apps.importer.models import ImportJob
 from apps.proxmox.api import ProxmoxAPIError
+from apps.proxmox.cloud_init import apply_cloud_init
 from apps.proxmox.ssh import SSHCommandError
 from apps.wizard.models import ProxmoxConfig
 
@@ -230,6 +231,25 @@ def _create_vm_and_import(job, config, remote_qcow2_path, job_id):
     job.set_stage(ImportJob.STAGE_IMPORTING_DISK, "Importing disk into Proxmox storage...")
     storage_pool = vm_config.get("storage_pool", config.default_storage)
 
+    # Hard-link the qcow2 to a friendly filename before importdisk consumes it.
+    # qm importdisk deletes the source path after import, but a hard link
+    # pointing to the same inode will survive.
+    friendly_name = re.sub(r"[^\w.\-]", "_", job.upload_filename or f"{vm_name}.qcow2")
+    if not friendly_name.lower().endswith(".qcow2"):
+        friendly_name += ".qcow2"
+    keep_path = f"{remote_dir}/{friendly_name}"
+    with config.get_ssh_client() as ssh:
+        out, err, rc = ssh.run(["ln", "-f", remote_qcow2_path, keep_path])
+        if rc != 0:
+            logger.warning(
+                "ImportJob %d: hard link failed (%s), falling back to cp — "
+                "this will use extra disk space during import",
+                job_id, err.strip(),
+            )
+            ssh.run_checked(["cp", remote_qcow2_path, keep_path])
+        else:
+            logger.info("ImportJob %d: preserved qcow2 as %s", job_id, keep_path)
+
     with config.get_ssh_client() as ssh:
         import_output = ssh.run_checked(
             ["qm", "importdisk", str(vmid), remote_qcow2_path, storage_pool]
@@ -296,12 +316,11 @@ def _create_vm_and_import(job, config, remote_qcow2_path, job_id):
                 "--tpmstate0", f"{storage_pool}:1,version=v2.0",
             ])
 
-        if vm_config.get("ballooning"):
-            balloon_args = ["qm", "set", str(vmid)]
-            balloon_min = vm_config.get("balloon_min_mb")
-            if balloon_min:
-                balloon_args += ["--balloon", str(balloon_min)]
-            ssh.run_checked(balloon_args)
+        balloon_min = vm_config.get("balloon_min_mb")
+        if not vm_config.get("ballooning"):
+            ssh.run_checked(["qm", "set", str(vmid), "--balloon", "0"])
+        elif balloon_min:
+            ssh.run_checked(["qm", "set", str(vmid), "--balloon", str(balloon_min)])
 
         # ── Extra disks ───────────────────────────────────────────────────
         extra_disks_raw = vm_config.get("extra_disks", "")
@@ -421,7 +440,15 @@ def _create_vm_and_import(job, config, remote_qcow2_path, job_id):
         except Exception as exc:
             logger.warning("ImportJob %d: failed to attach VirtIO ISO: %s", job_id, exc)
 
-    # ── 7. STARTING ──────────────────────────────────────────────────────────
+    # ── 7. CLOUD-INIT ────────────────────────────────────────────────────────
+    if vm_config.get("cloud_init_enabled"):
+        try:
+            with config.get_ssh_client() as ssh:
+                apply_cloud_init(vmid, vm_config, config, ssh)
+        except Exception as exc:
+            logger.warning("ImportJob %d: cloud-init setup failed (non-fatal): %s", job_id, exc)
+
+    # ── 8. STARTING ──────────────────────────────────────────────────────────
     if vm_config.get("start_after_import"):
         job.set_stage(ImportJob.STAGE_STARTING, "Starting VM...")
         try:
@@ -429,13 +456,13 @@ def _create_vm_and_import(job, config, remote_qcow2_path, job_id):
         except ProxmoxAPIError as exc:
             logger.warning("ImportJob %d: start_vm failed: %s", job_id, exc)
 
-    # ── 8. CLEANUP ───────────────────────────────────────────────────────────
+    # ── 9. CLEANUP ───────────────────────────────────────────────────────────
     # The converted qcow2 is left on Proxmox intentionally — it can be used
     # to create additional VMs directly from the Proxmox "Create VM" wizard
     # without re-uploading. Users can delete it manually from the storage pool.
     job.set_stage(ImportJob.STAGE_CLEANUP, "Finalising...")
 
-    # ── 9. DONE ──────────────────────────────────────────────────────────────
+    # ── 10. DONE ─────────────────────────────────────────────────────────────
     job.set_stage(ImportJob.STAGE_DONE, f"VM {vmid} created successfully.", percent=100)
     logger.info("ImportJob %d: pipeline complete. vmid=%d", job_id, vmid)
 

@@ -11,6 +11,7 @@ class VmCreateJob(models.Model):
     """Tracks a VM creation job (ISO install or blank VM)."""
 
     SOURCE_ISO = "iso"
+    SOURCE_ISO_PROXMOX = "iso_proxmox"
     SOURCE_BLANK = "blank"
 
     STAGE_QUEUED = "QUEUED"

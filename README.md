@@ -10,6 +10,7 @@ Made by **[Backup Assure](https://backupassure.io)**.
 
 - **Disk image import** — upload qcow2, vmdk, vhd, vhdx, raw, and OVA files; automatic conversion to qcow2 via `qemu-img`
 - **VM creation wizard** — full configuration including EFI/UEFI, TPM 2.0, CPU type, network, storage, and boot order
+- **ISO selection** — upload an ISO from your computer or browse and select ISOs already stored on Proxmox storage
 - **VM inventory dashboard** — live status, start/stop/shutdown/reboot actions with real-time updates
 - **VM console** — full in-browser VNC console with clipboard support (paste text into any OS including IOS-XE and Linux terminals)
 - **Setup wizard** — guided first-run setup for Proxmox API token, SSH key deployment, and environment discovery
@@ -158,8 +159,13 @@ OVA import extracts the first VMDK found inside the archive. Multi-disk OVAs (mu
 
 ### Creating a new VM from ISO
 
+**Two ways to select an ISO.**
+When creating a VM, the ISO step has two sub-options:
+- **Upload from computer** — select a local `.iso` file and ProxMigrate uploads it to Proxmox ISO storage before creating the VM.
+- **Browse Proxmox** — select a storage pool and pick from ISOs already stored there. No upload step; the VM is created and the ISO attached directly.
+
 **ISO storage must have the `iso` content type enabled.**
-In Proxmox go to Datacenter → Storage → select the pool → Edit → Content, and ensure `ISO Image` is ticked. Pools without this content type will not appear in the ISO storage dropdown.
+In Proxmox go to Datacenter → Storage → select the pool → Edit → Content, and ensure `ISO Image` is ticked. Pools without this content type will not appear in the ISO storage dropdowns.
 
 **Boot order — no manual changes needed after install.**
 ProxMigrate sets the boot order to `disk first, CD-ROM second`. On the first boot the disk is blank so the firmware falls through to the ISO and the installer runs. Once the OS is installed the disk becomes bootable and takes priority automatically — the VM boots from disk on every subsequent start without any manual change. If you ever need to reinstall, move the CD-ROM above the disk in Proxmox (VM → Options → Boot Order).
@@ -236,7 +242,7 @@ This removes all services, files, and the `proxmigrate` system user. The databas
 
 ### Phase 1 — Core VM Management (current)
 - [x] Disk image import — qcow2, vmdk, vhd, vhdx, raw, OVA with automatic format conversion
-- [x] New VM creation wizard — ISO install or blank disk, full hardware configuration
+- [x] New VM creation wizard — ISO install (upload or browse Proxmox storage) or blank disk, full hardware configuration
 - [x] VM inventory dashboard — live status, start/stop/shutdown/reboot
 - [x] In-browser VNC console with clipboard support
 - [x] First-run setup wizard — Proxmox API token, SSH key, environment discovery, defaults

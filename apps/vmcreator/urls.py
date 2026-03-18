@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path("", views.create, name="vmcreator_create"),
+    path("iso-browser/", views.iso_browser, name="vmcreator_iso_browser"),
     path("<int:job_id>/configure/", views.configure, name="vmcreator_configure"),
     path("<int:job_id>/progress/", views.progress, name="vmcreator_progress"),
     path("<int:job_id>/status/", views.job_status, name="vmcreator_status"),

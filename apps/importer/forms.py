@@ -192,7 +192,7 @@ class VMConfigForm(forms.Form):
     ballooning = forms.BooleanField(
         required=False,
         label="Enable Memory Ballooning",
-        initial=True,
+        initial=False,
     )
     balloon_min_mb = forms.IntegerField(
         required=False,
@@ -295,6 +295,23 @@ class VMConfigForm(forms.Form):
     start_after_import = forms.BooleanField(required=False)
     virtio_iso_ref = forms.CharField(required=False, max_length=500)
 
+    # --- Cloud-Init ---
+    cloud_init_enabled = forms.BooleanField(required=False)
+    ci_storage = forms.ChoiceField(required=False, choices=[])
+    ci_user = forms.CharField(required=False, max_length=100)
+    ci_password = forms.CharField(required=False, max_length=200, widget=forms.PasswordInput(render_value=True))
+    ci_ssh_keys = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 3}))
+    ci_ip_config = forms.ChoiceField(
+        required=False,
+        choices=[("dhcp", "DHCP"), ("static", "Static"), ("none", "None")],
+        initial="dhcp",
+    )
+    ci_ip_address = forms.CharField(required=False, max_length=50, help_text="e.g. 192.168.1.100/24")
+    ci_gateway = forms.CharField(required=False, max_length=50)
+    ci_nameserver = forms.CharField(required=False, max_length=100)
+    ci_search_domain = forms.CharField(required=False, max_length=200)
+    ci_user_data = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 8}))
+
     def __init__(
         self,
         *args,
@@ -310,6 +327,7 @@ class VMConfigForm(forms.Form):
             self.fields["node"].choices = node_choices
         if storage_choices:
             self.fields["storage_pool"].choices = storage_choices
+            self.fields["ci_storage"].choices = [("", "— same as primary —")] + list(storage_choices)
         if bridge_choices:
             self.fields["net_bridge"].choices = bridge_choices
 
