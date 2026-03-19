@@ -2,6 +2,8 @@
 
 **Version 1.1.2** — Build `2026-03-19.1`
 
+> **To update an existing install:** `git pull origin main && sudo ./update.sh`
+
 A free, open-source, self-hosted web UI for Proxmox VE — built for administrators who need to import disk images, create VMs, and manage their virtual infrastructure without logging into the Proxmox web interface.
 
 Made by **[Backup Assure](https://backupassure.io)**.
