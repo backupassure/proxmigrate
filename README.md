@@ -23,7 +23,7 @@ Made by **[Backup Assure](https://backupassure.io)**.
 
 ## Requirements
 
-- **Proxmox VE 7.x or 8.x** reachable on the network
+- **Proxmox VE 7.x, 8.x, or 9.x** reachable on the network (tested on 9.x)
 - Internet access on the host during install (for package downloads)
 - **`install.sh` and `uninstall.sh` must be run as root** (via `sudo`)
 
