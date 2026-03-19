@@ -338,6 +338,17 @@ Export a complete VM (configuration + all disks) as a `.px` package — a tar.gz
 - [x] `.px` packages are standard tar.gz archives — rename to `.tar.gz` to inspect contents
 - [x] Automatic cleanup of export packages after 24 hours
 
+### Distribution — LXC One-Liner Installer
+Deploy ProxMigrate as a Proxmox LXC container with a single command — no manual setup required.
+
+```bash
+bash -c "$(wget -qLO - https://github.com/backupassure/proxmigrate/raw/main/lxc-install.sh)"
+```
+
+- [ ] `lxc-install.sh` — creates a Debian/Ubuntu LXC container on the Proxmox host with sensible defaults (RAM, disk, CPU), then runs `install.sh` inside it automatically
+- [ ] Follows the [tteck/Proxmox helper scripts](https://github.com/community-scripts/ProxmoxVE) pattern — the primary distribution mechanism for non-technical Proxmox users
+- [ ] No code changes required — `install.sh` already works inside LXC
+
 ### Phase 3 — Proxmox Monitoring & Alerting
 Turn ProxMigrate into a comprehensive Proxmox observability platform.
 
