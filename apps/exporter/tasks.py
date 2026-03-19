@@ -106,10 +106,11 @@ def _export_disk_to_staging(vmid, disk, staging_dir, remote_dir, config, job_id)
             "ExportJob %d: disk %s resolved to %s", job_id, slot, disk_path
         )
 
-        # Convert to qcow2 on Proxmox (qemu-img handles all source formats)
+        # Convert to compressed qcow2 on Proxmox (-c enables zlib compression)
         ssh.run_checked([
             "qemu-img", "convert",
             "-O", "qcow2",
+            "-c",
             disk_path,
             remote_qcow2,
         ])
