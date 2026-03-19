@@ -21,10 +21,21 @@ Made by **[Backup Assure](https://backupassure.io)**.
 
 ## Requirements
 
-- **Ubuntu 22.04 or 24.04** (Debian-based recommended)
 - **Proxmox VE 7.x or 8.x** reachable on the network
 - Internet access on the host during install (for package downloads)
 - **`install.sh` and `uninstall.sh` must be run as root** (via `sudo`)
+
+### Supported operating systems
+
+ProxMigrate is designed to run on a dedicated Linux server that connects to Proxmox over the network — not on the Proxmox host itself.
+
+| Family | Tested distros |
+|---|---|
+| **Debian / Ubuntu** | Ubuntu 22.04 LTS, Ubuntu 24.04 LTS, Debian 11, Debian 12 |
+| **RHEL / CentOS / Rocky** | CentOS Stream 9, Rocky Linux 8/9, AlmaLinux 8/9, RHEL 8/9, Fedora 38+ |
+| **SUSE / openSUSE** | openSUSE Leap 15, openSUSE Tumbleweed |
+
+The installer auto-detects `apt`, `dnf`, `yum`, or `zypper` and installs the correct packages for your distribution. Ubuntu 22.04/24.04 and Rocky Linux 9 are the most tested and recommended.
 
 ### Why root/sudo is required
 
