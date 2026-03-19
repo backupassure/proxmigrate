@@ -1,5 +1,7 @@
 # ProxMigrate
 
+**Version 1.1.2** — Build `2026-03-19.1`
+
 A free, open-source, self-hosted web UI for Proxmox VE — built for administrators who need to import disk images, create VMs, and manage their virtual infrastructure without logging into the Proxmox web interface.
 
 Made by **[Backup Assure](https://backupassure.io)**.
@@ -87,6 +89,25 @@ The installer:
 7. Runs database migrations and creates an admin account
 
 After install, open `https://<your-server-ip>:8443` and log in with the admin account created during installation.
+
+## Updating
+
+To update an existing installation to the latest version:
+
+```bash
+cd /path/to/proxmigrate   # wherever you cloned the repo
+git pull origin main
+sudo ./update.sh
+```
+
+`update.sh` will:
+1. Rsync all application files into `/opt/proxmigrate/`
+2. Install any new Python dependencies
+3. Run database migrations
+4. Collect static files
+5. Restart gunicorn and Celery
+
+It does **not** touch your nginx config, TLS certificates, systemd unit files, or SSH keys. Your data and configuration are preserved.
 
 ## First Login
 
@@ -238,6 +259,27 @@ sudo ./uninstall.sh
 
 This removes all services, files, and the `proxmigrate` system user. The database and uploads under `/opt/proxmigrate/` are removed — back up anything you need first.
 
+## Changelog
+
+### v1.1.2 — 2026-03-19.1
+- **VM Export** — export any VM as a portable `.px` package (compressed qcow2 + JSON manifest)
+- **Smart export modes** — live, filesystem freeze (QEMU guest agent), or graceful shutdown; Windows VMs default to shutdown for NTFS/registry consistency
+- **VM Import from .px** — upload a `.px` package, review and modify configuration pre-populated from the manifest, then deploy
+- **Automatic cleanup** — export packages are purged from the server after 24 hours
+- **Proxmox temp file safety** — remote temp files are always cleaned up after disk transfer, even on failure
+
+### v1.1.1 — Phase 1 baseline
+- Disk image import — qcow2, vmdk, vhd, vhdx, raw, OVA with automatic format conversion
+- VM creation wizard — full hardware configuration including EFI/UEFI, TPM 2.0, Secure Boot
+- VM inventory dashboard — live status, start/stop/shutdown/reboot with real-time updates
+- In-browser VNC console with clipboard support
+- First-run setup wizard — Proxmox API token, SSH key, environment discovery
+- Authentication — local accounts, LDAP, Microsoft Entra ID (Azure AD)
+- TLS certificate management — CSR workflow, upload, self-signed, port configuration
+- VirtIO Windows driver ISO support
+
+---
+
 ## Roadmap
 
 ### Phase 1 — Core VM Management (current)
@@ -254,10 +296,13 @@ This removes all services, files, and the `proxmigrate` system user. The databas
 - [ ] MFA — TOTP (authenticator app) for local and LDAP accounts
 
 ### Phase 2 — VM Export & Portable Packages
-Export a complete VM (configuration + all disks) as a `.px` package — a tar.gz archive with a YAML manifest — that can be imported on any ProxMigrate server to recreate the VM identically.
+Export a complete VM (configuration + all disks) as a `.px` package — a tar.gz archive with a JSON manifest — that can be imported on any ProxMigrate server to recreate the VM identically.
 
-- [ ] VM export: capture `qm config`, export all disks via `qemu-img convert`, bundle into `.px` archive with YAML manifest
-- [ ] Package import: parse YAML, transfer disks, recreate VM configuration, re-attach disks
+- [x] VM export: capture `qm config`, export all disks via `qemu-img convert -c` (compressed qcow2), bundle into `.px` archive with JSON manifest
+- [x] Smart export modes: live (crash-consistent), freeze (filesystem freeze via QEMU guest agent), shutdown (graceful stop → export → optional restart)
+- [x] Package import: parse manifest, transfer disks to Proxmox, recreate VM configuration pre-populated from manifest, re-attach disks
+- [x] `.px` packages are standard tar.gz archives — rename to `.tar.gz` to inspect contents
+- [x] Automatic cleanup of export packages after 24 hours
 
 ### Phase 3 — Proxmox Monitoring & Alerting
 Turn ProxMigrate into a comprehensive Proxmox observability platform.
