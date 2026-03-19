@@ -218,7 +218,7 @@
 
           {# ── Azure App Registration Guide (collapsible) ── #}
           <div class="form-section" style="margin-bottom:1.5rem;">
-            <div class="form-section-header" onclick="toggleSection(this)">
+            <div class="form-section-header">
               <div style="display:flex;align-items:center;gap:0.5rem;">
                 <i class="fas fa-book" style="color:#0369a1;"></i>
                 Azure App Registration Guide — Mail.Send via Client Credentials
@@ -423,14 +423,6 @@ function switchTab(tab) {
   document.querySelectorAll('.tabs li').forEach(t => t.classList.remove('is-active'));
   document.getElementById('pane-' + tab).classList.remove('is-hidden');
   document.getElementById('tab-' + tab).classList.add('is-active');
-}
-
-function toggleSection(header) {
-  const body = header.nextElementSibling;
-  const icon = header.querySelector('.section-toggle-icon');
-  const isOpen = body.classList.contains('is-open');
-  body.classList.toggle('is-open', !isOpen);
-  icon.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
 </script>
 {% endblock %}
