@@ -58,6 +58,15 @@
       <span>Resume</span>
     </button>
   {% endif %}
+  &nbsp;
+  <form method="post" action="{% url 'export_trigger' vmid %}" style="display:inline;">
+    {% csrf_token %}
+    <button type="submit" class="button is-info is-small"
+            onclick="return confirm('Export VM {{ vm.name }} as a .px package?\n\nThis may take several minutes depending on disk size.')">
+      <span class="icon is-small"><i class="fas fa-file-export"></i></span>
+      <span>Export VM</span>
+    </button>
+  </form>
 {% endblock %}
 
 {% block content %}

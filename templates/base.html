@@ -35,6 +35,9 @@
       <a href="{% url 'inventory' %}" class="{% if request.resolver_match.url_name == 'inventory' %}is-active{% endif %}">
         <i class="fas fa-server"></i> VM Inventory
       </a>
+      <a href="{% url 'export_index' %}" class="{% if 'export' in request.resolver_match.url_name or 'px_' in request.resolver_match.url_name %}is-active{% endif %}">
+        <i class="fas fa-file-export"></i> Export &amp; Import
+      </a>
 
       <div class="nav-label">Settings</div>
       <a href="{% url 'proxmox_settings' %}" class="{% if 'proxmox_settings' in request.resolver_match.url_name %}is-active{% endif %}">

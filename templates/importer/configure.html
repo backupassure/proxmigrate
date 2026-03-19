@@ -11,13 +11,15 @@
 {% endblock %}
 
 {% block content %}
-<form method="post" action="{% url 'importer_configure' job.id %}" id="configure-form">
+<form method="post" action="{% block form_action %}{% url 'importer_configure' job.id %}{% endblock %}" id="configure-form">
 {% csrf_token %}
 
 <div class="columns">
 
   {# ===== LEFT: VM Configuration Form ===== #}
   <div class="column is-8">
+
+    {% block configure_banner %}{% endblock %}
 
     {# Non-field errors #}
     {% if form.non_field_errors %}

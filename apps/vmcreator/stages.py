@@ -107,3 +107,20 @@ CREATE_STAGES_ISO_PROXMOX = [
     ("CONFIGURING",   "Configuring"),
     ("STARTING",      "Starting VM"),
 ]
+
+EXPORT_STAGES = [
+    ("READING_CONFIG",     "Reading VM Config"),
+    ("EXPORTING_DISKS",    "Exporting Disks"),
+    ("BUILDING_MANIFEST",  "Building Manifest"),
+    ("PACKAGING",          "Packaging Archive"),
+]
+
+PX_IMPORT_STAGES = [
+    ("TRANSFERRING",   "Transferring Disks to Proxmox"),
+    ("CREATING_VM",    "Creating VM"),
+    ("IMPORTING_DISK", "Importing Disk"),
+    ("CONFIGURING",    "Configuring"),
+    ("CLOUD_INIT",     "Cloud-Init Setup"),
+    ("STARTING",       "Starting VM"),
+    ("CLEANUP",        "Cleanup"),
+]
