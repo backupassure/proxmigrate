@@ -47,35 +47,76 @@
       </div>
     {% endif %}
 
-    {# ── Tabs ── #}
-    <div class="tabs" style="margin-bottom:0;">
-      <ul>
-        <li id="tab-smtp" class="{% if active_tab == 'smtp' %}is-active{% endif %}">
-          <a onclick="switchTab('smtp')">
-            <span class="icon is-small"><i class="fas fa-envelope"></i></span>
-            <span>SMTP</span>
-          </a>
-        </li>
-        <li id="tab-graph" class="{% if active_tab == 'graph' %}is-active{% endif %}">
-          <a onclick="switchTab('graph')">
-            <span class="icon is-small"><i class="fab fa-microsoft"></i></span>
-            <span>Microsoft Graph API</span>
-          </a>
-        </li>
-      </ul>
+    {# ── Delivery method selector ── #}
+    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
+      <div class="card-header">
+        <i class="fas fa-paper-plane" style="color:#3273dc;margin-right:0.5rem;"></i>
+        Delivery Method
+      </div>
+      <div class="card-body" style="padding:1.25rem;">
+        <p style="font-size:0.875rem;color:#6b7280;margin-bottom:1rem;">Choose one delivery method. Only the selected method will be used for outgoing email.</p>
+        <div class="columns">
+
+          {# SMTP card #}
+          <div class="column is-half">
+            <div id="card-smtp" class="method-card {% if not config or config.backend_type == 'smtp' %}is-selected{% endif %}"
+                 onclick="selectMethod('smtp')"
+                 style="border:2px solid transparent;border-radius:8px;padding:1.25rem;cursor:pointer;transition:all 0.15s;background:#f8faff;">
+              <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+                <div style="width:36px;height:36px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <i class="fas fa-envelope" style="color:#3273dc;font-size:1rem;"></i>
+                </div>
+                <div>
+                  <div style="font-weight:700;color:#1a1a2e;">SMTP</div>
+                  <div style="font-size:0.78rem;color:#6b7280;">Standard mail server</div>
+                </div>
+                <span class="method-check" style="margin-left:auto;font-size:1.1rem;color:#48c78e;display:none;">
+                  <i class="fas fa-check-circle"></i>
+                </span>
+              </div>
+              <p style="font-size:0.82rem;color:#4a4a4a;line-height:1.5;">
+                Works with any SMTP server — Office 365, Gmail, Postfix, SendGrid, or your own mail relay.
+              </p>
+            </div>
+          </div>
+
+          {# Graph API card #}
+          <div class="column is-half">
+            <div id="card-graph" class="method-card {% if config and config.backend_type == 'graph' %}is-selected{% endif %}"
+                 onclick="selectMethod('graph')"
+                 style="border:2px solid transparent;border-radius:8px;padding:1.25rem;cursor:pointer;transition:all 0.15s;background:#f8faff;">
+              <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+                <div style="width:36px;height:36px;border-radius:50%;background:#e8f4ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <i class="fab fa-microsoft" style="color:#0078d4;font-size:1rem;"></i>
+                </div>
+                <div>
+                  <div style="font-weight:700;color:#1a1a2e;">Microsoft Graph API</div>
+                  <div style="font-size:0.78rem;color:#6b7280;">Microsoft 365 / Azure AD</div>
+                </div>
+                <span class="method-check" style="margin-left:auto;font-size:1.1rem;color:#48c78e;display:none;">
+                  <i class="fas fa-check-circle"></i>
+                </span>
+              </div>
+              <p style="font-size:0.82rem;color:#4a4a4a;line-height:1.5;">
+                Sends via Microsoft Graph API using an Azure App Registration. No SMTP credentials required — ideal for Microsoft 365 tenants.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div>
 
     {# ══════════════════════════════════════════════════════════════════════ #}
-    {# SMTP Tab                                                               #}
+    {# SMTP Form                                                              #}
     {# ══════════════════════════════════════════════════════════════════════ #}
-    <div id="pane-smtp" class="tab-pane {% if active_tab != 'smtp' %}is-hidden{% endif %}">
+    <div id="pane-smtp" class="{% if config and config.backend_type == 'graph' %}is-hidden{% endif %}">
       <div class="proxmigrate-card">
         <div class="card-header">
           <i class="fas fa-envelope" style="color:#3273dc;margin-right:0.5rem;"></i>
           SMTP Configuration
         </div>
         <div class="card-body" style="padding:1.5rem;">
-
           <form method="post" action="{% url 'email_settings_save' 'smtp' %}" id="smtp-form">
             {% csrf_token %}
 
@@ -200,15 +241,14 @@
               </button>
             </div>
           </form>
-
         </div>
       </div>
     </div>
 
     {# ══════════════════════════════════════════════════════════════════════ #}
-    {# Microsoft Graph API Tab                                                #}
+    {# Microsoft Graph API Form                                               #}
     {# ══════════════════════════════════════════════════════════════════════ #}
-    <div id="pane-graph" class="tab-pane {% if active_tab != 'graph' %}is-hidden{% endif %}">
+    <div id="pane-graph" class="{% if not config or config.backend_type != 'graph' %}is-hidden{% endif %}">
       <div class="proxmigrate-card">
         <div class="card-header">
           <i class="fab fa-microsoft" style="color:#0078d4;margin-right:0.5rem;"></i>
@@ -234,7 +274,7 @@
                     Go to <strong>portal.azure.com</strong> &rarr; <strong>Microsoft Entra ID</strong> &rarr; <strong>App registrations</strong> &rarr; <strong>New registration</strong>.
                     Name it something descriptive like <code>ProxMigrate Mail</code>.
                     Supported account types: <strong>Accounts in this organizational directory only</strong>.
-                    No redirect URI is needed for this app — it uses application permissions, not user sign-in.
+                    No redirect URI is needed — this app uses application permissions, not user sign-in.
                   </div>
                 </li>
 
@@ -269,7 +309,7 @@
                     </table>
                     <p style="margin-top:0.5rem;color:#6b7280;">
                       After adding <code>Mail.Send</code>, click <strong>Grant admin consent for &lt;your tenant&gt;</strong>.
-                      The status column must show a green <strong>Granted</strong> tick — the permission will not work otherwise.
+                      The status column must show a green <strong>Granted</strong> tick — the permission will not work without it.
                     </p>
                   </div>
                 </li>
@@ -416,13 +456,22 @@ New-ApplicationAccessPolicy `
 </div>
 {% endblock %}
 
+{% block extra_head %}
+<style>
+.method-card { border: 2px solid #e8eaf0 !important; }
+.method-card:hover { border-color: #3273dc !important; background: #eff6ff !important; }
+.method-card.is-selected { border-color: #3273dc !important; background: #eff6ff !important; }
+.method-card.is-selected .method-check { display: inline !important; }
+</style>
+{% endblock %}
+
 {% block extra_scripts %}
 <script>
-function switchTab(tab) {
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('is-hidden'));
-  document.querySelectorAll('.tabs li').forEach(t => t.classList.remove('is-active'));
-  document.getElementById('pane-' + tab).classList.remove('is-hidden');
-  document.getElementById('tab-' + tab).classList.add('is-active');
+function selectMethod(method) {
+  document.querySelectorAll('.method-card').forEach(c => c.classList.remove('is-selected'));
+  document.getElementById('card-' + method).classList.add('is-selected');
+  document.getElementById('pane-smtp').classList.toggle('is-hidden', method !== 'smtp');
+  document.getElementById('pane-graph').classList.toggle('is-hidden', method !== 'graph');
 }
 </script>
 {% endblock %}
