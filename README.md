@@ -1,6 +1,6 @@
 # ProxMigrate
 
-**Version 1.1.3** — Build `2026-03-19.2`
+**Version 1.1.2** — Build `2026-03-19.2`
 
 > **To update an existing install:** `git pull origin main && sudo ./update.sh`
 
@@ -288,7 +288,7 @@ This removes all services, files, and the `proxmigrate` system user. The databas
 
 ## Changelog
 
-### v1.1.3 — 2026-03-19.2
+### v1.1.2 — 2026-03-19.2
 - **Email Settings** — SMTP and Microsoft Graph API (client credentials / Mail.Send) for outgoing email
 - Encrypted storage of SMTP password and Graph client secret
 - Live test send from the settings page for both backends
