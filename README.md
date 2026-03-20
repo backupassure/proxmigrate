@@ -1,6 +1,6 @@
 # ProxMigrate
 
-**Version 1.1.3** — Build `2026-03-20.1`
+**Version 1.1.2** — Build `2026-03-20.1`
 
 > **To update an existing install:** `git pull origin main && sudo ./update.sh`
 
@@ -316,7 +316,7 @@ ProxMigrate handles template downloading, container creation, and optional auto-
 
 ## Changelog
 
-### v1.1.3 — 2026-03-20.1
+### v1.1.2 — 2026-03-20.1
 - **LXC container management** — inventory, detail view, start/stop/shutdown/reboot actions, in-browser console
 - **LXC container creation** — two-step wizard with template browser (download on demand), full network/storage/credential configuration, live progress tracking
 - **CPU type default changed to `host`** — better default for VM imports and new VM creation; avoids boot failures on guests compiled for newer CPU feature sets
