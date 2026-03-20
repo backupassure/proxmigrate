@@ -1,6 +1,6 @@
 # ProxMigrate
 
-**Version 1.1.2** — Build `2026-03-19.2`
+**Version 1.1.3** — Build `2026-03-20.1`
 
 > **To update an existing install:** `git pull origin main && sudo ./update.sh`
 
@@ -17,6 +17,7 @@ Made by **[Backup Assure](https://backupassure.io)**.
 - **ISO selection** — upload an ISO from your computer or browse and select ISOs already stored on Proxmox storage
 - **VM inventory dashboard** — live status, start/stop/shutdown/reboot actions with real-time updates
 - **VM console** — full in-browser VNC console with clipboard support (paste text into any OS including IOS-XE and Linux terminals)
+- **LXC container management** — browse, start/stop/reboot, and view detailed config of existing LXC containers; create new containers from Proxmox templates with full network, storage, and credential configuration
 - **Setup wizard** — guided first-run setup for Proxmox API token, SSH key deployment, and environment discovery
 - **Authentication** — local accounts, LDAP, and Microsoft Entra ID (Azure AD)
 - **Self-signed or custom TLS** — runs HTTPS on port 8443 by default (configurable)
@@ -286,7 +287,39 @@ sudo ./uninstall.sh
 
 This removes all services, files, and the `proxmigrate` system user. The database and uploads under `/opt/proxmigrate/` are removed — back up anything you need first.
 
+## LXC Container Management
+
+ProxMigrate includes a full LXC container management interface alongside VM management.
+
+### Inventory
+
+The LXC inventory page lists all containers on your Proxmox node with live CPU, memory, and uptime stats. Containers are sorted with running ones first. You can start, stop, shutdown, or reboot any container directly from the list — actions update in real time via HTMX polling without a page refresh.
+
+### Container Detail
+
+Click any container to see its full configuration: hostname, OS type, CPU and memory allocation, rootfs and mount points, network interfaces, DNS settings, and enabled features (nesting, FUSE, etc.).
+
+### In-Browser Console
+
+Each container has a full noVNC console accessible directly from ProxMigrate — the same in-browser console experience as VMs.
+
+### Creating Containers
+
+The container creation wizard is a two-step flow:
+
+1. **Choose a template** — browse templates already downloaded to a storage pool, or select from the full list of available templates to download automatically before creation
+2. **Configure** — set hostname, CPU, memory, swap, rootfs storage and size, network (DHCP or static IP), DNS, root password, SSH public key, and options like nesting (for Docker-in-LXC) and unprivileged mode
+
+ProxMigrate handles template downloading, container creation, and optional auto-start — all tracked with a live progress view.
+
+---
+
 ## Changelog
+
+### v1.1.3 — 2026-03-20.1
+- **LXC container management** — inventory, detail view, start/stop/shutdown/reboot actions, in-browser console
+- **LXC container creation** — two-step wizard with template browser (download on demand), full network/storage/credential configuration, live progress tracking
+- **CPU type default changed to `host`** — better default for VM imports and new VM creation; avoids boot failures on guests compiled for newer CPU feature sets
 
 ### v1.1.2 — 2026-03-19.2
 - **Email Settings** — SMTP and Microsoft Graph API (client credentials / Mail.Send) for outgoing email
@@ -326,6 +359,7 @@ This removes all services, files, and the `proxmigrate` system user. The databas
 - [x] TLS certificate management — CSR workflow, upload, self-signed, port configuration
 - [x] VirtIO Windows driver ISO browser — automatically attach drivers to Windows VMs
 - [x] Email delivery — SMTP and Microsoft Graph API, with live test send and encrypted credential storage
+- [x] LXC container management — inventory, detail, console, start/stop/reboot, creation wizard
 - [ ] Password recovery — self-service password reset for local accounts via email
 - [ ] MFA — TOTP (authenticator app) for local and LDAP accounts, including TOTP recovery codes
 
