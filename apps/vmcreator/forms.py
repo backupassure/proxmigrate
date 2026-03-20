@@ -29,7 +29,7 @@ class VmCreateConfigForm(forms.Form):
     tpm = forms.BooleanField(required=False)
 
     # --- CPU ---
-    cpu_type = forms.ChoiceField(choices=CPU_TYPE_CHOICES, initial="x86-64-v2-AES")
+    cpu_type = forms.ChoiceField(choices=CPU_TYPE_CHOICES, initial="host")
     sockets = forms.IntegerField(initial=1, min_value=1, max_value=8)
     cores = forms.IntegerField(initial=2, min_value=1, max_value=256)
     numa = forms.BooleanField(required=False)

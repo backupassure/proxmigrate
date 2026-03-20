@@ -164,7 +164,7 @@ class VMConfigForm(forms.Form):
     cpu_type = forms.ChoiceField(
         choices=CPU_TYPE_CHOICES,
         label="CPU Type",
-        initial="x86-64-v2-AES",
+        initial="host",
     )
     sockets = forms.IntegerField(
         initial=1,
