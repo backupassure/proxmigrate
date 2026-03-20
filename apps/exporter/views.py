@@ -364,6 +364,7 @@ def px_configure(request, job_id):
             "memory_mb": manifest_vm.get("memory_mb", config.default_memory_mb),
             "sockets": manifest_vm.get("sockets", 1),
             "cpu_type": manifest_vm.get("cpu_type", "x86-64-v2-AES"),
+            "machine": manifest_vm.get("machine", "pc"),
             "os_type": manifest_vm.get("os_type", "l26"),
             "bios": manifest_vm.get("bios", "seabios"),
             "start_on_boot": manifest_vm.get("start_on_boot", False),

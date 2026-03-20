@@ -5,6 +5,7 @@ from apps.importer.forms import (
     CPU_TYPE_CHOICES,
     DISK_BUS_CHOICES,
     DISK_CACHE_CHOICES,
+    MACHINE_TYPE_CHOICES,
     NET_MODEL_CHOICES,
     OS_TYPE_CHOICES,
     VGA_TYPE_CHOICES,
@@ -23,6 +24,7 @@ class VmCreateConfigForm(forms.Form):
     os_type = forms.ChoiceField(choices=OS_TYPE_CHOICES, initial="l26")
 
     # --- Firmware ---
+    machine = forms.ChoiceField(choices=MACHINE_TYPE_CHOICES, initial="pc")
     bios = forms.ChoiceField(choices=BIOS_CHOICES, initial="seabios")
     efi_disk = forms.BooleanField(required=False)
     secure_boot_keys = forms.BooleanField(required=False)

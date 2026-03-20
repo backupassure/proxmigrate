@@ -49,6 +49,11 @@ BIOS_CHOICES = [
     ("ovmf", "UEFI (OVMF)"),
 ]
 
+MACHINE_TYPE_CHOICES = [
+    ("pc", "i440FX (legacy)"),
+    ("q35", "Q35 (modern, PCIe)"),
+]
+
 DISK_BUS_CHOICES = [
     ("scsi", "VirtIO-SCSI (recommended)"),
     ("sata", "SATA"),
@@ -137,6 +142,11 @@ class VMConfigForm(forms.Form):
     )
 
     # --- Firmware ---
+    machine = forms.ChoiceField(
+        choices=MACHINE_TYPE_CHOICES,
+        label="Machine Type",
+        initial="pc",
+    )
     bios = forms.ChoiceField(
         choices=BIOS_CHOICES,
         label="BIOS Type",
