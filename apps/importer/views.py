@@ -148,7 +148,9 @@ def configure(request, job_id):
 
             from apps.importer.tasks import run_import_pipeline
 
-            run_import_pipeline.delay(job.pk)
+            result = run_import_pipeline.delay(job.pk)
+            job.task_id = result.id
+            job.save(update_fields=["task_id"])
             return redirect(f"/importer/{job.pk}/progress/")
     else:
         initial = {
@@ -234,6 +236,29 @@ def delete_job(request, job_id):
 
     job.delete()
     messages.success(request, f'Import job "{name}" deleted.')
+    return redirect("dashboard")
+
+
+@login_required
+@require_POST
+def cancel_job(request, job_id):
+    """Cancel a queued or in-progress import job."""
+    job = get_object_or_404(ImportJob, pk=job_id)
+    if job.stage in (ImportJob.STAGE_DONE, ImportJob.STAGE_FAILED, ImportJob.STAGE_CANCELLED):
+        messages.warning(request, f'Job "{job.vm_name}" is already {job.get_stage_display().lower()}.')
+        return redirect("dashboard")
+
+    # Revoke the Celery task if we have a task_id
+    if job.task_id:
+        from proxmigrate.celery import app as celery_app
+        celery_app.control.revoke(job.task_id, terminate=True, signal="SIGTERM")
+        logger.info("cancel_job: revoked Celery task %s for ImportJob %d", job.task_id, job.pk)
+
+    job.stage = ImportJob.STAGE_CANCELLED
+    job.message = "Cancelled by user"
+    job.save(update_fields=["stage", "message", "updated_at"])
+    logger.info("ImportJob %d: cancelled by user %s", job.pk, request.user.username)
+    messages.success(request, f'Job "{job.vm_name}" has been cancelled.')
     return redirect("dashboard")
 
 

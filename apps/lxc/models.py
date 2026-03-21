@@ -17,6 +17,7 @@ class LxcCreateJob(models.Model):
     STAGE_STARTING = "STARTING"
     STAGE_DONE = "DONE"
     STAGE_FAILED = "FAILED"
+    STAGE_CANCELLED = "CANCELLED"
 
     STAGE_CHOICES = [
         (STAGE_QUEUED, "Queued"),
@@ -26,6 +27,7 @@ class LxcCreateJob(models.Model):
         (STAGE_STARTING, "Starting Container"),
         (STAGE_DONE, "Done"),
         (STAGE_FAILED, "Failed"),
+        (STAGE_CANCELLED, "Cancelled"),
     ]
 
     ct_name = models.CharField(max_length=100)
@@ -35,6 +37,8 @@ class LxcCreateJob(models.Model):
     template_storage = models.CharField(max_length=200, blank=True)
 
     stage = models.CharField(max_length=30, choices=STAGE_CHOICES, default=STAGE_QUEUED)
+    task_id = models.CharField(max_length=200, blank=True)
+    cancelled = models.BooleanField(default=False)
     percent = models.IntegerField(default=0)
     message = models.CharField(max_length=500, blank=True)
     error = models.TextField(blank=True)

@@ -19,4 +19,5 @@ urlpatterns = [
     path("new/<int:job_id>/configure/", views.lxc_configure, name="lxc_configure"),
     path("new/<int:job_id>/progress/", views.lxc_progress, name="lxc_progress"),
     path("new/<int:job_id>/status/", views.lxc_job_status, name="lxc_job_status"),
+    path("new/<int:job_id>/cancel/", views.cancel_job, name="lxc_cancel_job"),
 ]

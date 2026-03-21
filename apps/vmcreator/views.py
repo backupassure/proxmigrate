@@ -173,7 +173,9 @@ def configure(request, job_id):
             job.save(update_fields=["vm_name", "node", "vmid", "vm_config_json", "updated_at"])
 
             from apps.vmcreator.tasks import run_create_pipeline
-            run_create_pipeline.delay(job.pk)
+            result = run_create_pipeline.delay(job.pk)
+            job.task_id = result.id
+            job.save(update_fields=["task_id"])
             return redirect("vmcreator_progress", job_id=job.pk)
     else:
         form = VmCreateConfigForm(
@@ -259,6 +261,28 @@ def delete_job(request, job_id):
 
     job.delete()
     messages.success(request, f'VM creation job "{name}" deleted.')
+    return redirect("dashboard")
+
+
+@login_required
+@require_POST
+def cancel_job(request, job_id):
+    """Cancel a queued or in-progress VM create job."""
+    job = get_object_or_404(VmCreateJob, pk=job_id)
+    if job.stage in (VmCreateJob.STAGE_DONE, VmCreateJob.STAGE_FAILED, VmCreateJob.STAGE_CANCELLED):
+        messages.warning(request, f'Job "{job.vm_name}" is already {job.get_stage_display().lower()}.')
+        return redirect("dashboard")
+
+    if job.task_id:
+        from proxmigrate.celery import app as celery_app
+        celery_app.control.revoke(job.task_id, terminate=True, signal="SIGTERM")
+        logger.info("cancel_job: revoked Celery task %s for VmCreateJob %d", job.task_id, job.pk)
+
+    job.stage = VmCreateJob.STAGE_CANCELLED
+    job.message = "Cancelled by user"
+    job.save(update_fields=["stage", "message", "updated_at"])
+    logger.info("VmCreateJob %d: cancelled by user %s", job.pk, request.user.username)
+    messages.success(request, f'Job "{job.vm_name}" has been cancelled.')
     return redirect("dashboard")
 
 

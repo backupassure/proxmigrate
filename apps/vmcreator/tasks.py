@@ -15,6 +15,18 @@ from apps.wizard.models import ProxmoxConfig
 
 logger = logging.getLogger(__name__)
 
+
+class JobCancelled(Exception):
+    """Raised when a job has been cancelled by the user."""
+    pass
+
+
+def _check_cancelled(job):
+    """Re-read job from DB and raise if cancelled."""
+    job.refresh_from_db(fields=["stage"])
+    if job.stage == VmCreateJob.STAGE_CANCELLED:
+        raise JobCancelled(f"VmCreateJob {job.pk} was cancelled by user")
+
 UPLOAD_ROOT = getattr(settings, "UPLOAD_ROOT", "/opt/proxmigrate/uploads")
 
 
@@ -88,6 +100,7 @@ def run_create_pipeline(self, job_id):
     assigned_vmid = None
 
     try:
+        _check_cancelled(job)
         api = config.get_api_client()
 
         # ── 1. UPLOADING ISO ─────────────────────────────────────────────────
@@ -130,6 +143,7 @@ def run_create_pipeline(self, job_id):
             job.save(update_fields=["percent", "updated_at"])
 
         # ── 2. CREATING VM ───────────────────────────────────────────────────
+        _check_cancelled(job)
         job.set_stage(VmCreateJob.STAGE_CREATING_VM, "Creating VM on Proxmox...", percent=0)
 
         if job.vmid:
@@ -184,6 +198,7 @@ def run_create_pipeline(self, job_id):
             ssh.run_checked(qm_create_args)
 
         # ── 3. CONFIGURING ───────────────────────────────────────────────────
+        _check_cancelled(job)
         job.set_stage(VmCreateJob.STAGE_CONFIGURING, "Configuring VM...")
 
         storage_pool = vm_config.get("storage_pool", config.default_storage)
@@ -294,6 +309,7 @@ def run_create_pipeline(self, job_id):
                 logger.warning("VmCreateJob %d: cloud-init setup failed (non-fatal): %s", job.pk, exc)
 
         # ── 5. STARTING ──────────────────────────────────────────────────────
+        _check_cancelled(job)
         if vm_config.get("start_after_create"):
             job.set_stage(VmCreateJob.STAGE_STARTING, "Starting VM...")
             try:
@@ -305,6 +321,8 @@ def run_create_pipeline(self, job_id):
         job.set_stage(VmCreateJob.STAGE_DONE, f"VM {vmid} created successfully.", percent=100)
         logger.info("VmCreateJob %d: complete. vmid=%d", job_id, vmid)
 
+    except JobCancelled:
+        logger.info("VmCreateJob %d: cancelled by user", job_id)
     except SSHCommandError as exc:
         _fail_create(job, f"SSH command failed: {exc}", assigned_vmid, config, node)
     except ProxmoxAPIError as exc:
