@@ -114,6 +114,239 @@ VGA_TYPE_CHOICES = [
 ]
 
 
+VMWARE_EXTENSIONS = {".ova", ".vmdk"}
+HYPERV_EXTENSIONS = {".vhd", ".vhdx"}
+KVM_EXTENSIONS = {".qcow2", ".raw", ".img"}
+
+
+def detect_source_platform(filename):
+    """Detect the source virtualisation platform from the filename extension.
+
+    Returns 'vmware', 'hyperv', 'kvm', or None.
+    """
+    _, ext = os.path.splitext(filename.lower())
+    if ext in VMWARE_EXTENSIONS:
+        return "vmware"
+    if ext in HYPERV_EXTENSIONS:
+        return "hyperv"
+    if ext in KVM_EXTENSIONS:
+        return "kvm"
+    return None
+
+
+HARDWARE_PRESETS = {
+    "Server OS": [
+        {
+            "key": "windows-server",
+            "label": "Windows Server (2016/2019/2022)",
+            "config": {
+                "cpu_type": "host", "cores": 4, "sockets": 1,
+                "memory_mb": 4096, "net_model": "e1000e", "disk_bus": "sata",
+                "os_type": "win10", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+            },
+        },
+        {
+            "key": "windows-desktop",
+            "label": "Windows 10 / 11",
+            "config": {
+                "cpu_type": "host", "cores": 2, "sockets": 1,
+                "memory_mb": 4096, "net_model": "e1000e", "disk_bus": "sata",
+                "os_type": "win10", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+            },
+        },
+        {
+            "key": "linux-ubuntu",
+            "label": "Linux — Ubuntu / Debian",
+            "config": {
+                "cpu_type": "host", "cores": 2, "sockets": 1,
+                "memory_mb": 2048, "net_model": "e1000", "disk_bus": "scsi",
+                "os_type": "l26", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": True, "ballooning": False, "qemu_agent": False,
+            },
+        },
+        {
+            "key": "linux-rhel",
+            "label": "Linux — RHEL / CentOS / Rocky",
+            "config": {
+                "cpu_type": "host", "cores": 2, "sockets": 1,
+                "memory_mb": 2048, "net_model": "e1000", "disk_bus": "scsi",
+                "os_type": "l26", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": True, "ballooning": False, "qemu_agent": False,
+            },
+        },
+        {
+            "key": "linux-other",
+            "label": "Linux — Other",
+            "config": {
+                "cpu_type": "host", "cores": 2, "sockets": 1,
+                "memory_mb": 2048, "net_model": "e1000", "disk_bus": "scsi",
+                "os_type": "l26", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": True, "ballooning": False, "qemu_agent": False,
+            },
+        },
+        {
+            "key": "freebsd",
+            "label": "FreeBSD",
+            "config": {
+                "cpu_type": "host", "cores": 2, "sockets": 1,
+                "memory_mb": 2048, "net_model": "e1000", "disk_bus": "sata",
+                "os_type": "other", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+            },
+        },
+    ],
+    "Appliances": [
+        {
+            "key": "cisco-expressway",
+            "label": "Cisco — Expressway / VCS",
+            "config": {
+                "cpu_type": "qemu64", "cores": 4, "sockets": 1,
+                "memory_mb": 6144, "net_model": "e1000", "disk_bus": "ide",
+                "os_type": "l26", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+                "serial_port": True,
+            },
+        },
+        {
+            "key": "cisco-cucm",
+            "label": "Cisco — CUCM / UCM",
+            "config": {
+                "cpu_type": "host", "cores": 4, "sockets": 1,
+                "memory_mb": 8192, "net_model": "e1000", "disk_bus": "ide",
+                "os_type": "l26", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+                "serial_port": True,
+            },
+        },
+        {
+            "key": "cisco-ise",
+            "label": "Cisco — ISE",
+            "config": {
+                "cpu_type": "host", "cores": 4, "sockets": 1,
+                "memory_mb": 16384, "net_model": "e1000", "disk_bus": "ide",
+                "os_type": "l26", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+                "serial_port": True,
+            },
+        },
+        {
+            "key": "cisco-fmc",
+            "label": "Cisco — FMC / FTD",
+            "config": {
+                "cpu_type": "host", "cores": 4, "sockets": 1,
+                "memory_mb": 32768, "net_model": "e1000", "disk_bus": "ide",
+                "os_type": "l26", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+                "serial_port": True,
+            },
+        },
+        {
+            "key": "cisco-other",
+            "label": "Cisco — Other",
+            "config": {
+                "cpu_type": "host", "cores": 2, "sockets": 1,
+                "memory_mb": 4096, "net_model": "e1000", "disk_bus": "ide",
+                "os_type": "l26", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+                "serial_port": True,
+            },
+        },
+        {
+            "key": "aruba-clearpass",
+            "label": "Aruba — ClearPass",
+            "config": {
+                "cpu_type": "host", "cores": 4, "sockets": 1,
+                "memory_mb": 8192, "net_model": "e1000", "disk_bus": "ide",
+                "os_type": "l26", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+            },
+        },
+        {
+            "key": "aruba-other",
+            "label": "Aruba — Other",
+            "config": {
+                "cpu_type": "host", "cores": 2, "sockets": 1,
+                "memory_mb": 4096, "net_model": "e1000", "disk_bus": "ide",
+                "os_type": "l26", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+            },
+        },
+        {
+            "key": "paloalto-firewall",
+            "label": "Palo Alto — Firewall",
+            "config": {
+                "cpu_type": "host", "cores": 4, "sockets": 1,
+                "memory_mb": 6656, "net_model": "e1000", "disk_bus": "ide",
+                "os_type": "l26", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+            },
+        },
+        {
+            "key": "fortinet-fortigate",
+            "label": "Fortinet — FortiGate",
+            "config": {
+                "cpu_type": "host", "cores": 2, "sockets": 1,
+                "memory_mb": 2048, "net_model": "e1000", "disk_bus": "ide",
+                "os_type": "l26", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+            },
+        },
+        {
+            "key": "sophos-firewall",
+            "label": "Sophos — Firewall",
+            "config": {
+                "cpu_type": "host", "cores": 2, "sockets": 1,
+                "memory_mb": 4096, "net_model": "e1000", "disk_bus": "ide",
+                "os_type": "l26", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+            },
+        },
+        {
+            "key": "appliance-other",
+            "label": "Appliance — Other",
+            "config": {
+                "cpu_type": "host", "cores": 2, "sockets": 1,
+                "memory_mb": 4096, "net_model": "e1000", "disk_bus": "ide",
+                "os_type": "l26", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+            },
+        },
+    ],
+    "Other": [
+        {
+            "key": "other",
+            "label": "Other / Unknown",
+            "config": {
+                "cpu_type": "host", "cores": 2, "sockets": 1,
+                "memory_mb": 2048, "net_model": "e1000", "disk_bus": "sata",
+                "os_type": "other", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+            },
+        },
+    ],
+}
+
+
 class UploadForm(forms.Form):
     """Disk image upload form."""
 
@@ -327,6 +560,11 @@ class VMConfigForm(forms.Form):
     tablet = forms.BooleanField(
         required=False,
         label="Enable USB Tablet (for VNC pointer sync)",
+    )
+    serial_port = forms.BooleanField(
+        required=False,
+        label="Add Serial Port (socket)",
+        help_text="Required for some appliances (e.g. Cisco Expressway install wizard).",
     )
     protection = forms.BooleanField(
         required=False,
