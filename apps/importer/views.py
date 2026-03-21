@@ -16,6 +16,7 @@ from django.views.decorators.http import require_POST
 from apps.importer.forms import ALLOWED_EXTENSIONS
 from apps.importer.forms import UploadForm
 from apps.importer.forms import VMConfigForm
+from apps.importer.forms import sanitize_vm_name
 from apps.importer.models import ImportJob
 from apps.vmcreator.stages import IMPORT_STAGES, IMPORT_STAGES_PROXMOX_SOURCE, build_stages
 from apps.wizard.models import DiscoveredEnvironment
@@ -63,7 +64,7 @@ def upload(request):
             config = ProxmoxConfig.get_config()
 
             job = ImportJob.objects.create(
-                vm_name=os.path.splitext(filename)[0][:100],
+                vm_name=sanitize_vm_name(os.path.splitext(filename)[0]),
                 node=config.default_node or "",
                 upload_filename=filename,
                 local_input_path=dest_path,

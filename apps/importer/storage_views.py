@@ -9,6 +9,7 @@ from django.shortcuts import redirect
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
 
+from apps.importer.forms import sanitize_vm_name
 from apps.importer.models import ImportJob
 from apps.wizard.models import ProxmoxConfig
 
@@ -233,7 +234,7 @@ def create_job_from_existing(request):
         return JsonResponse({"ok": False, "error": "File not found."}, status=404)
 
     filename = os.path.basename(real_path)
-    vm_name = os.path.splitext(filename)[0][:100]
+    vm_name = sanitize_vm_name(os.path.splitext(filename)[0])
 
     config = ProxmoxConfig.get_config()
     job = ImportJob.objects.create(
@@ -267,7 +268,7 @@ def create_job_from_proxmox(request):
     if ext not in _DISK_EXTENSIONS:
         return JsonResponse({"ok": False, "error": f"Unsupported file type: .{ext}"}, status=400)
 
-    vm_name = os.path.splitext(filename)[0][:100]
+    vm_name = sanitize_vm_name(os.path.splitext(filename)[0])
 
     job = ImportJob.objects.create(
         vm_name=vm_name,

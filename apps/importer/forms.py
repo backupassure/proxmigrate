@@ -1,9 +1,37 @@
 import logging
 import os
+import re
 
 from django import forms
+from django.core.validators import RegexValidator
 
 logger = logging.getLogger(__name__)
+
+
+def sanitize_vm_name(name):
+    """Convert a filename stem into a valid Proxmox VM name (DNS hostname).
+
+    Proxmox requires: letters, digits, and hyphens only; must not start/end
+    with a hyphen; max 63 characters.
+    """
+    # Replace underscores, dots, spaces with hyphens
+    name = re.sub(r"[._\s]+", "-", name)
+    # Strip anything that isn't alphanumeric or hyphen
+    name = re.sub(r"[^a-zA-Z0-9-]", "", name)
+    # Collapse multiple hyphens
+    name = re.sub(r"-{2,}", "-", name)
+    # Strip leading/trailing hyphens
+    name = name.strip("-")
+    # Truncate to 63 chars (DNS label limit)
+    name = name[:63].rstrip("-")
+    return name or "imported-vm"
+
+
+vm_name_validator = RegexValidator(
+    regex=r"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$",
+    message="VM name must contain only letters, numbers, and hyphens, "
+            "and must not start or end with a hyphen (max 63 characters).",
+)
 
 ALLOWED_EXTENSIONS = {".qcow2", ".vmdk", ".vhd", ".vhdx", ".raw", ".img", ".ova"}
 
@@ -115,9 +143,11 @@ class VMConfigForm(forms.Form):
 
     # --- General ---
     vm_name = forms.CharField(
-        max_length=100,
+        max_length=63,
         label="VM Name",
+        validators=[vm_name_validator],
         widget=forms.TextInput(attrs={"placeholder": "my-server"}),
+        help_text="Letters, numbers, and hyphens only.",
     )
     vmid = forms.IntegerField(
         required=False,
