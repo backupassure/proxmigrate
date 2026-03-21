@@ -155,7 +155,10 @@ def run_lxc_create_pipeline(self, job_id):
         if password:
             pct_args += ["--password", password]
 
-        # SSH public key — write via SFTP to avoid bash -c string interpolation
+        # SSH public key — write via SFTP to avoid bash -c string interpolation.
+        # NOTE: If the job is cancelled during SFTP transfer, the temp file
+        # (/tmp/pct_sshkey_<vmid>.pub) may be left on the Proxmox host.
+        # This is harmless and cleaned up on the next successful run.
         ssh_key = ct_config.get("ssh_public_key", "").strip()
         remote_sshkey_path = None
         if ssh_key:
