@@ -18,4 +18,5 @@ urlpatterns = [
     path("import/<int:job_id>/progress/", views.px_progress, name="px_progress"),
     path("import/<int:job_id>/status/", views.px_status, name="px_status"),
     path("import/<int:job_id>/delete/", views.px_delete_job, name="px_delete_job"),
+
 ]

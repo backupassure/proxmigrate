@@ -14,6 +14,18 @@ from apps.wizard.models import ProxmoxConfig
 logger = logging.getLogger(__name__)
 
 
+class JobCancelled(Exception):
+    """Raised when a job has been cancelled by the user."""
+    pass
+
+
+def _check_cancelled(job):
+    """Re-read job from DB and raise if cancelled."""
+    job.refresh_from_db(fields=["stage"])
+    if job.stage == LxcCreateJob.STAGE_CANCELLED:
+        raise JobCancelled(f"LxcCreateJob {job.pk} was cancelled by user")
+
+
 def _fail_create(job, error_message, vmid, config, node):
     logger.error("LxcCreateJob %d FAILED: %s", job.pk, error_message)
     job.stage = LxcCreateJob.STAGE_FAILED
@@ -81,6 +93,8 @@ def run_lxc_create_pipeline(self, job_id):
                         downloaded_names.add(name)
             already_downloaded = template_ref in downloaded_names
 
+        _check_cancelled(job)
+
         if not already_downloaded:
             job.set_stage(LxcCreateJob.STAGE_DOWNLOADING,
                           f"Downloading {template_ref}...", percent=0)
@@ -90,6 +104,7 @@ def run_lxc_create_pipeline(self, job_id):
                           "Template downloaded.", percent=100)
 
         # ── 2. CREATING CONTAINER ─────────────────────────────────────────
+        _check_cancelled(job)
         job.set_stage(LxcCreateJob.STAGE_CREATING, "Creating container on Proxmox...", percent=0)
 
         if job.vmid:
@@ -140,7 +155,10 @@ def run_lxc_create_pipeline(self, job_id):
         if password:
             pct_args += ["--password", password]
 
-        # SSH public key — write via SFTP to avoid bash -c string interpolation
+        # SSH public key — write via SFTP to avoid bash -c string interpolation.
+        # NOTE: If the job is cancelled during SFTP transfer, the temp file
+        # (/tmp/pct_sshkey_<vmid>.pub) may be left on the Proxmox host.
+        # This is harmless and cleaned up on the next successful run.
         ssh_key = ct_config.get("ssh_public_key", "").strip()
         remote_sshkey_path = None
         if ssh_key:
@@ -176,6 +194,7 @@ def run_lxc_create_pipeline(self, job_id):
                 pass
 
         # ── 3. CONFIGURING ────────────────────────────────────────────────
+        _check_cancelled(job)
         job.set_stage(LxcCreateJob.STAGE_CONFIGURING, "Applying configuration...")
 
         with config.get_ssh_client() as ssh:
@@ -195,6 +214,7 @@ def run_lxc_create_pipeline(self, job_id):
                 ])
 
         # ── 4. STARTING ──────────────────────────────────────────────────
+        _check_cancelled(job)
         if ct_config.get("start_after_create"):
             job.set_stage(LxcCreateJob.STAGE_STARTING, "Starting container...")
             try:
@@ -207,6 +227,8 @@ def run_lxc_create_pipeline(self, job_id):
                       f"Container {vmid} created successfully.", percent=100)
         logger.info("LxcCreateJob %d: complete. vmid=%d", job_id, vmid)
 
+    except JobCancelled:
+        logger.info("LxcCreateJob %d: cancelled by user", job_id)
     except SSHCommandError as exc:
         _fail_create(job, f"SSH command failed: {exc}", assigned_vmid, config, node)
     except ProxmoxAPIError as exc:

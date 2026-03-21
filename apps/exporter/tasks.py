@@ -16,6 +16,8 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.exporter.models import ExportJob
+from apps.exporter.models import LxcExportJob
+from apps.exporter.models import LxcPxImportJob
 from apps.exporter.models import PxImportJob
 from apps.importer.tasks import build_net_arg
 from apps.importer.tasks import build_vga_arg
@@ -863,4 +865,530 @@ def cleanup_old_exports():
         count += 1
     if count:
         logger.info("cleanup_old_exports: removed %d expired export job(s)", count)
+    return count
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LXC Container Export Pipeline
+# ═══════════════════════════════════════════════════════════════════════════════
+
+CT_EXPORT_ROOT = os.path.join(UPLOAD_ROOT, "ct-exports")
+CT_PX_IMPORT_ROOT = os.path.join(UPLOAD_ROOT, "ct-px-imports")
+
+
+def _build_ct_manifest(vmid, ct_name, raw_config):
+    """Build a manifest dict from raw Proxmox LXC container config."""
+    # Parse network (net0 typically)
+    net_raw = raw_config.get("net0", "")
+    net_name = "eth0"
+    net_bridge = "vmbr0"
+    net_ip = ""
+    net_gw = ""
+    net_firewall = False
+    net_hwaddr = ""
+    for part in net_raw.split(","):
+        if part.startswith("name="):
+            net_name = part[5:]
+        elif part.startswith("bridge="):
+            net_bridge = part[7:]
+        elif part.startswith("ip="):
+            net_ip = part[3:]
+        elif part.startswith("gw="):
+            net_gw = part[3:]
+        elif part == "firewall=1":
+            net_firewall = True
+        elif part.startswith("hwaddr="):
+            net_hwaddr = part[7:]
+
+    # Parse rootfs
+    rootfs_raw = raw_config.get("rootfs", "")
+    rootfs_storage = ""
+    rootfs_size = ""
+    for part in rootfs_raw.split(","):
+        if ":" in part and not part.startswith("size="):
+            rootfs_storage = part.split(":")[0]
+        elif part.startswith("size="):
+            rootfs_size = part[5:]
+
+    # Parse features
+    features_raw = raw_config.get("features", "")
+    features = {}
+    for part in features_raw.split(","):
+        if "=" in part:
+            k, v = part.split("=", 1)
+            features[k.strip()] = v.strip()
+
+    # Parse mountpoints (mp0, mp1, ...)
+    mountpoints = {}
+    for key, value in raw_config.items():
+        if re.match(r"^mp\d+$", key):
+            mountpoints[key] = value
+
+    exported_at = datetime.now(dt_timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    return {
+        "version": "1",
+        "type": "lxc",
+        "exported_at": exported_at,
+        "container": {
+            "name": ct_name,
+            "vmid": vmid,
+            "hostname": raw_config.get("hostname", ct_name),
+            "description": raw_config.get("description", ""),
+            "ostype": raw_config.get("ostype", ""),
+            "arch": raw_config.get("arch", "amd64"),
+            "cores": int(raw_config.get("cores", 1)),
+            "memory_mb": int(raw_config.get("memory", 512)),
+            "swap_mb": int(raw_config.get("swap", 512)),
+            "unprivileged": raw_config.get("unprivileged") == "1",
+            "start_on_boot": raw_config.get("onboot") == "1",
+            "features": features,
+        },
+        "rootfs": {
+            "storage": rootfs_storage,
+            "size": rootfs_size,
+        },
+        "network": {
+            "name": net_name,
+            "bridge": net_bridge,
+            "ip": net_ip,
+            "gateway": net_gw,
+            "firewall": net_firewall,
+            "hwaddr": net_hwaddr,
+        },
+        "dns": {
+            "nameserver": raw_config.get("nameserver", ""),
+            "searchdomain": raw_config.get("searchdomain", ""),
+        },
+        "mountpoints": mountpoints,
+        "backup_file": "",  # filled in during packaging
+    }
+
+
+def _fail_lxc_export(job, error_message, staging_dir, output_path):
+    """Mark LXC export job as FAILED and clean up staging files."""
+    logger.error("LxcExportJob %d FAILED: %s", job.pk, error_message)
+    job.stage = LxcExportJob.STAGE_FAILED
+    job.error = error_message
+    job.save(update_fields=["stage", "error", "updated_at"])
+
+    for path in (staging_dir, output_path):
+        if not path:
+            continue
+        try:
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            elif os.path.exists(path):
+                os.remove(path)
+        except OSError as exc:
+            logger.warning(
+                "LxcExportJob %d: cleanup failed for %s: %s", job.pk, path, exc
+            )
+
+
+@shared_task(bind=True, name="exporter.run_lxc_export_pipeline")
+def run_lxc_export_pipeline(self, job_id):
+    """Export a Proxmox LXC container as a portable .px archive.
+
+    Uses vzdump for a native snapshot-based export, then packages the
+    backup file with a manifest into a .px tar.gz archive.
+
+    Stages:
+        READING_CONFIG → EXPORTING → BUILDING_MANIFEST → PACKAGING → DONE
+    """
+    try:
+        job = LxcExportJob.objects.get(pk=job_id)
+    except LxcExportJob.DoesNotExist:
+        logger.error("run_lxc_export_pipeline: LxcExportJob %d not found", job_id)
+        return
+
+    config = ProxmoxConfig.get_config()
+    vmid = job.vmid
+    node = job.node or config.default_node
+    staging_dir = os.path.join(CT_EXPORT_ROOT, str(job_id))
+    output_path = os.path.join(CT_EXPORT_ROOT, f"{job_id}.px")
+    remote_dir = "/" + config.proxmox_temp_dir.strip("/")
+    remote_dump_dir = f"{remote_dir}/ct-export-{job_id}"
+
+    try:
+        os.makedirs(staging_dir, exist_ok=True)
+        os.makedirs(CT_EXPORT_ROOT, exist_ok=True)
+
+        # ── 1. READING_CONFIG ─────────────────────────────────────────────────
+        job.set_stage(LxcExportJob.STAGE_READING_CONFIG, "Reading container config...", percent=0)
+        api = config.get_api_client()
+        raw_config = api.get_lxc_config(node, vmid)
+        ct_name = raw_config.get("hostname", str(vmid))
+        job.ct_name = ct_name
+        job.ct_config_json = json.dumps(raw_config)
+        job.save(update_fields=["ct_name", "ct_config_json", "updated_at"])
+
+        logger.info(
+            "LxcExportJob %d: read config for CT %d (%s)", job_id, vmid, ct_name
+        )
+
+        # ── 2. EXPORTING ─────────────────────────────────────────────────────
+        job.set_stage(LxcExportJob.STAGE_EXPORTING, "Creating vzdump backup...", percent=10)
+
+        # Run vzdump on Proxmox — snapshot mode handles live containers
+        with config.get_ssh_client() as ssh:
+            ssh.run(["mkdir", "-p", remote_dump_dir])
+            vzdump_out = ssh.run_checked([
+                "vzdump", str(vmid),
+                "--compress", "zstd",
+                "--mode", "snapshot",
+                "--dumpdir", remote_dump_dir,
+            ])
+            logger.info("LxcExportJob %d: vzdump output: %s", job_id, vzdump_out[:500])
+
+        # Find the backup file produced by vzdump
+        with config.get_ssh_client() as ssh:
+            ls_out, _, _ = ssh.run(["ls", "-1", remote_dump_dir])
+            backup_filename = None
+            for line in ls_out.strip().splitlines():
+                if line.endswith(".tar.zst") or line.endswith(".tar.gz") or line.endswith(".tar.lzo"):
+                    backup_filename = line.strip()
+                    break
+
+        if not backup_filename:
+            raise ValueError(
+                f"vzdump did not produce a recognisable backup file in {remote_dump_dir}"
+            )
+
+        remote_backup_path = f"{remote_dump_dir}/{backup_filename}"
+        local_backup_path = os.path.join(staging_dir, backup_filename)
+
+        job.set_stage(
+            LxcExportJob.STAGE_EXPORTING,
+            f"Downloading backup ({backup_filename})...",
+            percent=30,
+        )
+
+        # SFTP the backup from Proxmox to local staging
+        def _sftp_progress(transferred, total):
+            pct = 30 + int((transferred / total * 30)) if total else 30
+            if pct != job.percent:
+                job.percent = pct
+                job.save(update_fields=["percent", "updated_at"])
+
+        try:
+            with config.get_sftp_client() as sftp:
+                sftp.get(remote_backup_path, local_backup_path, progress_callback=_sftp_progress)
+            logger.info(
+                "LxcExportJob %d: transferred %s to %s", job_id, remote_backup_path, local_backup_path
+            )
+        finally:
+            # Always clean up remote temp dir
+            try:
+                with config.get_ssh_client() as ssh:
+                    ssh.run(["rm", "-rf", remote_dump_dir])
+            except Exception as exc:
+                logger.warning(
+                    "LxcExportJob %d: could not remove remote temp dir %s: %s",
+                    job_id, remote_dump_dir, exc,
+                )
+
+        # ── 3. BUILDING_MANIFEST ──────────────────────────────────────────────
+        job.set_stage(
+            LxcExportJob.STAGE_BUILDING_MANIFEST, "Building manifest...", percent=65
+        )
+
+        manifest = _build_ct_manifest(vmid, ct_name, raw_config)
+        manifest["backup_file"] = backup_filename
+
+        manifest_path = os.path.join(staging_dir, "manifest.json")
+        with open(manifest_path, "w") as f:
+            json.dump(manifest, f, indent=2)
+        logger.info("LxcExportJob %d: wrote manifest to %s", job_id, manifest_path)
+
+        # ── 4. PACKAGING ──────────────────────────────────────────────────────
+        job.set_stage(LxcExportJob.STAGE_PACKAGING, "Packaging archive...", percent=75)
+
+        with tarfile.open(output_path, "w:gz") as tar:
+            tar.add(manifest_path, arcname="manifest.json")
+            tar.add(local_backup_path, arcname=backup_filename)
+            logger.info(
+                "LxcExportJob %d: added %s and manifest to archive", job_id, backup_filename
+            )
+
+        logger.info("LxcExportJob %d: created archive %s", job_id, output_path)
+
+        # Clean up staging directory
+        try:
+            shutil.rmtree(staging_dir)
+        except Exception as exc:
+            logger.warning("LxcExportJob %d: could not clean staging dir: %s", job_id, exc)
+
+        # ── 5. DONE ───────────────────────────────────────────────────────────
+        job.output_path = output_path
+        job.save(update_fields=["output_path", "updated_at"])
+        job.set_stage(
+            LxcExportJob.STAGE_DONE,
+            f"Container {ct_name} ({vmid}) exported successfully.",
+            percent=100,
+        )
+        logger.info("LxcExportJob %d: pipeline complete", job_id)
+
+    except SSHCommandError as exc:
+        _fail_lxc_export(job, f"SSH command failed: {exc}", staging_dir, output_path)
+    except ProxmoxAPIError as exc:
+        _fail_lxc_export(job, f"Proxmox API error: {exc.message}", staging_dir, output_path)
+    except Exception as exc:
+        _fail_lxc_export(job, str(exc), staging_dir, output_path)
+        logger.error("LxcExportJob %d: unexpected error", job_id, exc_info=True)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LXC Container .px Import Pipeline
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _fail_lxc_px_import(job, error_message, vmid, config):
+    """Mark LXC import job as FAILED, clean up files, and roll back container if created."""
+    logger.error("LxcPxImportJob %d FAILED: %s", job.pk, error_message)
+    job.stage = LxcPxImportJob.STAGE_FAILED
+    job.error = error_message
+    job.save(update_fields=["stage", "error", "updated_at"])
+
+    # Local cleanup
+    for path in (job.extract_dir, job.upload_path):
+        if not path:
+            continue
+        try:
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            elif os.path.exists(path):
+                os.remove(path)
+        except OSError as exc:
+            logger.warning(
+                "LxcPxImportJob %d: cleanup failed for %s: %s", job.pk, path, exc
+            )
+
+    # Container rollback
+    if vmid is not None:
+        try:
+            node = job.node or config.default_node
+            api = config.get_api_client()
+            try:
+                api.stop_lxc(node, vmid)
+            except ProxmoxAPIError:
+                pass
+            with config.get_ssh_client() as ssh:
+                ssh.run(["pct", "destroy", str(vmid), "--purge", "1"])
+        except Exception as rb_exc:
+            logger.warning("LxcPxImportJob %d: rollback failed: %s", job.pk, rb_exc)
+
+
+@shared_task(bind=True, name="exporter.run_lxc_px_import_pipeline")
+def run_lxc_px_import_pipeline(self, job_id):
+    """Import an LXC container from a .px package archive.
+
+    Stages:
+        TRANSFERRING → CREATING_CT → CONFIGURING → [STARTING] → CLEANUP → DONE
+    """
+    try:
+        job = LxcPxImportJob.objects.get(pk=job_id)
+    except LxcPxImportJob.DoesNotExist:
+        logger.error("run_lxc_px_import_pipeline: LxcPxImportJob %d not found", job_id)
+        return
+
+    config = ProxmoxConfig.get_config()
+    ct_config = job.ct_config
+    manifest = job.manifest
+    node = job.node or config.default_node
+    extract_dir = job.extract_dir
+    assigned_vmid = None
+    remote_dir = "/" + config.proxmox_temp_dir.strip("/")
+
+    # Find the backup file from manifest
+    backup_filename = manifest.get("backup_file", "")
+    storage_pool = ct_config.get("storage_pool", config.default_storage)
+
+    try:
+        # ── 1. TRANSFERRING ───────────────────────────────────────────────────
+        job.set_stage(LxcPxImportJob.STAGE_TRANSFERRING, "Transferring backup to Proxmox...", percent=0)
+
+        if not backup_filename:
+            raise ValueError("No backup_file specified in manifest.")
+
+        local_backup_path = os.path.join(extract_dir, backup_filename)
+        if not os.path.exists(local_backup_path):
+            raise ValueError(f"Backup file not found in package: {backup_filename}")
+
+        unique = uuid.uuid4().hex[:8]
+        remote_backup_path = f"{remote_dir}/{job_id}_{unique}_{backup_filename}"
+
+        def _sftp_progress(transferred, total):
+            pct = int((transferred / total) * 35) if total else 0
+            if pct != job.percent:
+                job.percent = pct
+                job.save(update_fields=["percent", "updated_at"])
+
+        with config.get_sftp_client() as sftp:
+            sftp.mkdir_p(remote_dir)
+            sftp.put(local_backup_path, remote_backup_path, progress_callback=_sftp_progress)
+
+        logger.info(
+            "LxcPxImportJob %d: transferred %s to %s", job_id, backup_filename, remote_backup_path
+        )
+
+        # ── 2. CREATING_CT ────────────────────────────────────────────────────
+        job.set_stage(LxcPxImportJob.STAGE_CREATING_CT, "Restoring container...", percent=40)
+        api = config.get_api_client()
+
+        if job.vmid:
+            vmid = job.vmid
+        else:
+            vmid = api.get_next_vmid()
+            job.vmid = vmid
+            job.save(update_fields=["vmid", "updated_at"])
+
+        assigned_vmid = vmid
+        ct_name = ct_config.get("hostname", job.ct_name or f"ct-import-{vmid}")
+
+        # pct restore creates the container from the vzdump backup
+        pct_args = [
+            "pct", "restore", str(vmid), remote_backup_path,
+            "--storage", storage_pool,
+        ]
+
+        if ct_config.get("unprivileged", True):
+            pct_args += ["--unprivileged", "1"]
+
+        logger.info(
+            "LxcPxImportJob %d: pct restore: %s", job_id, shlex.join(pct_args)
+        )
+        with config.get_ssh_client() as ssh:
+            ssh.run_checked(pct_args)
+
+        logger.info("LxcPxImportJob %d: container %d restored", job_id, vmid)
+
+        # Clean up remote backup file after restore
+        try:
+            with config.get_ssh_client() as ssh:
+                ssh.run(["rm", "-f", remote_backup_path])
+        except Exception:
+            pass
+
+        # ── 3. CONFIGURING ────────────────────────────────────────────────────
+        job.set_stage(LxcPxImportJob.STAGE_CONFIGURING, "Configuring container...", percent=60)
+
+        with config.get_ssh_client() as ssh:
+            # Hostname
+            hostname = ct_config.get("hostname", "").strip()
+            if hostname:
+                ssh.run_checked(["pct", "set", str(vmid), "--hostname", hostname])
+
+            # Resources
+            cores = ct_config.get("cores")
+            if cores:
+                ssh.run_checked(["pct", "set", str(vmid), "--cores", str(cores)])
+
+            memory_mb = ct_config.get("memory_mb")
+            if memory_mb:
+                ssh.run_checked(["pct", "set", str(vmid), "--memory", str(memory_mb)])
+
+            swap_mb = ct_config.get("swap_mb")
+            if swap_mb:
+                ssh.run_checked(["pct", "set", str(vmid), "--swap", str(swap_mb)])
+
+            # Network
+            net_bridge = ct_config.get("net_bridge", config.default_bridge)
+            ip_config = ct_config.get("ip_config", "")
+            if ip_config == "dhcp":
+                net_str = f"name=eth0,bridge={net_bridge},ip=dhcp"
+            elif ip_config == "static":
+                ip_addr = ct_config.get("ip_address", "")
+                gateway = ct_config.get("gateway", "")
+                net_str = f"name=eth0,bridge={net_bridge},ip={ip_addr}"
+                if gateway:
+                    net_str += f",gw={gateway}"
+            else:
+                net_str = ""
+
+            if net_str:
+                ssh.run_checked(["pct", "set", str(vmid), "--net0", net_str])
+
+            # DNS
+            nameserver = ct_config.get("nameserver", "").strip()
+            if nameserver:
+                ssh.run_checked(["pct", "set", str(vmid), "--nameserver", nameserver])
+            searchdomain = ct_config.get("searchdomain", "").strip()
+            if searchdomain:
+                ssh.run_checked(["pct", "set", str(vmid), "--searchdomain", searchdomain])
+
+            # Features (nesting for Docker, etc.)
+            nesting = ct_config.get("nesting")
+            if nesting:
+                ssh.run_checked(["pct", "set", str(vmid), "--features", "nesting=1"])
+
+            # Description
+            description = ct_config.get("description", "").strip()
+            if description:
+                ssh.run_checked(["pct", "set", str(vmid), "--description", description])
+
+            # Start on boot
+            if ct_config.get("start_on_boot"):
+                ssh.run_checked(["pct", "set", str(vmid), "--onboot", "1"])
+
+        # ── 4. STARTING ───────────────────────────────────────────────────────
+        if ct_config.get("start_after_import"):
+            job.set_stage(LxcPxImportJob.STAGE_STARTING, "Starting container...", percent=80)
+            try:
+                api.start_lxc(node, vmid)
+            except ProxmoxAPIError as exc:
+                logger.warning("LxcPxImportJob %d: start_lxc failed: %s", job_id, exc)
+
+        # ── 5. CLEANUP ────────────────────────────────────────────────────────
+        job.set_stage(LxcPxImportJob.STAGE_CLEANUP, "Cleaning up...", percent=90)
+
+        for path in (extract_dir, job.upload_path):
+            if not path:
+                continue
+            try:
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+                elif os.path.exists(path):
+                    os.remove(path)
+            except OSError as exc:
+                logger.warning(
+                    "LxcPxImportJob %d: cleanup failed for %s: %s", job_id, path, exc
+                )
+
+        # ── 6. DONE ───────────────────────────────────────────────────────────
+        job.set_stage(
+            LxcPxImportJob.STAGE_DONE,
+            f"Container {ct_name} ({vmid}) imported successfully.",
+            percent=100,
+        )
+        logger.info("LxcPxImportJob %d: pipeline complete. vmid=%d", job_id, vmid)
+
+    except SSHCommandError as exc:
+        _fail_lxc_px_import(job, f"SSH command failed: {exc}", assigned_vmid, config)
+    except ProxmoxAPIError as exc:
+        _fail_lxc_px_import(job, f"Proxmox API error: {exc.message}", assigned_vmid, config)
+    except Exception as exc:
+        _fail_lxc_px_import(job, str(exc), assigned_vmid, config)
+        logger.error("LxcPxImportJob %d: unexpected error", job_id, exc_info=True)
+
+
+@shared_task(name="exporter.cleanup_old_lxc_exports")
+def cleanup_old_lxc_exports():
+    """Delete completed LxcExportJobs and their .px files older than 24 hours."""
+    cutoff = timezone.now() - timedelta(hours=24)
+    old_jobs = LxcExportJob.objects.filter(
+        stage=LxcExportJob.STAGE_DONE,
+        updated_at__lt=cutoff,
+    )
+    count = 0
+    for job in old_jobs:
+        if job.output_path:
+            try:
+                if os.path.exists(job.output_path):
+                    os.remove(job.output_path)
+            except OSError as exc:
+                logger.warning("cleanup_old_lxc_exports: could not remove %s: %s", job.output_path, exc)
+        job.delete()
+        count += 1
+    if count:
+        logger.info("cleanup_old_lxc_exports: removed %d expired LXC export job(s)", count)
     return count

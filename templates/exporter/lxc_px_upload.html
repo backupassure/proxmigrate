@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Import Container Package — ProxMigrate{% endblock %}
+{% block page_title %}Import Container Package{% endblock %}
+{% block help_slug %}lxc-px-upload{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'lxc_export_index' %}" class="button is-light is-small">
+    <span class="icon is-small"><i class="fas fa-arrow-left"></i></span>
+    <span>Back to Exports</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="columns">
+  <div class="column is-7">
+
+    <div class="proxmigrate-card">
+      <div class="card-header">
+        <i class="fas fa-file-import" style="color:#3273dc;"></i> Upload Container .px Package
+      </div>
+      <div class="card-body">
+
+        {% if error %}
+          <div class="notification is-danger is-light" style="margin-bottom:1.25rem;">
+            <i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i>{{ error }}
+          </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" id="upload-form">
+          {% csrf_token %}
+
+          <div class="field" style="margin-bottom:1.25rem;">
+            <label class="label" style="font-size:0.875rem;font-weight:600;">Package File</label>
+            <div class="control">
+              <input class="input" type="file" name="px_file" accept=".px" id="px-file-input"
+                     style="height:auto;padding:0.5rem;" required>
+            </div>
+            <p class="field-hint">Select a container <code>.px</code> file exported from ProxMigrate.</p>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;gap:1rem;">
+            <a href="{% url 'lxc_export_index' %}" class="button is-light is-medium" style="font-weight:600;">Cancel</a>
+            <button type="submit" class="button is-info is-medium" id="btn-submit" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-arrow-right"></i></span>
+              <span>Upload &amp; Continue</span>
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+
+  <div class="column is-5">
+    <div class="proxmigrate-card">
+      <div class="card-header">
+        <i class="fas fa-info-circle" style="color:#3273dc;"></i> What happens next
+      </div>
+      <div class="card-body" style="font-size:0.85rem;color:#555;line-height:1.7;">
+        <p style="margin-bottom:0.75rem;">
+          <strong>Step 1 — Upload</strong>: your <code>.px</code> package is uploaded and validated as a container export.
+        </p>
+        <p style="margin-bottom:0.75rem;">
+          <strong>Step 2 — Configure</strong>: review and adjust container settings — hostname, resources, network — before anything is created on Proxmox.
+        </p>
+        <p style="margin-bottom:0.75rem;">
+          <strong>Step 3 — Deploy</strong>: ProxMigrate transfers the backup to Proxmox and restores the container with your chosen configuration.
+        </p>
+        <hr style="border:none;border-top:1px solid #e8ecf0;margin:0.75rem 0;">
+        <p style="font-size:0.78rem;color:#888;">
+          <i class="fas fa-shield-alt" style="margin-right:0.3rem;"></i>
+          Only container packages exported from ProxMigrate are accepted.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+  document.getElementById('upload-form').addEventListener('submit', function() {
+    const btn = document.getElementById('btn-submit');
+    btn.innerHTML = '<span class="spinner"></span> Uploading…';
+    btn.disabled = true;
+  });
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}LXC Containers — ProxMigrate{% endblock %}
-{% block page_title %}LXC Containers{% endblock %}
+{% block title %}Container Inventory — ProxMigrate{% endblock %}
+{% block page_title %}Container Inventory{% endblock %}
 {% block help_slug %}lxc{% endblock %}
 
 {% block page_actions %}
@@ -57,7 +57,7 @@
      hx-swap="outerHTML"
      hx-indicator="#refresh-spinner">
   <div class="card-header">
-    <i class="fas fa-cube" style="color:#3273dc;"></i> LXC Containers
+    <i class="fas fa-cube" style="color:#3273dc;"></i> Container Inventory
     {% if node_name %}
       <span style="font-weight:400;color:#7a7a7a;font-size:0.82rem;margin-left:0.5rem;">
         on <strong>{{ node_name }}</strong>
@@ -194,7 +194,7 @@
     {# Empty state #}
     <div class="empty-state">
       <div class="empty-state-icon"><i class="fas fa-cube"></i></div>
-      <h3>No LXC Containers Found</h3>
+      <h3>No Containers Found</h3>
       <p>
         {% if search_query %}
           No containers matched your search. <a href="{% url 'lxc_list' %}">Clear filter</a>

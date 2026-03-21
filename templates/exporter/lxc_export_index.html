@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}VM Export & Import — ProxMigrate{% endblock %}
-{% block page_title %}VM Export & Import{% endblock %}
-{% block help_slug %}exporter{% endblock %}
+{% block title %}Container Export & Import — ProxMigrate{% endblock %}
+{% block page_title %}Container Export & Import{% endblock %}
+{% block help_slug %}lxc-export{% endblock %}
 
 {% block page_actions %}
-  <a href="{% url 'px_upload' %}" class="button is-info is-small" style="font-weight:600;">
+  <a href="{% url 'lxc_px_upload' %}" class="button is-info is-small" style="font-weight:600;">
     <span class="icon is-small"><i class="fas fa-file-import"></i></span>
-    <span>Import .px Package</span>
+    <span>Import Container Package</span>
   </a>
 {% endblock %}
 
@@ -23,31 +23,31 @@
 <div class="columns">
   <div class="column is-8">
 
-    {# ===== Export Jobs ===== #}
+    {# ===== Container Export Jobs ===== #}
     <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
       <div class="card-header">
-        <i class="fas fa-file-export" style="color:#3273dc;"></i> VM Exports
+        <i class="fas fa-file-export" style="color:#3273dc;"></i> Container Exports
         <span style="margin-left:auto;font-size:0.78rem;color:#7a7a7a;font-weight:400;">
           Completed exports expire after 24 hours
         </span>
       </div>
       <div class="card-body" style="padding:0;">
-        {% if export_jobs %}
+        {% if lxc_export_jobs %}
           <table class="table is-fullwidth is-hoverable" style="margin:0;font-size:0.875rem;">
             <thead>
               <tr style="background:#f8f9fa;">
-                <th style="padding:0.75rem 1rem;font-weight:600;color:#4a4a4a;">VM</th>
+                <th style="padding:0.75rem 1rem;font-weight:600;color:#4a4a4a;">Container</th>
                 <th style="padding:0.75rem 1rem;font-weight:600;color:#4a4a4a;">Status</th>
                 <th style="padding:0.75rem 1rem;font-weight:600;color:#4a4a4a;">Created</th>
                 <th style="padding:0.75rem 1rem;"></th>
               </tr>
             </thead>
             <tbody>
-              {% for job in export_jobs %}
+              {% for job in lxc_export_jobs %}
                 <tr>
                   <td style="padding:0.75rem 1rem;vertical-align:middle;">
-                    <div style="font-weight:600;color:#1a1a2e;">{{ job.vm_name|default:job.vmid }}</div>
-                    <div style="font-size:0.78rem;color:#7a7a7a;">VMID {{ job.vmid }}</div>
+                    <div style="font-weight:600;color:#1a1a2e;">{{ job.ct_name|default:job.vmid }}</div>
+                    <div style="font-size:0.78rem;color:#7a7a7a;">CTID {{ job.vmid }}</div>
                   </td>
                   <td style="padding:0.75rem 1rem;vertical-align:middle;">
                     {% if job.stage == 'DONE' %}
@@ -63,17 +63,17 @@
                   </td>
                   <td style="padding:0.75rem 1rem;vertical-align:middle;text-align:right;">
                     {% if job.stage == 'DONE' and job.output_path %}
-                      <a href="{% url 'export_download' job.pk %}" class="button is-primary is-small" style="margin-right:0.5rem;">
+                      <a href="{% url 'lxc_export_download' job.pk %}" class="button is-primary is-small" style="margin-right:0.5rem;">
                         <span class="icon is-small"><i class="fas fa-download"></i></span>
                         <span>Download</span>
                       </a>
                     {% elif job.stage not in 'DONE FAILED' %}
-                      <a href="{% url 'export_progress' job.pk %}" class="button is-light is-small" style="margin-right:0.5rem;">
+                      <a href="{% url 'lxc_export_progress' job.pk %}" class="button is-light is-small" style="margin-right:0.5rem;">
                         <span class="icon is-small"><i class="fas fa-tasks"></i></span>
                         <span>View Progress</span>
                       </a>
                     {% endif %}
-                    <form method="post" action="{% url 'export_delete_job' job.pk %}" style="display:inline;"
+                    <form method="post" action="{% url 'lxc_export_delete_job' job.pk %}" style="display:inline;"
                           onsubmit="return confirm('Delete this export?');">
                       {% csrf_token %}
                       <button type="submit" class="button is-light is-small">
@@ -87,38 +87,38 @@
           </table>
         {% else %}
           <div style="padding:2rem;text-align:center;color:#7a7a7a;">
-            <i class="fas fa-file-export" style="font-size:2rem;color:#dbdbdb;display:block;margin-bottom:0.75rem;"></i>
-            <div style="font-size:0.875rem;">No exports yet.</div>
+            <i class="fas fa-cube" style="font-size:2rem;color:#dbdbdb;display:block;margin-bottom:0.75rem;"></i>
+            <div style="font-size:0.875rem;">No container exports yet.</div>
             <div style="font-size:0.8rem;margin-top:0.4rem;">
-              Go to <a href="{% url 'inventory' %}">VM Inventory</a>, open a VM, and click <strong>Export VM</strong>.
+              Go to <a href="{% url 'lxc_list' %}">Container Inventory</a>, open a container, and click <strong>Export Container</strong>.
             </div>
           </div>
         {% endif %}
       </div>
     </div>
 
-    {# ===== .px Import Jobs ===== #}
-    {% if px_import_jobs %}
+    {# ===== Container Import Jobs ===== #}
+    {% if lxc_px_import_jobs %}
     <div class="proxmigrate-card">
       <div class="card-header">
-        <i class="fas fa-file-import" style="color:#7a7a7a;"></i> Recent Package Imports
+        <i class="fas fa-file-import" style="color:#7a7a7a;"></i> Recent Container Imports
       </div>
       <div class="card-body" style="padding:0;">
         <table class="table is-fullwidth is-hoverable" style="margin:0;font-size:0.875rem;">
           <thead>
             <tr style="background:#f8f9fa;">
-              <th style="padding:0.75rem 1rem;font-weight:600;color:#4a4a4a;">VM</th>
+              <th style="padding:0.75rem 1rem;font-weight:600;color:#4a4a4a;">Container</th>
               <th style="padding:0.75rem 1rem;font-weight:600;color:#4a4a4a;">Status</th>
               <th style="padding:0.75rem 1rem;font-weight:600;color:#4a4a4a;">Created</th>
               <th style="padding:0.75rem 1rem;"></th>
             </tr>
           </thead>
           <tbody>
-            {% for job in px_import_jobs %}
+            {% for job in lxc_px_import_jobs %}
               <tr>
                 <td style="padding:0.75rem 1rem;vertical-align:middle;">
-                  <div style="font-weight:600;color:#1a1a2e;">{{ job.vm_name|default:"Unnamed" }}</div>
-                  {% if job.vmid %}<div style="font-size:0.78rem;color:#7a7a7a;">VMID {{ job.vmid }}</div>{% endif %}
+                  <div style="font-weight:600;color:#1a1a2e;">{{ job.ct_name|default:"Unnamed" }}</div>
+                  {% if job.vmid %}<div style="font-size:0.78rem;color:#7a7a7a;">CTID {{ job.vmid }}</div>{% endif %}
                 </td>
                 <td style="padding:0.75rem 1rem;vertical-align:middle;">
                   {% if job.stage == 'DONE' %}
@@ -136,17 +136,17 @@
                 </td>
                 <td style="padding:0.75rem 1rem;vertical-align:middle;text-align:right;">
                   {% if job.stage == 'DONE' and job.vmid %}
-                    <a href="{% url 'vm_detail' job.vmid %}" class="button is-primary is-small" style="margin-right:0.5rem;">
-                      <span class="icon is-small"><i class="fas fa-server"></i></span>
-                      <span>View VM</span>
+                    <a href="{% url 'lxc_detail' job.vmid %}" class="button is-primary is-small" style="margin-right:0.5rem;">
+                      <span class="icon is-small"><i class="fas fa-cube"></i></span>
+                      <span>View Container</span>
                     </a>
                   {% elif job.stage not in 'DONE FAILED QUEUED' %}
-                    <a href="{% url 'px_progress' job.pk %}" class="button is-light is-small" style="margin-right:0.5rem;">
+                    <a href="{% url 'lxc_px_progress' job.pk %}" class="button is-light is-small" style="margin-right:0.5rem;">
                       <span class="icon is-small"><i class="fas fa-tasks"></i></span>
                       <span>View Progress</span>
                     </a>
                   {% endif %}
-                  <form method="post" action="{% url 'px_delete_job' job.pk %}" style="display:inline;"
+                  <form method="post" action="{% url 'lxc_px_delete_job' job.pk %}" style="display:inline;"
                         onsubmit="return confirm('Delete this import job?');">
                     {% csrf_token %}
                     <button type="submit" class="button is-light is-small">
@@ -168,19 +168,19 @@
   <div class="column is-4">
     <div class="proxmigrate-card">
       <div class="card-header">
-        <i class="fas fa-info-circle" style="color:#3273dc;"></i> About .px Packages
+        <i class="fas fa-info-circle" style="color:#3273dc;"></i> About Container Packages
       </div>
       <div class="card-body" style="font-size:0.85rem;color:#555;line-height:1.7;">
         <p style="margin-bottom:0.75rem;">
-          <strong>Export</strong> — packages a VM's full configuration and all disks into a portable <code>.px</code> file.
-          Trigger an export from any VM's detail page.
+          <strong>Export</strong> — packages a container's full configuration and rootfs into a portable <code>.px</code> file
+          using vzdump snapshot mode (zero downtime).
         </p>
         <p style="margin-bottom:0.75rem;">
-          <strong>Import</strong> — restores a <code>.px</code> package onto any ProxMigrate server.
-          You can review and adjust all settings (name, memory, CPU, network, storage) before deployment.
+          <strong>Import</strong> — restores a container <code>.px</code> package onto any ProxMigrate server.
+          You can review and adjust hostname, resources, network, and storage before deployment.
         </p>
         <p style="margin-bottom:0.75rem;">
-          <strong>Use cases:</strong> migrate VMs between Proxmox clusters, back up VM configurations, share development environments, or deploy templated VMs.
+          <strong>Use cases:</strong> migrate containers between Proxmox clusters, back up container configurations, or share development environments.
         </p>
         <hr style="border:none;border-top:1px solid #e8ecf0;margin:0.75rem 0;">
         <p style="font-size:0.78rem;color:#888;">
@@ -192,15 +192,15 @@
 
     <div class="proxmigrate-card" style="margin-top:1rem;">
       <div class="card-header">
-        <i class="fas fa-file-import" style="color:#3273dc;"></i> Import a Package
+        <i class="fas fa-file-import" style="color:#3273dc;"></i> Import a Container
       </div>
       <div class="card-body" style="text-align:center;padding:1.5rem;">
         <p style="font-size:0.85rem;color:#555;margin-bottom:1rem;">
-          Have a <code>.px</code> file from another ProxMigrate server?
+          Have a container <code>.px</code> file from another ProxMigrate server?
         </p>
-        <a href="{% url 'px_upload' %}" class="button is-info is-medium is-fullwidth" style="font-weight:600;">
+        <a href="{% url 'lxc_px_upload' %}" class="button is-info is-medium is-fullwidth" style="font-weight:600;">
           <span class="icon"><i class="fas fa-upload"></i></span>
-          <span>Upload .px Package</span>
+          <span>Upload Container Package</span>
         </a>
       </div>
     </div>

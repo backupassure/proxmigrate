@@ -9,7 +9,7 @@
       <thead>
         <tr>
           <th>Template</th>
-          <th style="width:120px;text-align:right;">Action</th>
+          <th style="width:200px;text-align:right;">Action</th>
         </tr>
       </thead>
       <tbody>
@@ -23,7 +23,7 @@
             {% endif %}
             {{ t.name }}
           </td>
-          <td style="vertical-align:middle;text-align:right;">
+          <td style="vertical-align:middle;text-align:right;white-space:nowrap;">
             <form method="post" action="{% url 'lxc_create_submit' %}" style="display:inline;">
               {% csrf_token %}
               <input type="hidden" name="template" value="{{ t.name }}">
@@ -33,6 +33,19 @@
                 <span>Select</span>
               </button>
             </form>
+            {% if t.downloaded %}
+            <button class="button is-danger is-small is-outlined"
+                    style="margin-left:0.4rem;"
+                    hx-post="{% url 'lxc_template_delete' %}"
+                    hx-vals='{"template": "{{ t.name }}", "storage": "{{ storage }}"}'
+                    hx-target="#template-list"
+                    hx-swap="innerHTML"
+                    hx-confirm="Delete template {{ t.name }}? This removes it from the Proxmox storage."
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+              <span class="icon is-small"><i class="fas fa-trash"></i></span>
+              <span>Delete</span>
+            </button>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}

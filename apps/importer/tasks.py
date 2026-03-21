@@ -16,6 +16,18 @@ from apps.wizard.models import ProxmoxConfig
 
 logger = logging.getLogger(__name__)
 
+
+class JobCancelled(Exception):
+    """Raised when a job has been cancelled by the user."""
+    pass
+
+
+def _check_cancelled(job):
+    """Re-read job from DB and raise if cancelled."""
+    job.refresh_from_db(fields=["stage"])
+    if job.stage == ImportJob.STAGE_CANCELLED:
+        raise JobCancelled(f"ImportJob {job.pk} was cancelled by user")
+
 UPLOAD_ROOT = getattr(settings, "UPLOAD_ROOT", "/opt/proxmigrate/uploads")
 
 # Map file extensions to qemu-img format names
@@ -498,6 +510,7 @@ def run_import_pipeline(self, job_id):
     assigned_vmid = None
 
     try:
+        _check_cancelled(job)
         if job.proxmox_source_path:
             # ── Proxmox-source path: file already on Proxmox ─────────────────
             logger.info("ImportJob %d: source is already on Proxmox at %s",
@@ -510,11 +523,13 @@ def run_import_pipeline(self, job_id):
             local_input_path = job.local_input_path
 
             # ── 1. DETECTING ─────────────────────────────────────────────────
+            _check_cancelled(job)
             job.set_stage(ImportJob.STAGE_DETECTING, "Detecting image format...")
             detected_format = _detect_format(local_input_path)
             logger.info("ImportJob %d: detected format %s", job_id, detected_format)
 
             # ── 2. TRANSFERRING ──────────────────────────────────────────────
+            _check_cancelled(job)
             job.set_stage(ImportJob.STAGE_TRANSFERRING, "Transferring disk image to Proxmox...")
 
             remote_dir = config.proxmox_temp_dir.rstrip("/")
@@ -543,6 +558,7 @@ def run_import_pipeline(self, job_id):
                 logger.warning("ImportJob %d: could not remove local input: %s", job_id, exc)
 
             # ── 3. CONVERTING (on Proxmox) ───────────────────────────────────
+            _check_cancelled(job)
             if detected_format == "qcow2":
                 job.set_stage(ImportJob.STAGE_CONVERTING,
                               "Image is already qcow2 — skipping conversion.", percent=100)
@@ -568,8 +584,11 @@ def run_import_pipeline(self, job_id):
                 job.save(update_fields=["percent", "updated_at"])
                 logger.info("ImportJob %d: conversion complete on Proxmox", job_id)
 
+        _check_cancelled(job)
         assigned_vmid = _create_vm_and_import(job, config, remote_qcow2_path, job_id)
 
+    except JobCancelled:
+        logger.info("ImportJob %d: cancelled by user", job_id)
     except SSHCommandError as exc:
         _fail(job, f"SSH command failed: {exc}", assigned_vmid, config)
     except ProxmoxAPIError as exc:

@@ -21,6 +21,7 @@ class ImportJob(models.Model):
     STAGE_CLEANUP = "CLEANUP"
     STAGE_DONE = "DONE"
     STAGE_FAILED = "FAILED"
+    STAGE_CANCELLED = "CANCELLED"
 
     STAGE_CHOICES = [
         (STAGE_QUEUED, "Queued"),
@@ -34,6 +35,7 @@ class ImportJob(models.Model):
         (STAGE_CLEANUP, "Cleanup"),
         (STAGE_DONE, "Done"),
         (STAGE_FAILED, "Failed"),
+        (STAGE_CANCELLED, "Cancelled"),
     ]
 
     vm_name = models.CharField(max_length=100)
@@ -44,6 +46,7 @@ class ImportJob(models.Model):
     proxmox_source_path = models.CharField(max_length=1000, blank=True)
     local_qcow2_path = models.CharField(max_length=1000, blank=True)
     remote_qcow2_path = models.CharField(max_length=1000, blank=True)
+    task_id = models.CharField(max_length=200, blank=True)
     stage = models.CharField(max_length=20, choices=STAGE_CHOICES, default=STAGE_QUEUED)
     percent = models.IntegerField(default=0)
     message = models.CharField(max_length=500, blank=True)

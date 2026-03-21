@@ -132,3 +132,18 @@ PX_IMPORT_STAGES = [
     ("STARTING",       "Starting VM"),
     ("CLEANUP",        "Cleanup"),
 ]
+
+LXC_EXPORT_STAGES = [
+    ("READING_CONFIG",    "Reading Container Config"),
+    ("EXPORTING",         "Exporting Container"),
+    ("BUILDING_MANIFEST", "Building Manifest"),
+    ("PACKAGING",         "Packaging Archive"),
+]
+
+LXC_PX_IMPORT_STAGES = [
+    ("TRANSFERRING",  "Transferring to Proxmox"),
+    ("CREATING_CT",   "Restoring Container"),
+    ("CONFIGURING",   "Configuring"),
+    ("STARTING",      "Starting Container"),
+    ("CLEANUP",       "Cleanup"),
+]

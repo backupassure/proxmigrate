@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}ProxMigrate{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg">
   <link rel="stylesheet" href="/static/vendor/css/bulma.min.css">
   <link rel="stylesheet" href="/static/vendor/css/all.min.css">
   <link rel="stylesheet" href="/static/css/proxmigrate.css">
@@ -38,7 +39,7 @@
       <a href="{% url 'inventory' %}" class="{% if request.resolver_match.url_name == 'inventory' %}is-active{% endif %}">
         <i class="fas fa-server"></i> VM Inventory
       </a>
-      <a href="{% url 'export_index' %}" class="{% if 'export' in request.resolver_match.url_name or 'px_' in request.resolver_match.url_name %}is-active{% endif %}">
+      <a href="{% url 'export_index' %}" class="{% if 'lxc' not in request.resolver_match.url_name and 'export' in request.resolver_match.url_name or 'px_' in request.resolver_match.url_name and 'lxc' not in request.resolver_match.url_name %}is-active{% endif %}">
         <i class="fas fa-file-export"></i> Export &amp; Import
       </a>
 
@@ -47,7 +48,10 @@
         <i class="fas fa-plus-circle"></i> New Container
       </a>
       <a href="{% url 'lxc_list' %}" class="{% if request.resolver_match.url_name == 'lxc_list' %}is-active{% endif %}">
-        <i class="fas fa-cube"></i> Containers
+        <i class="fas fa-cube"></i> Container Inventory
+      </a>
+      <a href="{% url 'lxc_export_index' %}" class="{% if 'lxc_export' in request.resolver_match.url_name or 'lxc_px' in request.resolver_match.url_name %}is-active{% endif %}">
+        <i class="fas fa-file-export"></i> Export &amp; Import
       </a>
 
       <div class="nav-label">Settings</div>

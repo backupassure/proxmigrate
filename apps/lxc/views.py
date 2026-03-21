@@ -1,6 +1,7 @@
 import json
 import logging
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -559,6 +560,61 @@ def template_browser(request):
 
 
 @login_required
+@require_POST
+def template_delete(request):
+    """HTMX endpoint: delete a downloaded template from a Proxmox storage pool."""
+    config = ProxmoxConfig.get_config()
+    storage = request.POST.get("storage", "").strip()
+    template = request.POST.get("template", "").strip()
+
+    if not storage or not template:
+        return render(request, "lxc/partials/template_list.html", {
+            "templates": [], "error": "Missing storage or template name.",
+        })
+
+    volid = f"{storage}:vztmpl/{template}"
+    try:
+        with config.get_ssh_client() as ssh:
+            _, stderr, rc = ssh.run(["pveam", "remove", volid])
+            if rc != 0:
+                err_msg = stderr.strip() if stderr else f"Failed to remove {template}"
+                return render(request, "lxc/partials/template_list.html", {
+                    "templates": [], "error": err_msg,
+                })
+    except Exception as exc:
+        return render(request, "lxc/partials/template_list.html", {
+            "templates": [], "error": str(exc),
+        })
+
+    # Re-render the downloaded list so the deleted template disappears
+    templates = []
+    error = None
+    try:
+        with config.get_ssh_client() as ssh:
+            out, _, rc = ssh.run(["pveam", "list", storage])
+            if rc == 0 and out:
+                for line in out.strip().splitlines()[1:]:
+                    parts = line.split()
+                    if parts:
+                        vid = parts[0]
+                        name = vid.split("/")[-1] if "/" in vid else vid
+                        templates.append({
+                            "name": name,
+                            "volid": vid,
+                            "downloaded": True,
+                        })
+    except Exception as exc:
+        error = str(exc)
+
+    return render(request, "lxc/partials/template_list.html", {
+        "templates": templates,
+        "storage": storage,
+        "section": "downloaded",
+        "error": error,
+    })
+
+
+@login_required
 def lxc_configure(request, job_id):
     """Step 2: Configure the LXC container before creation."""
     job = get_object_or_404(LxcCreateJob, pk=job_id)
@@ -601,7 +657,9 @@ def lxc_configure(request, job_id):
         job.save()
 
         from apps.lxc.tasks import run_lxc_create_pipeline
-        run_lxc_create_pipeline.delay(job.pk)
+        result = run_lxc_create_pipeline.delay(job.pk)
+        job.task_id = result.id
+        job.save(update_fields=["task_id"])
 
         return redirect("lxc_progress", job_id=job.pk)
 
@@ -699,3 +757,25 @@ def lxc_job_status(request, job_id):
         "stages": stages,
         "stages_done_count": done_count,
     })
+
+
+@login_required
+@require_POST
+def cancel_job(request, job_id):
+    """Cancel a queued or in-progress LXC creation job."""
+    job = get_object_or_404(LxcCreateJob, pk=job_id)
+    if job.stage in (LxcCreateJob.STAGE_DONE, LxcCreateJob.STAGE_FAILED, LxcCreateJob.STAGE_CANCELLED):
+        messages.warning(request, f'Job "{job.ct_name}" is already {job.get_stage_display().lower()}.')
+        return redirect("dashboard")
+
+    if job.task_id:
+        from proxmigrate.celery import app as celery_app
+        celery_app.control.revoke(job.task_id, terminate=True, signal="SIGTERM")
+        logger.info("cancel_job: revoked Celery task %s for LxcCreateJob %d", job.task_id, job.pk)
+
+    job.stage = LxcCreateJob.STAGE_CANCELLED
+    job.message = "Cancelled by user"
+    job.save(update_fields=["stage", "message", "updated_at"])
+    logger.info("LxcCreateJob %d: cancelled by user %s", job.pk, request.user.username)
+    messages.success(request, f'Job "{job.ct_name}" has been cancelled.')
+    return redirect("dashboard")

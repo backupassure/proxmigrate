@@ -21,6 +21,7 @@ class VmCreateJob(models.Model):
     STAGE_STARTING = "STARTING"
     STAGE_DONE = "DONE"
     STAGE_FAILED = "FAILED"
+    STAGE_CANCELLED = "CANCELLED"
 
     STAGE_CHOICES = [
         (STAGE_QUEUED, "Queued"),
@@ -30,6 +31,7 @@ class VmCreateJob(models.Model):
         (STAGE_STARTING, "Starting VM"),
         (STAGE_DONE, "Done"),
         (STAGE_FAILED, "Failed"),
+        (STAGE_CANCELLED, "Cancelled"),
     ]
 
     source_type = models.CharField(max_length=20, default=SOURCE_BLANK)
@@ -43,6 +45,7 @@ class VmCreateJob(models.Model):
     vmid = models.IntegerField(null=True, blank=True)
     node = models.CharField(max_length=100, blank=True)
 
+    task_id = models.CharField(max_length=200, blank=True)
     stage = models.CharField(max_length=30, choices=STAGE_CHOICES, default=STAGE_QUEUED)
     percent = models.IntegerField(default=0)
     message = models.CharField(max_length=500, blank=True)

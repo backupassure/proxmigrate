@@ -10,6 +10,7 @@ urlpatterns = [
     path("<int:job_id>/progress/", views.progress, name="importer_progress"),
     path("<int:job_id>/status/", views.job_status, name="importer_status"),
     path("<int:job_id>/delete/", views.delete_job, name="importer_delete_job"),
+    path("<int:job_id>/cancel/", views.cancel_job, name="importer_cancel_job"),
     path("<int:job_id>/resume/", views.resume_job, name="importer_resume_job"),
     path("storage/", storage_views.storage, name="storage_management"),
     path("storage/delete-local/", storage_views.delete_local_file, name="storage_delete_local"),

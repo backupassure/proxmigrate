@@ -6,7 +6,7 @@
 {% block page_actions %}
   <a href="{% url 'lxc_list' %}" class="button is-light is-small">
     <span class="icon is-small"><i class="fas fa-arrow-left"></i></span>
-    <span>Back to LXC Containers</span>
+    <span>Back to Container Inventory</span>
   </a>
   &nbsp;
   {% if ct.status == 'running' %}
@@ -50,6 +50,11 @@
       <span>Start</span>
     </button>
   {% endif %}
+  &nbsp;
+  <a href="{% url 'lxc_export_options' ct.vmid %}" class="button is-link is-small" title="Export container as .px package">
+    <span class="icon is-small"><i class="fas fa-file-export"></i></span>
+    <span>Export Container</span>
+  </a>
 {% endblock %}
 
 {% block content %}
