@@ -39,10 +39,16 @@
               <strong>OS:</strong> {{ ovf_data.os_description }}
             </span>
           {% endif %}
-          {% if ovf_data.disks|length > 1 %}
+          {% if ovf_data.disks %}
             <span style="margin-left:0.5rem;">
               <i class="fas fa-hdd" style="color:#22c55e;margin-right:0.3rem;"></i>
-              <strong>{{ ovf_data.disks|length }} disks</strong> detected
+              <strong>{{ ovf_data.disks|length }} disk{{ ovf_data.disks|length|pluralize }}</strong>:
+              {% for disk in ovf_data.disks %}
+                {{ disk.capacity_gb|floatformat:0 }}GB{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+              {% if ovf_data.disks|length > 1 %}
+                (all disks will be imported automatically)
+              {% endif %}
             </span>
           {% endif %}
           {% if ovf_data.firmware == "ovmf" %}

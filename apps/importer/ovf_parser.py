@@ -205,7 +205,7 @@ def _parse_ovf_xml(ovf_xml):
     # OS type
     os_section = vs.find("ovf:OperatingSystemSection", _NS)
     if os_section is not None:
-        vmw_os = os_section.get(f"{{{_NS['vmw']}}}osType", "")
+        vmw_os = os_section.get(f"{{{_NS['vmw']}}}osType", "").lstrip("*")
         result["vmware_os_type"] = vmw_os
         result["os_type"] = _VMWARE_OS_MAP.get(vmw_os, "other")
 
@@ -219,9 +219,27 @@ def _parse_ovf_xml(ovf_xml):
         result["disks"] = list(disk_info.values())
         return result
 
+    # Determine default deployment configuration (if any)
+    default_config = None
+    deploy_section = root.find(".//ovf:DeploymentOptionSection", _NS)
+    if deploy_section is not None:
+        for cfg in deploy_section.findall("ovf:Configuration", _NS):
+            if cfg.get(f"{{{_NS['ovf']}}}default", "").lower() == "true":
+                default_config = cfg.get(f"{{{_NS['ovf']}}}id", "")
+                break
+        # If no default marked, use the first one
+        if default_config is None:
+            first = deploy_section.find("ovf:Configuration", _NS)
+            if first is not None:
+                default_config = first.get(f"{{{_NS['ovf']}}}id", "")
+
     controllers = {}  # instanceID -> controller type
 
     for item in hw.findall("ovf:Item", _NS):
+        # Skip items for non-default deployment configurations
+        item_config = item.get(f"{{{_NS['ovf']}}}configuration", "")
+        if item_config and default_config and item_config != default_config:
+            continue
         rt = _text(item, "rasd:ResourceType")
         instance_id = _text(item, "rasd:InstanceID")
         sub_type = _text(item, "rasd:ResourceSubType").lower()
