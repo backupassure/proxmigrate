@@ -3,12 +3,14 @@ import logging
 import os
 import re
 import shlex
+import tarfile
 import uuid
 
 from celery import shared_task
 from django.conf import settings
 
 from apps.importer.models import ImportJob
+from apps.importer.ovf_parser import list_ova_disk_files
 from apps.proxmox.api import ProxmoxAPIError
 from apps.proxmox.cloud_init import apply_cloud_init
 from apps.proxmox.ssh import SSHCommandError
@@ -93,6 +95,62 @@ def _detect_format(local_path):
     # Default to raw — qemu-img on Proxmox will handle it
     logger.warning("detect_format: unknown format for %s, assuming raw", local_path)
     return "raw"
+
+
+def _is_ova(local_path):
+    """Check if a file is an OVA (tar archive containing an OVF)."""
+    ext = local_path.rsplit(".", 1)[-1].lower() if "." in local_path else ""
+    if ext != "ova":
+        return False
+    try:
+        return tarfile.is_tarfile(local_path)
+    except (OSError, tarfile.TarError):
+        return False
+
+
+def _extract_ova(local_path, extract_dir):
+    """Extract disk files from an OVA archive.
+
+    Uses the OVF descriptor to determine disk order when available.
+    Returns a list of extracted VMDK paths in import order (first = boot disk).
+    """
+    os.makedirs(extract_dir, exist_ok=True)
+
+    # Get ordered disk list from OVF if available
+    ovf_disk_names = list_ova_disk_files(local_path)
+
+    disk_exts = {".vmdk", ".raw", ".qcow2", ".img", ".vhd", ".vhdx"}
+    extracted = []
+
+    with tarfile.open(local_path, "r") as tar:
+        for member in tar.getmembers():
+            # Safety: reject path traversal
+            if member.name.startswith("/") or ".." in member.name:
+                continue
+            _, ext = os.path.splitext(member.name.lower())
+            if ext in disk_exts:
+                # Extract to flat directory (strip any subdirectory from tar)
+                member.name = os.path.basename(member.name)
+                tar.extract(member, extract_dir)
+                extracted.append(os.path.join(extract_dir, member.name))
+                logger.info("OVA extract: %s", member.name)
+
+    if not extracted:
+        raise ValueError(f"No disk images found in OVA: {local_path}")
+
+    # Reorder by OVF disk order if available
+    if ovf_disk_names:
+        name_to_path = {os.path.basename(p): p for p in extracted}
+        ordered = []
+        for name in ovf_disk_names:
+            if name in name_to_path:
+                ordered.append(name_to_path.pop(name))
+        # Append any disks not listed in OVF
+        ordered.extend(name_to_path.values())
+        return ordered
+
+    # Fallback: sort alphabetically (disk1 before disk2)
+    return sorted(extracted)
 
 
 def build_net_arg(vm_config):
@@ -232,6 +290,8 @@ def _create_vm_and_import(job, config, remote_qcow2_path, job_id):
         qm_create_args += ["--protection", "1"]
     if vm_config.get("numa"):
         qm_create_args += ["--numa", "1"]
+    if vm_config.get("serial_port"):
+        qm_create_args += ["--serial0", "socket"]
 
     description = vm_config.get("description", "").strip()
     if description:
@@ -525,7 +585,37 @@ def run_import_pipeline(self, job_id):
             # ── 1. DETECTING ─────────────────────────────────────────────────
             _check_cancelled(job)
             job.set_stage(ImportJob.STAGE_DETECTING, "Detecting image format...")
-            detected_format = _detect_format(local_input_path)
+
+            ova_extra_disk_paths = []  # Populated only for multi-disk OVAs
+
+            if _is_ova(local_input_path):
+                # ── OVA: extract disks from tar archive ──────────────────────
+                job.set_stage(ImportJob.STAGE_DETECTING, "Extracting OVA archive...")
+                extract_dir = os.path.join(
+                    os.path.dirname(local_input_path), "ova_extract"
+                )
+                disk_paths = _extract_ova(local_input_path, extract_dir)
+                logger.info(
+                    "ImportJob %d: OVA extracted %d disk(s): %s",
+                    job_id, len(disk_paths), [os.path.basename(p) for p in disk_paths],
+                )
+
+                # First disk is the primary boot disk
+                local_input_path = disk_paths[0]
+                detected_format = _detect_format(local_input_path)
+
+                # Additional disks will be imported as extra disks after VM creation
+                if len(disk_paths) > 1:
+                    ova_extra_disk_paths = disk_paths[1:]
+
+                # Remove the OVA tar now that we have extracted the disks
+                try:
+                    os.remove(job.local_input_path)
+                except OSError:
+                    pass
+            else:
+                detected_format = _detect_format(local_input_path)
+
             logger.info("ImportJob %d: detected format %s", job_id, detected_format)
 
             # ── 2. TRANSFERRING ──────────────────────────────────────────────
@@ -557,6 +647,34 @@ def run_import_pipeline(self, job_id):
             except OSError as exc:
                 logger.warning("ImportJob %d: could not remove local input: %s", job_id, exc)
 
+            # Transfer extra OVA disks to Proxmox temp dir
+            ova_extra_remote_paths = []
+            for idx, extra_path in enumerate(ova_extra_disk_paths):
+                _check_cancelled(job)
+                extra_uid = uuid.uuid4().hex[:8]
+                remote_extra = f"{remote_dir}/{job_id}_{extra_uid}_ova_disk{idx + 2}"
+                job.set_stage(
+                    ImportJob.STAGE_TRANSFERRING,
+                    f"Transferring disk {idx + 2} of {len(ova_extra_disk_paths) + 1}...",
+                )
+                with config.get_sftp_client() as sftp:
+                    sftp.put(extra_path, remote_extra)
+                ova_extra_remote_paths.append(remote_extra)
+                logger.info("ImportJob %d: OVA extra disk %d transferred -> %s",
+                            job_id, idx + 2, remote_extra)
+                try:
+                    os.remove(extra_path)
+                except OSError:
+                    pass
+
+            # Clean up local OVA extract dir
+            ova_extract_dir = os.path.join(
+                os.path.dirname(job.local_input_path), "ova_extract"
+            )
+            if os.path.isdir(ova_extract_dir):
+                import shutil
+                shutil.rmtree(ova_extract_dir, ignore_errors=True)
+
             # ── 3. CONVERTING (on Proxmox) ───────────────────────────────────
             _check_cancelled(job)
             if detected_format == "qcow2":
@@ -583,6 +701,27 @@ def run_import_pipeline(self, job_id):
                 job.percent = 100
                 job.save(update_fields=["percent", "updated_at"])
                 logger.info("ImportJob %d: conversion complete on Proxmox", job_id)
+
+            # Inject OVA extra disks into vm_config as extra_disks
+            if ova_extra_remote_paths:
+                vm_config = job.vm_config
+                existing_extras = vm_config.get("extra_disks", "")
+                try:
+                    extra_list = json.loads(existing_extras) if isinstance(existing_extras, str) and existing_extras else []
+                except (ValueError, TypeError):
+                    extra_list = []
+
+                for remote_path in ova_extra_remote_paths:
+                    extra_list.append({
+                        "type": "proxmox",
+                        "source_path": remote_path,
+                    })
+
+                vm_config["extra_disks"] = json.dumps(extra_list)
+                job.vm_config_json = json.dumps(vm_config)
+                job.save(update_fields=["vm_config_json", "updated_at"])
+                logger.info("ImportJob %d: injected %d OVA extra disks into vm_config",
+                            job_id, len(ova_extra_remote_paths))
 
         _check_cancelled(job)
         assigned_vmid = _create_vm_and_import(job, config, remote_qcow2_path, job_id)

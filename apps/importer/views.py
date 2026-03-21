@@ -14,9 +14,13 @@ from django.shortcuts import render
 from django.views.decorators.http import require_POST
 
 from apps.importer.forms import ALLOWED_EXTENSIONS
+from apps.importer.forms import HARDWARE_PRESETS
 from apps.importer.forms import UploadForm
 from apps.importer.forms import VMConfigForm
+from apps.importer.forms import detect_source_platform
 from apps.importer.forms import sanitize_vm_name
+from apps.importer.ovf_parser import ovf_to_form_defaults
+from apps.importer.ovf_parser import parse_ovf_from_ova
 from apps.importer.models import ImportJob
 from apps.vmcreator.stages import IMPORT_STAGES, IMPORT_STAGES_PROXMOX_SOURCE, build_stages
 from apps.wizard.models import DiscoveredEnvironment
@@ -161,6 +165,15 @@ def configure(request, job_id):
             "storage_pool": config.default_storage,
             "net_bridge": config.default_bridge,
         }
+
+        # Parse OVF from OVA uploads and merge into form defaults
+        ovf_data = None
+        if job.local_input_path and job.upload_filename.lower().endswith(".ova"):
+            ovf_data = parse_ovf_from_ova(job.local_input_path)
+            if ovf_data:
+                ovf_defaults = ovf_to_form_defaults(ovf_data)
+                initial.update(ovf_defaults)
+
         form = VMConfigForm(
             initial=initial,
             node_choices=node_choices,
@@ -168,6 +181,8 @@ def configure(request, job_id):
             bridge_choices=bridge_choices,
             config_defaults=config,
         )
+
+    source_platform = detect_source_platform(job.upload_filename)
 
     return render(
         request,
@@ -182,6 +197,10 @@ def configure(request, job_id):
             "suggested_vmid": suggested_vmid,
             "virtio_iso_configured": bool(config.virtio_iso),
             "virtio_iso": config.virtio_iso or "",
+            "source_platform": source_platform,
+            "ovf_data": ovf_data,
+            "hardware_presets": HARDWARE_PRESETS,
+            "hardware_presets_json": json.dumps(HARDWARE_PRESETS),
         },
     )
 

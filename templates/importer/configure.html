@@ -21,6 +21,135 @@
 
     {% block configure_banner %}{% endblock %}
 
+    {# Platform detection banner #}
+    {% if ovf_data %}
+    <div style="background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:1px solid #86efac;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:1rem;">
+      <div style="flex-shrink:0;width:40px;height:40px;border-radius:8px;background:#22c55e;display:flex;align-items:center;justify-content:center;">
+        <i class="fas fa-file-archive" style="color:#fff;font-size:1rem;"></i>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;color:#1a1a2e;font-size:0.95rem;margin-bottom:0.35rem;">
+          OVA Settings Detected
+        </div>
+        <div style="font-size:0.83rem;color:#4a4a4a;line-height:1.6;">
+          Hardware settings have been read from the OVF descriptor inside the OVA package.
+          {% if ovf_data.os_description %}
+            <span style="margin-left:0.5rem;">
+              <i class="fas fa-desktop" style="color:#22c55e;margin-right:0.3rem;"></i>
+              <strong>OS:</strong> {{ ovf_data.os_description }}
+            </span>
+          {% endif %}
+          {% if ovf_data.disks %}
+            <span style="margin-left:0.5rem;">
+              <i class="fas fa-hdd" style="color:#22c55e;margin-right:0.3rem;"></i>
+              <strong>{{ ovf_data.disks|length }} disk{{ ovf_data.disks|length|pluralize }}</strong>:
+              {% for disk in ovf_data.disks %}
+                {{ disk.capacity_gb|floatformat:0 }}GB{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+              {% if ovf_data.disks|length > 1 %}
+                (all disks will be imported automatically)
+              {% endif %}
+            </span>
+          {% endif %}
+          {% if ovf_data.firmware == "ovmf" %}
+            <span style="margin-left:0.5rem;">
+              <i class="fas fa-microchip" style="color:#22c55e;margin-right:0.3rem;"></i>
+              <strong>UEFI</strong> firmware
+            </span>
+          {% endif %}
+        </div>
+        <div style="font-size:0.78rem;color:#7a7a7a;margin-top:0.4rem;">
+          Settings are pre-filled from the OVA. For vendor appliances (Cisco, Aruba, etc.),
+          select a <strong>hardware preset</strong> below to override with KVM-compatible settings.
+        </div>
+      </div>
+    </div>
+    {% elif source_platform == "vmware" %}
+    <div style="background:linear-gradient(135deg,#fff8f0 0%,#fffbeb 100%);border:1px solid #fbbf24;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:1rem;">
+      <div style="flex-shrink:0;width:40px;height:40px;border-radius:8px;background:#f59e0b;display:flex;align-items:center;justify-content:center;">
+        <i class="fas fa-exchange-alt" style="color:#fff;font-size:1rem;"></i>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;color:#1a1a2e;font-size:0.95rem;margin-bottom:0.35rem;">
+          VMware Image Detected
+        </div>
+        <div style="font-size:0.83rem;color:#4a4a4a;line-height:1.6;">
+          This looks like a VMware disk image. Select a <strong>hardware preset</strong> below
+          to auto-configure compatible settings for a smooth transition.
+          VMware guests often need <strong>E1000 / SATA / IDE</strong> instead of VirtIO to boot successfully.
+          You can switch to VirtIO later after installing drivers in the guest.
+        </div>
+      </div>
+    </div>
+    {% elif source_platform == "kvm" %}
+    <div style="background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:1px solid #86efac;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:1rem;">
+      <div style="flex-shrink:0;width:40px;height:40px;border-radius:8px;background:#22c55e;display:flex;align-items:center;justify-content:center;">
+        <i class="fas fa-check-circle" style="color:#fff;font-size:1rem;"></i>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;color:#1a1a2e;font-size:0.95rem;margin-bottom:0.35rem;">
+          KVM Image Detected
+        </div>
+        <div style="font-size:0.83rem;color:#4a4a4a;line-height:1.6;">
+          This is a native KVM/QEMU disk image. It should work with <strong>VirtIO</strong> drivers
+          for the best performance. Select a hardware preset or configure manually.
+        </div>
+      </div>
+    </div>
+    {% elif source_platform == "hyperv" %}
+    <div style="background:linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%);border:1px solid #93c5fd;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:1rem;">
+      <div style="flex-shrink:0;width:40px;height:40px;border-radius:8px;background:#3b82f6;display:flex;align-items:center;justify-content:center;">
+        <i class="fas fa-exchange-alt" style="color:#fff;font-size:1rem;"></i>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;color:#1a1a2e;font-size:0.95rem;margin-bottom:0.35rem;">
+          Hyper-V Image Detected
+        </div>
+        <div style="font-size:0.83rem;color:#4a4a4a;line-height:1.6;">
+          This looks like a Hyper-V disk image. Select a <strong>hardware preset</strong> below
+          to auto-configure compatible settings.
+          Hyper-V guests typically work well with <strong>E1000e / SATA</strong> controllers.
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {# ---- SECTION: Hardware Preset (hidden for .px imports only) ---- #}
+    {% block hardware_preset_section %}
+    <div class="form-section">
+      <div class="form-section-header" id="section-preset-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-magic"></i></div>
+          Hardware Preset
+          {% if source_platform %}
+            <span class="tag is-warning is-light" style="font-size:0.7rem;">Recommended for {{ source_platform|title }} imports</span>
+          {% endif %}
+        </div>
+        <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+      </div>
+      <div class="form-section-body is-open">
+        <div class="field">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">Select a Preset</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select id="hardware-preset-select" onchange="applyPreset(this.value)">
+                <option value="">— No preset (manual configuration) —</option>
+                {% for category, presets in hardware_presets.items %}
+                  <optgroup label="{{ category }}">
+                    {% for preset in presets %}
+                      <option value="{{ preset.key }}">{{ preset.label }}</option>
+                    {% endfor %}
+                  </optgroup>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <p class="field-hint">Auto-fills CPU, memory, disk, network, and display settings. You can override any value after selecting.</p>
+        </div>
+      </div>
+    </div>
+    {% endblock hardware_preset_section %}
+
     {# Non-field errors #}
     {% if form.non_field_errors %}
       <div class="notification is-danger is-light" style="margin-bottom:1.5rem;">
@@ -581,6 +710,18 @@
             </div>
           </div>
         </div>
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="checkbox">
+                <input type="checkbox" name="serial_port" {% if form.serial_port.value %}checked{% endif %}>
+                &nbsp;<strong>Add Serial Port</strong>
+              </label>
+              <p class="field-hint" style="margin-left:1.5rem;">Required for some appliances (e.g. Cisco Expressway install wizard).</p>
+            </div>
+          </div>
+          <div class="column"></div>
+        </div>
       </div>
     </div>
 
@@ -804,6 +945,45 @@
 
 {% block extra_scripts %}
 <script>
+  // ── Hardware Presets ──────────────────────────────────────────────────
+  const HARDWARE_PRESETS = {{ hardware_presets_json|safe }};
+
+  function applyPreset(key) {
+    if (!key) return;
+    // Find the preset config by key across all categories
+    let config = null;
+    for (const category of Object.values(HARDWARE_PRESETS)) {
+      for (const preset of category) {
+        if (preset.key === key) { config = preset.config; break; }
+      }
+      if (config) break;
+    }
+    if (!config) return;
+
+    for (const [field, value] of Object.entries(config)) {
+      const el = document.querySelector(`[name="${field}"]`);
+      if (!el) continue;
+
+      if (el.type === 'checkbox') {
+        el.checked = !!value;
+        el.dispatchEvent(new Event('change'));
+      } else if (field === 'memory_mb') {
+        // Memory uses a visible GB input + hidden MB field
+        el.value = value;
+        const gbInput = document.getElementById('memory-gb-input');
+        if (gbInput) gbInput.value = Math.round(value / 1024 * 10) / 10;
+      } else {
+        el.value = value;
+      }
+    }
+
+    // Trigger dependent UI updates
+    if (config.bios) handleBiosChange(config.bios);
+    if (config.os_type) {
+      if (typeof updateVirtioIsoRow === 'function') updateVirtioIsoRow();
+    }
+  }
+
   // UEFI/EFI field visibility
   function handleBiosChange(value) {
     const efiField    = document.getElementById('efi-disk-field');
@@ -969,7 +1149,18 @@
       method: 'POST',
       body: formData,
     })
-    .then(r => r.text())
+    .then(r => {
+      if (!r.ok) {
+        return r.text().then(html => {
+          statusEl.innerHTML = '<span style="color:#cc0f35;"><i class="fas fa-exclamation-triangle" style="margin-right:0.3rem;"></i>' +
+            (html.trim() || 'Unsupported file type.') + '</span>';
+          row.dataset.fileId = '';
+          serializeExtraDisks();
+          throw new Error('Upload rejected');
+        });
+      }
+      return r.text();
+    })
     .then(html => {
       statusEl.innerHTML = html;
       // Extract file_id from the hidden input in the returned HTML
@@ -978,11 +1169,16 @@
       const fileIdInput = tmp.querySelector('.extra-disk-file-id');
       if (fileIdInput) {
         row.dataset.fileId = fileIdInput.value;
+      } else {
+        row.dataset.fileId = '';
       }
       serializeExtraDisks();
     })
-    .catch(() => {
-      statusEl.innerHTML = '<span style="color:#cc0f35;">Upload failed. Please try again.</span>';
+    .catch(err => {
+      if (err.message !== 'Upload rejected') {
+        statusEl.innerHTML = '<span style="color:#cc0f35;"><i class="fas fa-exclamation-triangle" style="margin-right:0.3rem;"></i>Upload failed. Please try again.</span>';
+        row.dataset.fileId = '';
+      }
     });
   }
 

@@ -209,10 +209,24 @@
     }
   });
 
+  const ALLOWED_EXTENSIONS = ['.qcow2', '.vmdk', '.vhd', '.vhdx', '.raw', '.img', '.ova'];
+
   function handleFileSelect(input) {
     if (!input.files.length) return;
     const file = input.files[0];
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
 
+    // Client-side extension check
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      showUploadError(
+        'Unsupported file type: <strong>' + ext + '</strong>. ' +
+        'Allowed formats: ' + ALLOWED_EXTENSIONS.join(', ')
+      );
+      input.value = '';
+      return;
+    }
+
+    clearUploadError();
     fileName.textContent = file.name;
     fileSize.textContent = formatBytes(file.size);
     fileInfo.style.display = 'block';
@@ -221,6 +235,24 @@
     // Update drop zone to show selected state
     dropzone.style.borderColor = '#3273dc';
     dropzone.style.background  = '#eff6ff';
+  }
+
+  function showUploadError(message) {
+    clearUploadError();
+    const el = document.createElement('div');
+    el.id = 'upload-error';
+    el.className = 'notification is-danger is-light';
+    el.style.cssText = 'margin-top:1rem;font-size:0.875rem;';
+    el.innerHTML =
+      '<button class="delete" onclick="this.parentElement.remove()"></button>' +
+      '<strong><i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i></strong> ' +
+      message;
+    dropzone.parentNode.insertBefore(el, dropzone.nextSibling);
+  }
+
+  function clearUploadError() {
+    const existing = document.getElementById('upload-error');
+    if (existing) existing.remove();
   }
 
   function clearFile() {
@@ -271,7 +303,15 @@
         uploadBtn.disabled = false;
         uploadBtn.innerHTML = '<span class="icon"><i class="fas fa-upload"></i></span><span>Upload &amp; Continue</span>';
         progressDiv.style.display = 'none';
+        showUploadError('Upload failed. Please check the file format and try again.');
       }
+    });
+
+    xhr.addEventListener('error', function() {
+      uploadBtn.disabled = false;
+      uploadBtn.innerHTML = '<span class="icon"><i class="fas fa-upload"></i></span><span>Upload &amp; Continue</span>';
+      progressDiv.style.display = 'none';
+      showUploadError('Upload failed — could not connect to server.');
     });
 
     xhr.open('POST', this.action);
