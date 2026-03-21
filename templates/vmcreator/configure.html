@@ -165,6 +165,21 @@
         <div class="columns">
           <div class="column">
             <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Machine Type</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="machine">
+                    {% for val, label in form.machine.field.choices %}
+                      <option value="{{ val }}" {% if form.machine.value == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <p class="field-hint">Use <strong>Q35</strong> for PCIe, NVMe, or if the source VM was Q35. Use <strong>i440FX</strong> for legacy compatibility.</p>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field">
               <label class="label" style="font-size:0.875rem;font-weight:600;">BIOS Type</label>
               <div class="control">
                 <div class="select is-fullwidth">

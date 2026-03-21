@@ -1,0 +1,11 @@
+{# Error row shown when an LXC action fails #}
+<tr id="ct-row-{{ vmid }}">
+  <td class="vmid-col">{{ vmid }}</td>
+  <td colspan="6" style="vertical-align:middle;color:#cc0f35;font-size:0.875rem;">
+    <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
+    {{ error }}
+  </td>
+  <td style="vertical-align:middle;">
+    <a href="{% url 'lxc_list' %}" class="button is-small is-light">Refresh</a>
+  </td>
+</tr>

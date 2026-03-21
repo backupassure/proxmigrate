@@ -11,7 +11,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Load .env from the project root (or /opt/proxmigrate/.env in production)
 load_dotenv(BASE_DIR / ".env")
-load_dotenv("/opt/proxmigrate/.env")
+_prod_env = Path("/opt/proxmigrate/.env")
+if _prod_env.is_file() and os.access(_prod_env, os.R_OK):
+    load_dotenv(_prod_env)
 
 # ---------------------------------------------------------------------------
 # Core
@@ -57,6 +59,7 @@ INSTALLED_APPS = [
     "apps.emailconfig",
     "apps.certificates",
     "apps.vmcreator",
+    "apps.lxc",
 ]
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block title %}LXC Containers — ProxMigrate{% endblock %}
+{% block page_title %}LXC Containers{% endblock %}
+{% block help_slug %}lxc{% endblock %}
+
+{% block page_actions %}
+  <button class="button is-light is-small"
+          hx-get="{% url 'lxc_list' %}"
+          hx-target="#ct-table-wrapper"
+          hx-select="#ct-table-wrapper"
+          hx-swap="outerHTML"
+          hx-indicator="#refresh-spinner">
+    <span id="refresh-spinner" class="htmx-indicator spinner" style="margin-right:0.3rem;"></span>
+    <span class="icon is-small"><i class="fas fa-sync-alt"></i></span>
+    <span>Refresh</span>
+  </button>
+{% endblock %}
+
+{% block content %}
+
+{# ===== Stats Row ===== #}
+<div class="columns is-multiline" style="margin-bottom:1.5rem;">
+  <div class="column is-4">
+    <div class="stat-card">
+      <div class="stat-card-icon is-blue"><i class="fas fa-cube"></i></div>
+      <div>
+        <div class="stat-card-value">{{ total_count|default:0 }}</div>
+        <div class="stat-card-label">Total Containers</div>
+      </div>
+    </div>
+  </div>
+  <div class="column is-4">
+    <div class="stat-card">
+      <div class="stat-card-icon is-green"><i class="fas fa-play-circle"></i></div>
+      <div>
+        <div class="stat-card-value">{{ running_count|default:0 }}</div>
+        <div class="stat-card-label">Running</div>
+      </div>
+    </div>
+  </div>
+  <div class="column is-4">
+    <div class="stat-card">
+      <div class="stat-card-icon is-red"><i class="fas fa-stop-circle"></i></div>
+      <div>
+        <div class="stat-card-value">{{ stopped_count|default:0 }}</div>
+        <div class="stat-card-label">Stopped</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ===== Container Table — polls every 10s for live status ===== #}
+<div id="ct-table-wrapper" class="proxmigrate-card"
+     hx-get="{% url 'lxc_list' %}"
+     hx-trigger="every 10s"
+     hx-select="#ct-table-wrapper"
+     hx-swap="outerHTML"
+     hx-indicator="#refresh-spinner">
+  <div class="card-header">
+    <i class="fas fa-cube" style="color:#3273dc;"></i> LXC Containers
+    {% if node_name %}
+      <span style="font-weight:400;color:#7a7a7a;font-size:0.82rem;margin-left:0.5rem;">
+        on <strong>{{ node_name }}</strong>
+      </span>
+    {% endif %}
+    <div style="margin-left:auto;">
+      <div class="control has-icons-left" style="font-size:0.85rem;">
+        <input id="ct-filter-input" class="input is-small" type="text"
+               placeholder="Filter by name or ID…"
+               value="{{ search_query }}"
+               autocomplete="off"
+               style="min-width:220px;">
+        <span class="icon is-left is-small"><i class="fas fa-search"></i></span>
+      </div>
+    </div>
+  </div>
+
+  {% if error %}
+    <div style="padding:1.5rem;color:#cc0f35;font-size:0.9rem;">
+      <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i> {{ error }}
+    </div>
+  {% elif containers %}
+    <div style="overflow-x:auto;">
+      <table class="table vm-table is-fullwidth" style="margin:0;">
+        <thead>
+          <tr>
+            <th>CTID</th>
+            <th>Name</th>
+            <th>Status</th>
+            <th>CPU</th>
+            <th>RAM</th>
+            <th>Uptime</th>
+            <th>Node</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="ct-tbody">
+          <tr id="ct-empty-row" style="display:none;">
+            <td colspan="8" style="text-align:center;padding:2rem;color:#7a7a7a;font-size:0.875rem;">
+              <i class="fas fa-search" style="margin-right:0.4rem;"></i>
+              No containers matched your filter. <a href="#" onclick="document.getElementById('ct-filter-input').value='';applyCtFilter();return false;">Clear</a>
+            </td>
+          </tr>
+          {% for ct in containers %}
+          <tr id="ct-row-{{ ct.vmid }}">
+            <td class="vmid-col">{{ ct.vmid }}</td>
+            <td style="vertical-align:middle;">
+              <a href="{% url 'lxc_detail' ct.vmid %}" style="font-weight:600;color:#1a1a2e;">{{ ct.name }}</a>
+            </td>
+            <td style="vertical-align:middle;">
+              {% if ct.status == 'running' %}
+                <span class="status-badge vm-status-running">Running</span>
+              {% elif ct.status == 'stopped' %}
+                <span class="status-badge vm-status-stopped">Stopped</span>
+              {% else %}
+                <span class="status-badge vm-status-unknown">{{ ct.status }}</span>
+              {% endif %}
+            </td>
+            <td style="vertical-align:middle;">
+              <span style="font-size:0.875rem;color:#4a4a4a;">
+                {% if ct.status == 'running' %}
+                  {{ ct.cpu_pct|floatformat:1 }}%
+                {% else %}
+                  {{ ct.cpus|default:"—" }}{% if ct.cpus %} cores{% endif %}
+                {% endif %}
+              </span>
+            </td>
+            <td style="vertical-align:middle;">
+              <span style="font-size:0.875rem;color:#4a4a4a;">
+                {% if ct.maxmem %}{{ ct.maxmem|filesizeformat }}{% else %}—{% endif %}
+              </span>
+            </td>
+            <td style="vertical-align:middle;">
+              <span style="font-size:0.82rem;color:#7a7a7a;">
+                {% if ct.status == 'running' and ct.uptime %}
+                  {{ ct.uptime_human }}
+                {% else %}
+                  —
+                {% endif %}
+              </span>
+            </td>
+            <td style="vertical-align:middle;">
+              <span style="font-size:0.82rem;color:#7a7a7a;">{{ ct.node }}</span>
+            </td>
+            <td style="vertical-align:middle;">
+              <div class="vm-actions" style="justify-content:flex-end;">
+                <a href="{% url 'lxc_detail' ct.vmid %}" class="button is-light is-small" title="Details">
+                  <i class="fas fa-info-circle"></i>
+                </a>
+                {% if ct.status == 'running' %}
+                  <button class="button is-warning is-light is-small"
+                          hx-post="/lxc/{{ ct.vmid }}/action/shutdown/"
+                          hx-target="#ct-row-{{ ct.vmid }}"
+                          hx-swap="outerHTML"
+                          hx-confirm="Gracefully shut down {{ ct.name }}?"
+                          title="Shutdown">
+                    <i class="fas fa-power-off"></i>
+                  </button>
+                  <button class="button is-danger is-light is-small"
+                          hx-post="/lxc/{{ ct.vmid }}/action/stop/"
+                          hx-target="#ct-row-{{ ct.vmid }}"
+                          hx-swap="outerHTML"
+                          hx-confirm="Force stop {{ ct.name }}? Unsaved data may be lost."
+                          title="Stop">
+                    <i class="fas fa-stop"></i>
+                  </button>
+                  <button class="button is-info is-light is-small"
+                          hx-post="/lxc/{{ ct.vmid }}/action/reboot/"
+                          hx-target="#ct-row-{{ ct.vmid }}"
+                          hx-swap="outerHTML"
+                          hx-confirm="Reboot {{ ct.name }}?"
+                          title="Reboot">
+                    <i class="fas fa-redo"></i>
+                  </button>
+                {% elif ct.status == 'stopped' %}
+                  <button class="button is-success is-light is-small"
+                          hx-post="/lxc/{{ ct.vmid }}/action/start/"
+                          hx-target="#ct-row-{{ ct.vmid }}"
+                          hx-swap="outerHTML"
+                          title="Start">
+                    <span class="icon is-small"><i class="fas fa-play"></i></span>
+                    <span>Start</span>
+                  </button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  {% else %}
+    {# Empty state #}
+    <div class="empty-state">
+      <div class="empty-state-icon"><i class="fas fa-cube"></i></div>
+      <h3>No LXC Containers Found</h3>
+      <p>
+        {% if search_query %}
+          No containers matched your search. <a href="{% url 'lxc_list' %}">Clear filter</a>
+        {% else %}
+          Your Proxmox node doesn't have any LXC containers, or the API couldn't be reached.
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Add CSRF token to all HTMX POST requests
+  document.addEventListener('htmx:configRequest', function(evt) {
+    if (evt.detail.verb !== 'get') {
+      const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
+      if (csrfToken) {
+        evt.detail.headers['X-CSRFToken'] = csrfToken[1];
+      }
+    }
+  });
+
+  // Client-side container filter
+  function applyCtFilter() {
+    const input = document.getElementById('ct-filter-input');
+    if (!input) return;
+    const q = input.value.trim().toLowerCase();
+    const rows = document.querySelectorAll('#ct-tbody tr[id^="ct-row-"]');
+    let visible = 0;
+    rows.forEach(function(row) {
+      const name = (row.querySelector('td:nth-child(2)')?.textContent || '').toLowerCase();
+      const ctid = (row.querySelector('td:nth-child(1)')?.textContent || '').trim();
+      const match = !q || name.includes(q) || ctid.includes(q);
+      row.style.display = match ? '' : 'none';
+      if (match) visible++;
+    });
+    const emptyRow = document.getElementById('ct-empty-row');
+    if (emptyRow) emptyRow.style.display = (visible === 0 && q) ? '' : 'none';
+  }
+
+  document.addEventListener('input', function(evt) {
+    if (evt.target && evt.target.id === 'ct-filter-input') {
+      applyCtFilter();
+    }
+  });
+
+  document.addEventListener('keydown', function(evt) {
+    if (evt.target && evt.target.id === 'ct-filter-input' && evt.key === 'Enter') {
+      evt.preventDefault();
+    }
+  });
+
+  document.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.detail.target && evt.detail.target.id === 'ct-table-wrapper') {
+      applyCtFilter();
+    }
+  });
+</script>
+{% endblock %}

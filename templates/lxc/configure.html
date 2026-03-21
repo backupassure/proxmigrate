@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% block title %}Configure Container — ProxMigrate{% endblock %}
+{% block page_title %}Configure LXC Container{% endblock %}
+{% block help_slug %}lxc{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'lxc_create' %}" class="button is-light is-small">
+    <span class="icon is-small"><i class="fas fa-arrow-left"></i></span>
+    <span>Back</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+<form method="post" action="{% url 'lxc_configure' job.id %}" id="configure-form">
+{% csrf_token %}
+
+<div class="columns">
+
+  {# ===== LEFT: Configuration Form ===== #}
+  <div class="column is-8">
+
+    {# ---- SECTION: General ---- #}
+    <div class="form-section">
+      <div class="form-section-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon" style="background:#eff6ff;color:#3273dc;"><i class="fas fa-tag"></i></div>
+          General
+        </div>
+        <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+      </div>
+      <div class="form-section-body is-open">
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Hostname <span style="color:#f14668;">*</span></label>
+              <div class="control">
+                <input class="input" type="text" name="hostname" value="{{ job.ct_name }}" placeholder="my-container" autofocus>
+              </div>
+              <p class="field-hint">Container hostname. Letters, numbers, hyphens.</p>
+            </div>
+          </div>
+          <div class="column is-3">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">CTID</label>
+              <div class="control">
+                <input class="input" type="number" name="vmid" value="" placeholder="{{ suggested_vmid }}"
+                       hx-get="/inventory/api/vmid/check/"
+                       hx-trigger="keyup changed delay:500ms"
+                       hx-target="#vmid-feedback"
+                       hx-include="[name=vmid]">
+              </div>
+              <p class="field-hint">Leave blank to auto-assign.</p>
+              <div id="vmid-feedback" style="margin-top:0.25rem;"></div>
+            </div>
+          </div>
+          <div class="column is-3">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Target Node</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="node">
+                    {% for n in nodes %}
+                      <option value="{{ n }}" {% if n == config.default_node %}selected{% endif %}>{{ n }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">Description</label>
+          <div class="control">
+            <textarea class="textarea" name="description" rows="2" placeholder="Optional description..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ---- SECTION: Resources ---- #}
+    <div class="form-section">
+      <div class="form-section-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon" style="background:#f0fdf4;color:#257953;"><i class="fas fa-microchip"></i></div>
+          Resources
+        </div>
+        <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+      </div>
+      <div class="form-section-body is-open">
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">CPU Cores</label>
+              <div class="control">
+                <input class="input" type="number" name="cores" value="1" min="1" max="128">
+              </div>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Memory (MB)</label>
+              <div class="control">
+                <input class="input" type="number" name="memory_mb" value="512" min="64" step="64">
+              </div>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Swap (MB)</label>
+              <div class="control">
+                <input class="input" type="number" name="swap_mb" value="512" min="0" step="64">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ---- SECTION: Storage ---- #}
+    <div class="form-section">
+      <div class="form-section-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon" style="background:#fff8e1;color:#946c00;"><i class="fas fa-hdd"></i></div>
+          Storage
+        </div>
+        <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+      </div>
+      <div class="form-section-body is-open">
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Root Disk Storage</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="rootfs_storage">
+                    {% for s in rootfs_pools %}
+                      <option value="{{ s.storage }}" {% if s.storage == default_rootfs %}selected{% endif %}>{{ s.storage }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <p class="field-hint">Only storages supporting container rootfs are shown.</p>
+            </div>
+          </div>
+          <div class="column is-4">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Root Disk Size (GB)</label>
+              <div class="control">
+                <input class="input" type="number" name="rootfs_size" value="8" min="1" max="10000">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ---- SECTION: Network ---- #}
+    <div class="form-section">
+      <div class="form-section-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon" style="background:#eff6ff;color:#3273dc;"><i class="fas fa-network-wired"></i></div>
+          Network
+        </div>
+        <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+      </div>
+      <div class="form-section-body is-open">
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Bridge</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="net_bridge">
+                    {% for net in networks %}
+                      <option value="{{ net.iface }}" {% if net.iface == config.default_bridge %}selected{% endif %}>{{ net.iface }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">IP Configuration</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="ip_config" id="ip-config-select" onchange="toggleStaticIp()">
+                    <option value="dhcp">DHCP</option>
+                    <option value="static">Static IP</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="static-ip-fields" style="display:none;">
+          <div class="columns">
+            <div class="column">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">IP Address (CIDR)</label>
+                <div class="control">
+                  <input class="input" type="text" name="ip_address" placeholder="192.168.1.100/24">
+                </div>
+                <p class="field-hint">Include subnet mask, e.g. 192.168.1.100/24</p>
+              </div>
+            </div>
+            <div class="column">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">Gateway</label>
+                <div class="control">
+                  <input class="input" type="text" name="gateway" placeholder="192.168.1.1">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">DNS Server</label>
+              <div class="control">
+                <input class="input" type="text" name="nameserver" placeholder="8.8.8.8">
+              </div>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Search Domain</label>
+              <div class="control">
+                <input class="input" type="text" name="searchdomain" placeholder="example.com">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ---- SECTION: Authentication ---- #}
+    <div class="form-section">
+      <div class="form-section-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon" style="background:#fff5f7;color:#cc0f35;"><i class="fas fa-key"></i></div>
+          Authentication
+        </div>
+        <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+      </div>
+      <div class="form-section-body is-open">
+        <div class="field">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">Root Password</label>
+          <div class="control">
+            <input class="input" type="password" name="password" placeholder="Leave blank for key-only access">
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">SSH Public Key</label>
+          <div class="control">
+            <textarea class="textarea" name="ssh_public_key" rows="2" placeholder="ssh-rsa AAAA... or ssh-ed25519 AAAA..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ---- SECTION: Options ---- #}
+    <div class="form-section">
+      <div class="form-section-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon" style="background:#f5f5f5;color:#4a4a4a;"><i class="fas fa-cog"></i></div>
+          Options
+        </div>
+        <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+      </div>
+      <div class="form-section-body is-open">
+        <div class="columns">
+          <div class="column">
+            <label class="checkbox" style="font-size:0.875rem;">
+              <input type="checkbox" name="unprivileged" checked> Unprivileged container
+            </label>
+            <p class="field-hint">Recommended. Runs with reduced kernel privileges.</p>
+          </div>
+          <div class="column">
+            <label class="checkbox" style="font-size:0.875rem;">
+              <input type="checkbox" name="nesting"> Enable nesting
+            </label>
+            <p class="field-hint">Required for Docker inside LXC.</p>
+          </div>
+        </div>
+        <div class="columns">
+          <div class="column">
+            <label class="checkbox" style="font-size:0.875rem;">
+              <input type="checkbox" name="start_on_boot"> Start on boot
+            </label>
+          </div>
+          <div class="column">
+            <label class="checkbox" style="font-size:0.875rem;">
+              <input type="checkbox" name="start_after_create" checked> Start after creation
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  {# ===== RIGHT: Summary Card ===== #}
+  <div class="column is-4">
+    <div class="proxmigrate-card" style="position:sticky;top:1.5rem;">
+      <div class="card-header">
+        <i class="fas fa-cube" style="color:#3273dc;"></i> Summary
+      </div>
+      <div class="card-body" style="padding:1.25rem;">
+        <div style="font-size:0.85rem;color:#4a4a4a;line-height:1.8;">
+          <div><strong>Template:</strong></div>
+          <div style="font-size:0.8rem;color:#7a7a7a;word-break:break-all;margin-bottom:0.75rem;">{{ job.template }}</div>
+          <div><strong>Storage:</strong> {{ job.template_storage }}</div>
+        </div>
+        <hr style="margin:1rem 0;">
+        <button type="submit" class="button is-primary is-fullwidth is-medium" style="font-weight:700;">
+          <span class="icon"><i class="fas fa-cube"></i></span>
+          <span>Create Container</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function toggleStaticIp() {
+    const sel = document.getElementById('ip-config-select');
+    const fields = document.getElementById('static-ip-fields');
+    fields.style.display = sel.value === 'static' ? '' : 'none';
+  }
+
+  document.addEventListener('htmx:configRequest', function(evt) {
+    if (evt.detail.verb !== 'get') {
+      const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
+      if (csrfToken) {
+        evt.detail.headers['X-CSRFToken'] = csrfToken[1];
+      }
+    }
+  });
+</script>
+{% endblock %}
