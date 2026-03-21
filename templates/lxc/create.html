@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}New LXC Container — ProxMigrate{% endblock %}
+{% block page_title %}New LXC Container{% endblock %}
+{% block help_slug %}lxc{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'lxc_list' %}" class="button is-light is-small">
+    <span class="icon is-small"><i class="fas fa-arrow-left"></i></span>
+    <span>Back to Containers</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+
+{% if error %}
+  <div class="notification is-danger is-light">
+    <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i> {{ error }}
+  </div>
+{% endif %}
+
+<div class="columns">
+  <div class="column is-7 is-offset-0">
+
+    <div class="proxmigrate-card">
+      <div class="card-header">
+        <i class="fas fa-cube" style="color:#3273dc;"></i> Select Container Template
+      </div>
+      <div class="card-body" style="padding:1.5rem;">
+
+        {# Storage selector #}
+        <div class="field">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">Template Storage</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select id="template-storage"
+                      hx-get="{% url 'lxc_template_browser' %}"
+                      hx-target="#template-list"
+                      hx-include="#template-storage, #template-section"
+                      hx-trigger="change"
+                      name="storage">
+                <option value="">— Select storage pool —</option>
+                {% for s in storage_pools %}
+                  <option value="{{ s.storage }}">{{ s.storage }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <p class="field-hint">Storage pool with vztmpl content type enabled.</p>
+        </div>
+
+        {# Tab toggle: Downloaded vs Available #}
+        <div class="tabs is-small" style="margin-bottom:0;">
+          <ul>
+            <li class="is-active" id="tab-downloaded">
+              <a hx-get="{% url 'lxc_template_browser' %}"
+                 hx-target="#template-list"
+                 hx-include="#template-storage"
+                 hx-vals='{"section": "downloaded"}'
+                 onclick="document.getElementById('tab-downloaded').classList.add('is-active');document.getElementById('tab-available').classList.remove('is-active');document.getElementById('template-section').value='downloaded';">
+                <span class="icon is-small"><i class="fas fa-hdd"></i></span>
+                <span>Downloaded</span>
+              </a>
+            </li>
+            <li id="tab-available">
+              <a hx-get="{% url 'lxc_template_browser' %}"
+                 hx-target="#template-list"
+                 hx-include="#template-storage"
+                 hx-vals='{"section": "available"}'
+                 onclick="document.getElementById('tab-available').classList.add('is-active');document.getElementById('tab-downloaded').classList.remove('is-active');document.getElementById('template-section').value='available';">
+                <span class="icon is-small"><i class="fas fa-cloud-download-alt"></i></span>
+                <span>Available to Download</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+        <input type="hidden" id="template-section" name="section" value="downloaded">
+
+        {# Template list (HTMX target) #}
+        <div id="template-list">
+          <div style="padding:2rem;text-align:center;color:#7a7a7a;font-size:0.875rem;">
+            <i class="fas fa-arrow-up" style="margin-right:0.4rem;"></i>
+            Select a storage pool to browse templates.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  {# Right column: guidance #}
+  <div class="column is-5">
+    <div class="proxmigrate-card">
+      <div class="card-header">
+        <i class="fas fa-info-circle" style="color:#3273dc;"></i> About New LXC Container
+      </div>
+      <div class="card-body" style="font-size:0.85rem;color:#555;line-height:1.7;">
+        <p style="margin-bottom:0.75rem;">
+          <strong>Downloaded Templates</strong> — choose from templates already stored on your Proxmox node. These are ready to use immediately with no download required.
+        </p>
+        <p style="margin-bottom:0.75rem;">
+          <strong>Available to Download</strong> — browse the official Proxmox template catalogue. Selecting a template will download it to your storage before creating the container.
+        </p>
+        <p style="margin-bottom:0.75rem;">
+          <strong>After selecting a template</strong> you'll configure the container — hostname, resources (CPU, RAM, swap), storage, networking, and authentication — before creation begins.
+        </p>
+        <hr style="border:none;border-top:1px solid #e8ecf0;margin:0.75rem 0;">
+        <p style="font-size:0.78rem;color:#888;">
+          <i class="fas fa-hdd" style="margin-right:0.3rem;"></i>
+          Template storage must have the <strong>vztmpl</strong> content type enabled in Proxmox.
+          Go to Datacenter &rarr; Storage &rarr; select pool &rarr; Edit &rarr; Content.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('htmx:configRequest', function(evt) {
+    if (evt.detail.verb !== 'get') {
+      const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
+      if (csrfToken) {
+        evt.detail.headers['X-CSRFToken'] = csrfToken[1];
+      }
+    }
+  });
+</script>
+{% endblock %}

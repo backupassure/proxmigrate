@@ -148,6 +148,7 @@ def run_create_pipeline(self, job_id):
         cpu_type = vm_config.get("cpu_type", "x86-64-v2-AES")
         os_type = vm_config.get("os_type", "l26")
         bios = vm_config.get("bios", "seabios")
+        machine = vm_config.get("machine", "pc")
 
         qm_create_args = [
             "qm", "create", str(vmid),
@@ -160,6 +161,7 @@ def run_create_pipeline(self, job_id):
             "--ostype", os_type,
             "--vga", build_vga_arg(vm_config),
             "--bios", bios,
+            "--machine", machine,
         ]
 
         if vm_config.get("start_on_boot"):

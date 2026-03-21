@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}{{ ct.name }} — LXC Details — ProxMigrate{% endblock %}
+{% block page_title %}{{ ct.name }}{% endblock %}
+{% block help_slug %}lxc{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'lxc_list' %}" class="button is-light is-small">
+    <span class="icon is-small"><i class="fas fa-arrow-left"></i></span>
+    <span>Back to LXC Containers</span>
+  </a>
+  &nbsp;
+  {% if ct.status == 'running' %}
+  <a href="{% url 'lxc_console' ct.vmid %}" target="_blank" class="button is-dark is-small" title="Open container console in new tab">
+    <span class="icon is-small"><i class="fas fa-terminal"></i></span>
+    <span>Console</span>
+  </a>
+  &nbsp;
+  {% endif %}
+  {% if ct.status == 'running' %}
+    <button class="button is-warning is-small"
+            hx-post="/lxc/{{ ct.vmid }}/action/shutdown/"
+            hx-confirm="Gracefully shut down {{ ct.name }}?"
+            hx-swap="none"
+            hx-on::after-request="htmx.ajax('GET','/lxc/{{ ct.vmid }}/detail-status/?action=shutdown',{target:'#ct-status-banner',swap:'outerHTML'})">
+      <span class="icon is-small"><i class="fas fa-power-off"></i></span>
+      <span>Shutdown</span>
+    </button>
+    <button class="button is-danger is-small"
+            hx-post="/lxc/{{ ct.vmid }}/action/stop/"
+            hx-confirm="Force stop {{ ct.name }}? Unsaved data may be lost."
+            hx-swap="none"
+            hx-on::after-request="htmx.ajax('GET','/lxc/{{ ct.vmid }}/detail-status/?action=stop',{target:'#ct-status-banner',swap:'outerHTML'})">
+      <span class="icon is-small"><i class="fas fa-stop"></i></span>
+      <span>Force Stop</span>
+    </button>
+    <button class="button is-info is-small"
+            hx-post="/lxc/{{ ct.vmid }}/action/reboot/"
+            hx-confirm="Reboot {{ ct.name }}?"
+            hx-swap="none"
+            hx-on::after-request="htmx.ajax('GET','/lxc/{{ ct.vmid }}/detail-status/?action=reboot',{target:'#ct-status-banner',swap:'outerHTML'})">
+      <span class="icon is-small"><i class="fas fa-redo"></i></span>
+      <span>Reboot</span>
+    </button>
+  {% elif ct.status == 'stopped' %}
+    <button class="button is-success is-small"
+            hx-post="/lxc/{{ ct.vmid }}/action/start/"
+            hx-swap="none"
+            hx-on::after-request="htmx.ajax('GET','/lxc/{{ ct.vmid }}/detail-status/?action=start',{target:'#ct-status-banner',swap:'outerHTML'})">
+      <span class="icon is-small"><i class="fas fa-play"></i></span>
+      <span>Start</span>
+    </button>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+{# ===== Status Banner — self-polls every 5s ===== #}
+{% include "lxc/partials/ct_detail_banner.html" with ct=ct action="" action_label="" transitioning=False %}
+
+{# ===== Config Cards Grid ===== #}
+<div class="columns is-multiline">
+
+  {# General #}
+  <div class="column is-6">
+    <div class="proxmigrate-card">
+      <div class="card-header"><i class="fas fa-info-circle" style="color:#3273dc;"></i> General</div>
+      <div class="card-body" style="padding:1rem 1.5rem;">
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">CTID</div>
+          <div class="cert-detail-value">{{ ct.vmid }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Name</div>
+          <div class="cert-detail-value">{{ ct.hostname|default:ct.name }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">OS Type</div>
+          <div class="cert-detail-value">{{ ct.ostype|default:"—" }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Architecture</div>
+          <div class="cert-detail-value">{{ ct.arch|default:"—" }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Description</div>
+          <div class="cert-detail-value">{{ ct.description|striptags|truncatechars:200|default:"—" }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Options (replaces Firmware & Boot) #}
+  <div class="column is-6">
+    <div class="proxmigrate-card">
+      <div class="card-header"><i class="fas fa-microchip" style="color:#7c3aed;"></i> Options</div>
+      <div class="card-body" style="padding:1rem 1.5rem;">
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Unprivileged</div>
+          <div class="cert-detail-value">
+            {% if ct.unprivileged %}<span style="color:#48c78e;">Yes</span>{% else %}No{% endif %}
+          </div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Start on Boot</div>
+          <div class="cert-detail-value">
+            {% if ct.onboot %}<span style="color:#48c78e;">Yes</span>{% else %}No{% endif %}
+          </div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Protection</div>
+          <div class="cert-detail-value">
+            {% if ct.protection %}<span style="color:#48c78e;">Yes</span>{% else %}No{% endif %}
+          </div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Features</div>
+          <div class="cert-detail-value">
+            {% if ct.features %}
+              {% for f in ct.features %}{{ f }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            {% else %}
+              —
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# CPU #}
+  <div class="column is-6">
+    <div class="proxmigrate-card">
+      <div class="card-header"><i class="fas fa-microchip" style="color:#48c78e;"></i> CPU</div>
+      <div class="card-body" style="padding:1rem 1.5rem;">
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Cores</div>
+          <div class="cert-detail-value"><strong>{{ ct.cores|default:"—" }}</strong></div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">CPU Limit</div>
+          <div class="cert-detail-value">{{ ct.cpulimit|default:"Unlimited" }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">CPU Units</div>
+          <div class="cert-detail-value">{{ ct.cpuunits|default:"1024" }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Memory #}
+  <div class="column is-6">
+    <div class="proxmigrate-card">
+      <div class="card-header"><i class="fas fa-memory" style="color:#f59e0b;"></i> Memory</div>
+      <div class="card-body" style="padding:1rem 1.5rem;">
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Allocated RAM</div>
+          <div class="cert-detail-value"><strong>{{ ct.memory|default:"—" }} MB</strong></div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Swap</div>
+          <div class="cert-detail-value">{{ ct.swap|default:"0" }} MB</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Storage (replaces Disks) #}
+  <div class="column is-12">
+    <div class="proxmigrate-card">
+      <div class="card-header"><i class="fas fa-hdd" style="color:#48c78e;"></i> Storage</div>
+      <div style="overflow-x:auto;">
+        {% if ct.storage_items %}
+        <table class="table is-fullwidth is-narrow" style="margin:0;font-size:0.875rem;">
+          <thead>
+            <tr style="background:#f5f7fa;">
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;padding:0.75rem 1.5rem;">Mount</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Storage</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Size</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in ct.storage_items %}
+            <tr>
+              <td style="font-family:monospace;font-size:0.82rem;padding-left:1.5rem;font-weight:600;">{{ item.mount }}</td>
+              <td>{{ item.storage }}</td>
+              <td><strong>{{ item.size }}</strong></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <div style="padding:1.5rem;color:#7a7a7a;font-size:0.875rem;">No storage information available.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# Network Interfaces #}
+  <div class="column is-12">
+    <div class="proxmigrate-card">
+      <div class="card-header"><i class="fas fa-ethernet" style="color:#0369a1;"></i> Network Interfaces</div>
+      <div style="overflow-x:auto;">
+        {% if ct.networks %}
+        <table class="table is-fullwidth is-narrow" style="margin:0;font-size:0.875rem;">
+          <thead>
+            <tr style="background:#f5f7fa;">
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;padding:0.75rem 1.5rem;">Interface</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Name</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Bridge</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">MAC Address</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">IP Config</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for nic in ct.networks %}
+            <tr>
+              <td style="font-family:monospace;font-size:0.82rem;padding-left:1.5rem;font-weight:600;">{{ nic.interface }}</td>
+              <td>{{ nic.name }}</td>
+              <td>{{ nic.bridge }}</td>
+              <td style="font-family:monospace;font-size:0.8rem;">{{ nic.mac }}</td>
+              <td style="font-size:0.82rem;">{{ nic.ip }}{% if nic.gateway %} <span style="color:#7a7a7a;">(gw {{ nic.gateway }})</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <div style="padding:1.5rem;color:#7a7a7a;font-size:0.875rem;">No network interface information available.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Add CSRF token to HTMX POST requests
+  document.addEventListener('htmx:configRequest', function(evt) {
+    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
+    if (csrfToken) {
+      evt.detail.headers['X-CSRFToken'] = csrfToken[1];
+    }
+  });
+</script>
+{% endblock %}

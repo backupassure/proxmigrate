@@ -1,0 +1,16 @@
+{# Pending row shown immediately after an action — polls itself until target status is reached #}
+<tr id="ct-row-{{ vmid }}"
+    hx-get="/lxc/{{ vmid }}/status/{% if action %}?action={{ action }}{% endif %}"
+    hx-trigger="load delay:2s, every 3s"
+    hx-target="#ct-row-{{ vmid }}"
+    hx-swap="outerHTML">
+  <td class="vmid-col">{{ vmid }}</td>
+  <td style="vertical-align:middle;font-weight:600;color:#1a1a2e;">{{ ct_name }}</td>
+  <td style="vertical-align:middle;">
+    <span class="status-badge" style="background:#f0f4ff;color:#3273dc;">
+      <span class="spinner" style="width:10px;height:10px;border-width:2px;margin-right:4px;vertical-align:middle;"></span>
+      {{ action_label }}
+    </span>
+  </td>
+  <td colspan="5" style="color:#b5b5b5;font-size:0.82rem;vertical-align:middle;">Waiting for Proxmox…</td>
+</tr>

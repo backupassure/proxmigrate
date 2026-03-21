@@ -191,9 +191,10 @@ def _create_vm_and_import(job, config, remote_qcow2_path, job_id):
     memory_mb = vm_config.get("memory_mb", config.default_memory_mb)
     cores = vm_config.get("cores", config.default_cores)
     sockets = vm_config.get("sockets", 1)
-    cpu_type = vm_config.get("cpu_type", "x86-64-v2-AES")
+    cpu_type = vm_config.get("cpu_type", "host")
     os_type = vm_config.get("os_type", "l26")
     bios = vm_config.get("bios", "seabios")
+    machine = vm_config.get("machine", "pc")
 
     qm_create_args = [
         "qm", "create", str(vmid),
@@ -206,6 +207,7 @@ def _create_vm_and_import(job, config, remote_qcow2_path, job_id):
         "--ostype", os_type,
         "--vga", build_vga_arg(vm_config),
         "--bios", bios,
+        "--machine", machine,
     ]
 
     if vm_config.get("start_on_boot"):

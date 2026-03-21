@@ -38,54 +38,44 @@
 
 {% if wizard_complete %}
 
-{# ===== STAT CARDS ===== #}
-<div class="columns is-multiline" style="margin-bottom:0.5rem;">
+{# ===== VM STAT CARDS ===== #}
+<div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;font-weight:600;margin-bottom:0.5rem;">
+  <i class="fas fa-server" style="margin-right:0.3rem;"></i> Virtual Machines
+</div>
+<div class="columns is-multiline" style="margin-bottom:1rem;">
   <div class="column is-3">
-    <a href="{% url 'inventory' %}" class="stat-card stat-card-link"
-         hx-get="{% url 'inventory_stats' %}"
-         hx-trigger="load"
-         hx-target="#stat-total"
-         hx-swap="innerHTML">
+    <a href="{% url 'inventory' %}" class="stat-card stat-card-link">
       <div class="stat-card-icon is-blue">
         <i class="fas fa-server"></i>
       </div>
       <div>
-        <div class="stat-card-value" id="stat-total">
-          <span class="spinner"></span>
-        </div>
+        <div class="stat-card-value">{{ vm_total }}</div>
         <div class="stat-card-label">Total VMs</div>
       </div>
     </a>
   </div>
-
   <div class="column is-3">
     <a href="{% url 'inventory' %}" class="stat-card stat-card-link">
       <div class="stat-card-icon is-green">
         <i class="fas fa-play-circle"></i>
       </div>
       <div>
-        <div class="stat-card-value" id="stat-running">
-          <span class="spinner"></span>
-        </div>
+        <div class="stat-card-value">{{ vm_running }}</div>
         <div class="stat-card-label">Running</div>
       </div>
     </a>
   </div>
-
   <div class="column is-3">
     <a href="{% url 'inventory' %}" class="stat-card stat-card-link">
       <div class="stat-card-icon is-red">
         <i class="fas fa-stop-circle"></i>
       </div>
       <div>
-        <div class="stat-card-value" id="stat-stopped">
-          <span class="spinner"></span>
-        </div>
+        <div class="stat-card-value">{{ vm_stopped }}</div>
         <div class="stat-card-label">Stopped</div>
       </div>
     </a>
   </div>
-
   <div class="column is-3">
     <a href="{% url 'inventory' %}" class="stat-card stat-card-link">
       <div class="stat-card-icon is-purple">
@@ -93,7 +83,58 @@
       </div>
       <div>
         <div class="stat-card-value" style="font-size:1rem;padding-top:0.3rem;">See inventory</div>
-        <div class="stat-card-label">Storage usage</div>
+        <div class="stat-card-label">VM Details</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+{# ===== CONTAINER STAT CARDS ===== #}
+<div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;font-weight:600;margin-bottom:0.5rem;">
+  <i class="fas fa-cube" style="margin-right:0.3rem;"></i> LXC Containers
+</div>
+<div class="columns is-multiline" style="margin-bottom:0.5rem;">
+  <div class="column is-3">
+    <a href="{% url 'lxc_list' %}" class="stat-card stat-card-link">
+      <div class="stat-card-icon is-blue">
+        <i class="fas fa-cube"></i>
+      </div>
+      <div>
+        <div class="stat-card-value">{{ ct_total }}</div>
+        <div class="stat-card-label">Total Containers</div>
+      </div>
+    </a>
+  </div>
+  <div class="column is-3">
+    <a href="{% url 'lxc_list' %}" class="stat-card stat-card-link">
+      <div class="stat-card-icon is-green">
+        <i class="fas fa-play-circle"></i>
+      </div>
+      <div>
+        <div class="stat-card-value">{{ ct_running }}</div>
+        <div class="stat-card-label">Running</div>
+      </div>
+    </a>
+  </div>
+  <div class="column is-3">
+    <a href="{% url 'lxc_list' %}" class="stat-card stat-card-link">
+      <div class="stat-card-icon is-red">
+        <i class="fas fa-stop-circle"></i>
+      </div>
+      <div>
+        <div class="stat-card-value">{{ ct_stopped }}</div>
+        <div class="stat-card-label">Stopped</div>
+      </div>
+    </a>
+  </div>
+  <div class="column is-3">
+    <a href="{% url 'lxc_list' %}" class="stat-card stat-card-link">
+      <div class="stat-card-icon is-purple">
+        <i class="fas fa-database"></i>
+      </div>
+      <div>
+        <div class="stat-card-value" style="font-size:1rem;padding-top:0.3rem;">See inventory</div>
+        <div class="stat-card-label">LXC Details</div>
       </div>
     </a>
   </div>
@@ -111,9 +152,17 @@
           <span class="icon"><i class="fas fa-upload"></i></span>
           <span>Import VM from Disk Image</span>
         </a>
+        <a href="{% url 'lxc_create' %}" class="button is-primary is-medium is-fullwidth" style="font-weight:600;justify-content:flex-start;padding-left:1.25rem;">
+          <span class="icon"><i class="fas fa-cube"></i></span>
+          <span>New LXC Container</span>
+        </a>
         <a href="{% url 'inventory' %}" class="button is-light is-medium is-fullwidth" style="font-weight:600;justify-content:flex-start;padding-left:1.25rem;border:1px solid #e8ecf0;">
           <span class="icon"><i class="fas fa-server"></i></span>
           <span>View VM Inventory</span>
+        </a>
+        <a href="{% url 'lxc_list' %}" class="button is-light is-medium is-fullwidth" style="font-weight:600;justify-content:flex-start;padding-left:1.25rem;border:1px solid #e8ecf0;">
+          <span class="icon"><i class="fas fa-cube"></i></span>
+          <span>View LXC Containers</span>
         </a>
       </div>
     </div>
@@ -131,7 +180,7 @@
             <thead>
               <tr style="background:#f5f7fa;">
                 <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Source</th>
-                <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">VM Name</th>
+                <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Name</th>
                 <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Type</th>
                 <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Status</th>
                 <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Date</th>
@@ -152,6 +201,8 @@
                 <td style="vertical-align:middle;">
                   {% if job.job_type == 'import' %}
                     <span style="font-size:0.72rem;background:#f0f4ff;color:#3273dc;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">Import</span>
+                  {% elif job.job_type == 'lxc_create' %}
+                    <span style="font-size:0.72rem;background:#faf5ff;color:#7c3aed;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">New LXC</span>
                   {% else %}
                     <span style="font-size:0.72rem;background:#f0fdf4;color:#257953;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">New VM</span>
                   {% endif %}
@@ -172,7 +223,11 @@
                 </td>
                 <td style="vertical-align:middle;text-align:right;white-space:nowrap;">
                   {% if job.stage == 'DONE' %}
-                    {% if job.vmid %}
+                    {% if job.job_type == 'lxc_create' %}
+                      <a href="{% url 'lxc_list' %}" class="button is-small is-light" title="View LXC Containers">
+                        <i class="fas fa-cube"></i>
+                      </a>
+                    {% elif job.vmid %}
                       <a href="{% url 'vm_detail' job.vmid %}" class="button is-small is-light" title="View VM">
                         <i class="fas fa-external-link-alt"></i>
                       </a>
@@ -184,31 +239,23 @@
                       <a href="{% url 'importer_configure' job.id %}" class="button is-small is-warning is-light" title="Retry — edit config and re-run">
                         <i class="fas fa-redo"></i>
                       </a>
+                    {% elif job.job_type == 'lxc_create' %}
+                      <a href="{% url 'lxc_configure' job.id %}" class="button is-small is-warning is-light" title="Retry — edit config and re-run">
+                        <i class="fas fa-redo"></i>
+                      </a>
                     {% else %}
                       <a href="{% url 'vmcreator_configure' job.id %}" class="button is-small is-warning is-light" title="Retry — edit config and re-run">
                         <i class="fas fa-redo"></i>
                       </a>
                     {% endif %}
-                    {# Delete #}
-                    {% if job.job_type == 'import' %}
-                      <form method="post" action="{% url 'importer_delete_job' job.id %}" style="display:inline;" onsubmit="return confirm('Delete this job? This cannot be undone.')">
-                        {% csrf_token %}
-                        <button type="submit" class="button is-small is-danger is-light" title="Delete job">
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      </form>
-                    {% else %}
-                      <form method="post" action="{% url 'vmcreator_delete_job' job.id %}" style="display:inline;" onsubmit="return confirm('Delete this job? This cannot be undone.')">
-                        {% csrf_token %}
-                        <button type="submit" class="button is-small is-danger is-light" title="Delete job">
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      </form>
-                    {% endif %}
 
                   {% elif job.stage == 'QUEUED' %}
-                    {# Resume: re-queue the pipeline #}
-                    {% if job.job_type == 'import' %}
+                    {# For LXC jobs, just show the progress link #}
+                    {% if job.job_type == 'lxc_create' %}
+                      <a href="{% url 'lxc_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
+                        <i class="fas fa-tasks"></i>
+                      </a>
+                    {% elif job.job_type == 'import' %}
                       <form method="post" action="{% url 'importer_resume_job' job.id %}" style="display:inline;">
                         {% csrf_token %}
                         <button type="submit" class="button is-small is-info is-light" title="Resume job">
@@ -223,27 +270,15 @@
                         </button>
                       </form>
                     {% endif %}
-                    {# Delete #}
-                    {% if job.job_type == 'import' %}
-                      <form method="post" action="{% url 'importer_delete_job' job.id %}" style="display:inline;" onsubmit="return confirm('Delete this job? This cannot be undone.')">
-                        {% csrf_token %}
-                        <button type="submit" class="button is-small is-danger is-light" title="Delete job">
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      </form>
-                    {% else %}
-                      <form method="post" action="{% url 'vmcreator_delete_job' job.id %}" style="display:inline;" onsubmit="return confirm('Delete this job? This cannot be undone.')">
-                        {% csrf_token %}
-                        <button type="submit" class="button is-small is-danger is-light" title="Delete job">
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      </form>
-                    {% endif %}
 
                   {% else %}
                     {# In progress — view pipeline #}
                     {% if job.job_type == 'import' %}
                       <a href="{% url 'importer_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
+                        <i class="fas fa-spinner fa-spin"></i>
+                      </a>
+                    {% elif job.job_type == 'lxc_create' %}
+                      <a href="{% url 'lxc_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
                         <i class="fas fa-spinner fa-spin"></i>
                       </a>
                     {% else %}
@@ -261,11 +296,15 @@
           <div class="empty-state" style="padding:2.5rem 1.5rem;">
             <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
             <h3>No jobs yet</h3>
-            <p>Import a disk image or create a new VM to get started.</p>
+            <p>Import a disk image, create a VM, or spin up a container to get started.</p>
             <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
               <a href="{% url 'vmcreator_create' %}" class="button is-primary is-small">
                 <span class="icon is-small"><i class="fas fa-plus-circle"></i></span>
                 <span>New VM</span>
+              </a>
+              <a href="{% url 'lxc_create' %}" class="button is-primary is-small">
+                <span class="icon is-small"><i class="fas fa-cube"></i></span>
+                <span>New LXC Container</span>
               </a>
               <a href="{% url 'importer_upload' %}" class="button is-light is-small">
                 <span class="icon is-small"><i class="fas fa-upload"></i></span>

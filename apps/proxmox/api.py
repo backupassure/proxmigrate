@@ -175,3 +175,42 @@ class ProxmoxAPI:
             return int(vmid) not in used_ids
         except ProxmoxAPIError:
             return False
+
+    # ------------------------------------------------------------------
+    # LXC containers
+    # ------------------------------------------------------------------
+
+    def get_lxcs(self, node):
+        """Return list of LXC container dicts for a node."""
+        result = self._get(f"/nodes/{node}/lxc")
+        if not isinstance(result, list):
+            return []
+        return result
+
+    def get_lxc_config(self, node, vmid):
+        """Return LXC container config dict."""
+        return self._get(f"/nodes/{node}/lxc/{vmid}/config")
+
+    def get_lxc_status(self, node, vmid):
+        """Return LXC container status dict."""
+        return self._get(f"/nodes/{node}/lxc/{vmid}/status/current")
+
+    def start_lxc(self, node, vmid):
+        """Start an LXC container. Returns task UPID dict."""
+        return self._post(f"/nodes/{node}/lxc/{vmid}/status/start")
+
+    def stop_lxc(self, node, vmid):
+        """Force-stop an LXC container. Returns task UPID dict."""
+        return self._post(f"/nodes/{node}/lxc/{vmid}/status/stop")
+
+    def shutdown_lxc(self, node, vmid):
+        """Gracefully shut down an LXC container. Returns task UPID dict."""
+        return self._post(f"/nodes/{node}/lxc/{vmid}/status/shutdown")
+
+    def reboot_lxc(self, node, vmid):
+        """Reboot an LXC container. Returns task UPID dict."""
+        return self._post(f"/nodes/{node}/lxc/{vmid}/status/reboot")
+
+    def create_lxc_vnc_ticket(self, node, vmid):
+        """Create a VNC proxy ticket for an LXC container. Returns dict with ticket and port."""
+        return self._post(f"/nodes/{node}/lxc/{vmid}/vncproxy", {"websocket": 1})

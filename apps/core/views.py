@@ -25,6 +25,7 @@ def dashboard(request):
     from apps.wizard.models import ProxmoxConfig
     from apps.importer.models import ImportJob
     from apps.vmcreator.models import VmCreateJob
+    from apps.lxc.models import LxcCreateJob
     from apps.proxmox.api import ProxmoxAPIError
 
     config = ProxmoxConfig.objects.first()
@@ -34,6 +35,8 @@ def dashboard(request):
     api_ok = False
     ssh_key_ok = False
     recent_jobs = []
+    vm_total = vm_running = vm_stopped = 0
+    ct_total = ct_running = ct_stopped = 0
 
     if wizard_complete:
         proxmox_host = f"{config.host}:{config.api_port}" if config.host else ""
@@ -45,16 +48,29 @@ def dashboard(request):
         ]
         ssh_key_ok = any(os.path.exists(p) for p in ssh_key_paths)
 
-        # Quick API liveness check
+        # Quick API liveness check + gather counts
         try:
             api = config.get_api_client()
             api.get_nodes()
             api_ok = True
+
+            # VM counts
+            vms = api.get_vms(config.default_node)
+            vm_total = len(vms)
+            vm_running = sum(1 for v in vms if v.get("status") == "running")
+            vm_stopped = vm_total - vm_running
+
+            # Container counts
+            cts = api.get_lxcs(config.default_node)
+            ct_total = len(cts)
+            ct_running = sum(1 for c in cts if c.get("status") == "running")
+            ct_stopped = ct_total - ct_running
         except Exception:
             api_ok = False
 
         import_jobs = list(ImportJob.objects.order_by("-created_at")[:5])
         create_jobs = list(VmCreateJob.objects.order_by("-created_at")[:5])
+        lxc_jobs = list(LxcCreateJob.objects.order_by("-created_at")[:5])
 
         # Tag each with job_type and normalise fields for the template
         for j in import_jobs:
@@ -63,8 +79,12 @@ def dashboard(request):
         for j in create_jobs:
             j.job_type = "create"
             j.display_name = j.iso_filename if j.source_type == VmCreateJob.SOURCE_ISO else "Blank VM"
+        for j in lxc_jobs:
+            j.job_type = "lxc_create"
+            j.display_name = j.template or j.ct_name
+            j.vm_name = j.ct_name
 
-        combined = sorted(import_jobs + create_jobs, key=lambda j: j.created_at, reverse=True)
+        combined = sorted(import_jobs + create_jobs + lxc_jobs, key=lambda j: j.created_at, reverse=True)
         recent_jobs = combined[:8]
 
     context = {
@@ -73,6 +93,12 @@ def dashboard(request):
         "api_ok": api_ok,
         "ssh_key_ok": ssh_key_ok,
         "recent_jobs": recent_jobs,
+        "vm_total": vm_total,
+        "vm_running": vm_running,
+        "vm_stopped": vm_stopped,
+        "ct_total": ct_total,
+        "ct_running": ct_running,
+        "ct_stopped": ct_stopped,
         "help_slug": "dashboard",
     }
     return render(request, "core/dashboard.html", context)

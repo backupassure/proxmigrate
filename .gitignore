@@ -34,7 +34,16 @@ ENV/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+dev.sqlite3
+dev.sqlite3-journal
 media/
+staticfiles/
+
+# Local dev scripts
+dev-deploy.sh
+
+# Dev settings (local only)
+proxmigrate/settings/dev.py
 
 # Environment / secrets
 .env

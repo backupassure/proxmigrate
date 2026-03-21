@@ -1,0 +1,80 @@
+{# Single LXC container table row — returned after action completes #}
+<tr id="ct-row-{{ ct.vmid }}">
+  <td class="vmid-col">{{ ct.vmid }}</td>
+  <td style="vertical-align:middle;">
+    <a href="{% url 'lxc_detail' ct.vmid %}" style="font-weight:600;color:#1a1a2e;">{{ ct.name }}</a>
+  </td>
+  <td style="vertical-align:middle;">
+    {% if ct.status == 'running' %}
+      <span class="status-badge vm-status-running">Running</span>
+    {% elif ct.status == 'stopped' %}
+      <span class="status-badge vm-status-stopped">Stopped</span>
+    {% else %}
+      <span class="status-badge vm-status-unknown">{{ ct.status }}</span>
+    {% endif %}
+  </td>
+  <td style="vertical-align:middle;">
+    <span style="font-size:0.875rem;color:#4a4a4a;">
+      {% if ct.status == 'running' %}
+        {{ ct.cpu_pct }}%
+      {% else %}
+        {{ ct.cpus|default:"—" }}{% if ct.cpus %} cores{% endif %}
+      {% endif %}
+    </span>
+  </td>
+  <td style="vertical-align:middle;">
+    <span style="font-size:0.875rem;color:#4a4a4a;">
+      {% if ct.maxmem %}{{ ct.maxmem|filesizeformat }}{% else %}—{% endif %}
+    </span>
+  </td>
+  <td style="vertical-align:middle;">
+    <span style="font-size:0.82rem;color:#7a7a7a;">
+      {% if ct.status == 'running' and ct.uptime %}{{ ct.uptime_human }}{% else %}—{% endif %}
+    </span>
+  </td>
+  <td style="vertical-align:middle;">
+    <span style="font-size:0.82rem;color:#7a7a7a;">{{ ct.node }}</span>
+  </td>
+  <td style="vertical-align:middle;">
+    <div class="vm-actions" style="justify-content:flex-end;">
+      <a href="{% url 'lxc_detail' ct.vmid %}" class="button is-light is-small" title="Details">
+        <i class="fas fa-info-circle"></i>
+      </a>
+      {% if ct.status == 'running' %}
+        <button class="button is-warning is-light is-small"
+                hx-post="/lxc/{{ ct.vmid }}/action/shutdown/"
+                hx-target="#ct-row-{{ ct.vmid }}"
+                hx-swap="outerHTML"
+                hx-confirm="Gracefully shut down {{ ct.name }}?"
+                title="Shutdown">
+          <i class="fas fa-power-off"></i>
+        </button>
+        <button class="button is-danger is-light is-small"
+                hx-post="/lxc/{{ ct.vmid }}/action/stop/"
+                hx-target="#ct-row-{{ ct.vmid }}"
+                hx-swap="outerHTML"
+                hx-confirm="Force stop {{ ct.name }}? Unsaved data may be lost."
+                title="Force Stop">
+          <i class="fas fa-stop"></i>
+        </button>
+        <button class="button is-info is-light is-small"
+                hx-post="/lxc/{{ ct.vmid }}/action/reboot/"
+                hx-target="#ct-row-{{ ct.vmid }}"
+                hx-swap="outerHTML"
+                hx-confirm="Reboot {{ ct.name }}?"
+                title="Reboot">
+          <i class="fas fa-redo"></i>
+        </button>
+      {% elif ct.status == 'stopped' %}
+        <button class="button is-success is-light is-small"
+                hx-post="/lxc/{{ ct.vmid }}/action/start/"
+                hx-target="#ct-row-{{ ct.vmid }}"
+                hx-swap="outerHTML"
+                title="Start">
+          <span class="icon is-small"><i class="fas fa-play"></i></span>
+          <span>Start</span>
+        </button>
+      {% endif %}
+    </div>
+  </td>
+</tr>
