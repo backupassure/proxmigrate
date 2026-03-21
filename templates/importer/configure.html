@@ -39,6 +39,21 @@
         </div>
       </div>
     </div>
+    {% elif source_platform == "kvm" %}
+    <div style="background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:1px solid #86efac;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:1rem;">
+      <div style="flex-shrink:0;width:40px;height:40px;border-radius:8px;background:#22c55e;display:flex;align-items:center;justify-content:center;">
+        <i class="fas fa-check-circle" style="color:#fff;font-size:1rem;"></i>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;color:#1a1a2e;font-size:0.95rem;margin-bottom:0.35rem;">
+          KVM Image Detected
+        </div>
+        <div style="font-size:0.83rem;color:#4a4a4a;line-height:1.6;">
+          This is a native KVM/QEMU disk image. It should work with <strong>VirtIO</strong> drivers
+          for the best performance. Select a hardware preset or configure manually.
+        </div>
+      </div>
+    </div>
     {% elif source_platform == "hyperv" %}
     <div style="background:linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%);border:1px solid #93c5fd;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:1rem;">
       <div style="flex-shrink:0;width:40px;height:40px;border-radius:8px;background:#3b82f6;display:flex;align-items:center;justify-content:center;">

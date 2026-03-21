@@ -116,18 +116,21 @@ VGA_TYPE_CHOICES = [
 
 VMWARE_EXTENSIONS = {".ova", ".vmdk"}
 HYPERV_EXTENSIONS = {".vhd", ".vhdx"}
+KVM_EXTENSIONS = {".qcow2", ".raw", ".img"}
 
 
 def detect_source_platform(filename):
     """Detect the source virtualisation platform from the filename extension.
 
-    Returns 'vmware', 'hyperv', or None.
+    Returns 'vmware', 'hyperv', 'kvm', or None.
     """
     _, ext = os.path.splitext(filename.lower())
     if ext in VMWARE_EXTENSIONS:
         return "vmware"
     if ext in HYPERV_EXTENSIONS:
         return "hyperv"
+    if ext in KVM_EXTENSIONS:
+        return "kvm"
     return None
 
 
