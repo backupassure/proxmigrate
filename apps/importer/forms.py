@@ -115,12 +115,20 @@ VGA_TYPE_CHOICES = [
 
 
 VMWARE_EXTENSIONS = {".ova", ".vmdk"}
+HYPERV_EXTENSIONS = {".vhd", ".vhdx"}
 
 
-def is_vmware_source(filename):
-    """Return True if the upload filename indicates a VMware source."""
+def detect_source_platform(filename):
+    """Detect the source virtualisation platform from the filename extension.
+
+    Returns 'vmware', 'hyperv', or None.
+    """
     _, ext = os.path.splitext(filename.lower())
-    return ext in VMWARE_EXTENSIONS
+    if ext in VMWARE_EXTENSIONS:
+        return "vmware"
+    if ext in HYPERV_EXTENSIONS:
+        return "hyperv"
+    return None
 
 
 HARDWARE_PRESETS = {
