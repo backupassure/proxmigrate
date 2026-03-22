@@ -243,6 +243,19 @@
     }
   });
 
+  // Pause background table poll while any row is in a pending/transitioning state.
+  // Pending rows have hx-trigger="every 3s" and poll themselves — the 10s full-table
+  // refresh would overwrite them with stale data, making the row briefly disappear.
+  document.addEventListener('htmx:configRequest', function(evt) {
+    const el = evt.detail.elt;
+    if (el && el.id === 'vm-table-wrapper' && el.getAttribute('hx-trigger') === 'every 10s') {
+      const hasPending = document.querySelectorAll('#vm-tbody tr[hx-trigger*="every 3s"]').length > 0;
+      if (hasPending) {
+        evt.preventDefault();
+      }
+    }
+  });
+
   // Client-side VM filter — instant, survives HTMX poll swaps
   function applyVmFilter() {
     const input = document.getElementById('vm-filter-input');

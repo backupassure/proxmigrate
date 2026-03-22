@@ -220,6 +220,17 @@
     }
   });
 
+  // Pause background table poll while any row is in a pending/transitioning state.
+  document.addEventListener('htmx:configRequest', function(evt) {
+    const el = evt.detail.elt;
+    if (el && el.id === 'ct-table-wrapper' && el.getAttribute('hx-trigger') === 'every 10s') {
+      const hasPending = document.querySelectorAll('#ct-tbody tr[hx-trigger*="every 3s"]').length > 0;
+      if (hasPending) {
+        evt.preventDefault();
+      }
+    }
+  });
+
   // Client-side container filter
   function applyCtFilter() {
     const input = document.getElementById('ct-filter-input');
