@@ -24,13 +24,35 @@
 | `git branch -d <branch>` | Delete a local branch (after merge) |
 | `git fetch --all` | Download all remote branches (doesn't change your code) |
 
-## Branch Naming
+## Branch Types — When to Use What
 
-| Type | Branch off | Name format | Example |
+| Type | Branch off | Merge to | When to use |
 |---|---|---|---|
-| Feature | `dev` | `feature/short-description` | `feature/hardware-presets` |
-| Hotfix | `main` | `hotfix/short-description` | `hotfix/console-disconnect` |
-| Bugfix | `dev` | `bugfix/short-description` | `bugfix/row-disappears` |
+| **Feature** | `dev` | `dev` | New functionality, enhancements, or significant additions. Goes to `main` with the next release. |
+| **Bugfix** | `dev` | `dev` | Non-urgent bug fixes found during development or testing. Goes to `main` with the next release. |
+| **Hotfix** | `main` | `main` then `dev` | Urgent production fix that can't wait for the next release. Merged to `main` immediately, then synced back to `dev`. |
+
+### How to tell the difference
+
+- **Feature** — "We want to add hardware presets to the import page." New capability that didn't exist before.
+- **Bugfix** — "The row disappears when you click stop." Something is broken but it's not breaking production right now, or it was found during dev/testing.
+- **Hotfix** — "The console stopped working after the server rebooted." Production is broken and users are affected. Needs to go out now, can't wait for the next dev → main merge.
+
+### Branch naming
+
+| Type | Name format | Example |
+|---|---|---|
+| Feature | `feature/short-description` | `feature/hardware-presets` |
+| Bugfix | `bugfix/short-description` | `bugfix/row-disappears` |
+| Hotfix | `hotfix/short-description` | `hotfix/console-disconnect` |
+
+### Release flow
+
+```
+feature/xyz ──→ dev ──→ main (scheduled release)
+bugfix/xyz  ──→ dev ──→ main (scheduled release)
+hotfix/xyz  ──→ main ──→ dev (emergency, sync back)
+```
 
 ## Feature Workflow (new work)
 
@@ -56,6 +78,30 @@ gh pr create --base dev --head feature/my-feature --title "Add the thing"
 git checkout dev
 git pull
 git branch -d feature/my-feature
+```
+
+## Bugfix Workflow (non-urgent fix)
+
+```bash
+# 1. Start from dev
+git checkout dev
+git pull
+
+# 2. Create bugfix branch
+git checkout -b bugfix/fix-something
+
+# 3. Fix, commit, push
+git add <files>
+git commit -m "Fix the thing"
+git push -u origin bugfix/fix-something
+
+# 4. Create PR to dev, get it reviewed, merge
+# Goes to main with the next release merge (dev → main)
+
+# 5. Clean up
+git checkout dev
+git pull
+git branch -d bugfix/fix-something
 ```
 
 ## Hotfix Workflow (urgent production fix)
