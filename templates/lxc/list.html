@@ -222,12 +222,20 @@
   });
 
   // Prevent background table poll from overwriting pending action rows.
+  let ctPendingSince = 0;
   document.body.addEventListener('htmx:beforeSwap', function(evt) {
     const target = evt.detail.target;
     if (target && target.id === 'ct-table-wrapper') {
       const hasPending = target.querySelector('tr[hx-trigger*="every"]');
       if (hasPending) {
+        if (!ctPendingSince) ctPendingSince = Date.now();
+        if (Date.now() - ctPendingSince > 60000) {
+          ctPendingSince = 0;
+          return;
+        }
         evt.detail.shouldSwap = false;
+      } else {
+        ctPendingSince = 0;
       }
     }
   });

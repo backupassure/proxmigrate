@@ -244,32 +244,23 @@
     }
   });
 
-  // Debug: log all HTMX events to understand the swap lifecycle
-  ['htmx:beforeRequest', 'htmx:beforeSwap', 'htmx:afterSwap'].forEach(function(eventName) {
-    document.body.addEventListener(eventName, function(evt) {
-      const el = evt.detail.elt || evt.detail.target;
-      const id = el ? (el.id || el.tagName) : 'unknown';
-      const pending = document.querySelectorAll('#vm-tbody tr[hx-trigger]').length;
-      // Also check with broader selector
-      const allPending = document.querySelectorAll('tr[hx-trigger]').length;
-      console.log('[HTMX]', eventName, 'el=' + id, 'pendingInTbody=' + pending, 'pendingAnywhere=' + allPending);
-      // After row swaps, log the actual row content
-      if (eventName === 'htmx:afterSwap' && id && id.startsWith('vm-row-')) {
-        const row = document.getElementById(id);
-        console.log('[HTMX] row after swap:', id, 'hasHxTrigger=' + (row ? row.hasAttribute('hx-trigger') : 'NOT_FOUND'), 'innerHTML=' + (row ? row.innerHTML.substring(0, 100) : 'N/A'));
-      }
-    });
-  });
-
   // Prevent background table poll from overwriting pending action rows.
+  // Track when the first pending row appeared so we can timeout after 60s.
+  let vmPendingSince = 0;
   document.body.addEventListener('htmx:beforeSwap', function(evt) {
     const target = evt.detail.target;
     if (target && target.id === 'vm-table-wrapper') {
       const hasPending = target.querySelector('tr[hx-trigger*="every"]');
-      console.log('[HTMX] beforeSwap on vm-table-wrapper, hasPending=' + !!hasPending);
       if (hasPending) {
+        if (!vmPendingSince) vmPendingSince = Date.now();
+        // Allow table refresh after 60s to prevent permanent freeze
+        if (Date.now() - vmPendingSince > 60000) {
+          vmPendingSince = 0;
+          return;  // Allow the swap
+        }
         evt.detail.shouldSwap = false;
-        console.log('[HTMX] BLOCKED table swap — pending row exists');
+      } else {
+        vmPendingSince = 0;
       }
     }
   });

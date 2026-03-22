@@ -433,6 +433,13 @@ def lxc_row_status(request, vmid):
             "lxc/partials/ct_row_error.html",
             {"vmid": vmid, "error": exc.message},
         )
+    except Exception as exc:
+        logger.warning("lxc_row_status vmid %s: unexpected error: %s", vmid, exc)
+        return render(
+            request,
+            "lxc/partials/ct_row_error.html",
+            {"vmid": vmid, "error": f"Could not check container status: {exc}"},
+        )
 
     target_status = ACTION_TARGET_STATUS.get(action)
     if target_status and ct.get("status") != target_status:

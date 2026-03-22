@@ -175,6 +175,13 @@ def vm_row_status(request, vmid):
             "inventory/partials/vm_row_error.html",
             {"vmid": vmid, "error": exc.message},
         )
+    except Exception as exc:
+        logger.warning("vm_row_status vmid %s: unexpected error: %s", vmid, exc)
+        return render(
+            request,
+            "inventory/partials/vm_row_error.html",
+            {"vmid": vmid, "error": f"Could not check VM status: {exc}"},
+        )
 
     # If we know what state we're waiting for, keep the pending row until we get there
     target_status = ACTION_TARGET_STATUS.get(action)
