@@ -243,16 +243,25 @@
     }
   });
 
+  // Debug: log all HTMX events to understand the swap lifecycle
+  ['htmx:beforeRequest', 'htmx:beforeSwap', 'htmx:afterSwap'].forEach(function(eventName) {
+    document.body.addEventListener(eventName, function(evt) {
+      const el = evt.detail.elt || evt.detail.target;
+      const id = el ? (el.id || el.tagName) : 'unknown';
+      const pending = document.querySelectorAll('#vm-tbody tr[hx-trigger]').length;
+      console.log('[HTMX]', eventName, 'el=' + id, 'pendingRows=' + pending);
+    });
+  });
+
   // Prevent background table poll from overwriting pending action rows.
-  // When the 10s poll response arrives, check if any rows are mid-transition.
-  // If so, discard the poll response entirely — the pending row's own 3s poll
-  // will update it when the action completes.
   document.body.addEventListener('htmx:beforeSwap', function(evt) {
     const target = evt.detail.target;
     if (target && target.id === 'vm-table-wrapper') {
       const hasPending = target.querySelector('tr[hx-trigger*="every"]');
+      console.log('[HTMX] beforeSwap on vm-table-wrapper, hasPending=' + !!hasPending);
       if (hasPending) {
         evt.detail.shouldSwap = false;
+        console.log('[HTMX] BLOCKED table swap — pending row exists');
       }
     }
   });
