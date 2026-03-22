@@ -51,8 +51,9 @@ def list_vms(request):
                 vm["uptime_human"] = _uptime_human(vm.get("uptime", 0))
                 vms.append(vm)
 
-            # Sort: running first, then by vmid
-            vms.sort(key=lambda v: (v.get("status") != "running", v.get("vmid", 0)))
+            # Sort by VMID only — keeps rows in a stable position during
+            # state transitions so they don't jump around after stop/start
+            vms.sort(key=lambda v: v.get("vmid", 0))
 
         except ProxmoxAPIError as exc:
             error = f"Could not load VM inventory: {exc.message}"
