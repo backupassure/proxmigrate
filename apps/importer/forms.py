@@ -205,6 +205,30 @@ HARDWARE_PRESETS = {
     ],
     "Appliances": [
         {
+            "key": "backupassure-pro",
+            "label": "BackupAssure — Pro",
+            "config": {
+                "cpu_type": "host", "cores": 4, "sockets": 1,
+                "memory_mb": 12288, "net_model": "virtio", "disk_bus": "scsi",
+                "os_type": "l26", "machine": "q35", "bios": "ovmf",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": True, "disk_discard": True, "disk_ssd": True,
+                "ballooning": False, "qemu_agent": True, "efi_disk": True,
+            },
+        },
+        {
+            "key": "backupassure-standard",
+            "label": "BackupAssure — Standard",
+            "config": {
+                "cpu_type": "host", "cores": 4, "sockets": 1,
+                "memory_mb": 12288, "net_model": "virtio", "disk_bus": "scsi",
+                "os_type": "l26", "machine": "q35", "bios": "ovmf",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": True, "disk_discard": True, "disk_ssd": True,
+                "ballooning": False, "qemu_agent": True, "efi_disk": True,
+            },
+        },
+        {
             "key": "cisco-expressway",
             "label": "Cisco — Expressway / VCS",
             "config": {
