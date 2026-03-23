@@ -85,6 +85,11 @@
           <i class="fas fa-play"></i>
         </button>
       {% endif %}
+      {% if vm.status == 'running' %}
+        <a href="{% url 'vm_console' vm.vmid %}" target="_blank" class="button is-dark is-small" title="Console">
+          <i class="fas fa-terminal"></i>
+        </a>
+      {% endif %}
       <a href="{% url 'vm_detail' vm.vmid %}" class="button is-light is-small" title="Details">
         <i class="fas fa-info-circle"></i>
       </a>
