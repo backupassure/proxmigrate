@@ -95,6 +95,28 @@ class ProxmoxAPI:
         except ValueError as exc:
             raise ProxmoxAPIError(f"Invalid JSON from POST {path}: {exc}")
 
+    def _delete(self, path, timeout=15):
+        url = f"{self.base_url}{path}"
+        logger.debug("Proxmox API DELETE %s", url)
+        try:
+            resp = self._session.delete(url, timeout=timeout)
+        except Timeout:
+            raise ProxmoxAPIError(f"Request timed out: DELETE {path}")
+        except ConnError as exc:
+            raise ProxmoxAPIError(f"Connection error: DELETE {path} — {exc}")
+        except RequestException as exc:
+            raise ProxmoxAPIError(f"Request failed: DELETE {path} — {exc}")
+
+        if not resp.ok:
+            raise ProxmoxAPIError(
+                f"DELETE {path} returned HTTP {resp.status_code}: {resp.text[:200]}",
+                status_code=resp.status_code,
+            )
+        try:
+            return resp.json().get("data", {})
+        except ValueError as exc:
+            raise ProxmoxAPIError(f"Invalid JSON from DELETE {path}: {exc}")
+
     def get_nodes(self):
         """Return list of node dicts."""
         result = self._get("/nodes")
@@ -211,6 +233,47 @@ class ProxmoxAPI:
         """Reboot an LXC container. Returns task UPID dict."""
         return self._post(f"/nodes/{node}/lxc/{vmid}/status/reboot")
 
+    def clone_lxc(self, node, vmid, newid, **kwargs):
+        """Clone an LXC container. Returns task UPID string.
+
+        Required: node, vmid (source), newid (target CTID).
+        Optional kwargs: hostname, description, target (node), storage, pool, full (1/0), snapname.
+        """
+        data = {"newid": newid}
+        for key in ("hostname", "description", "target", "storage", "pool", "full", "snapname"):
+            if key in kwargs and kwargs[key] is not None:
+                data[key] = kwargs[key]
+        return self._post(f"/nodes/{node}/lxc/{vmid}/clone", data, timeout=300)
+
     def create_lxc_vnc_ticket(self, node, vmid):
         """Create a VNC proxy ticket for an LXC container. Returns dict with ticket and port."""
         return self._post(f"/nodes/{node}/lxc/{vmid}/vncproxy", {"websocket": 1})
+
+    # ------------------------------------------------------------------
+    # LXC snapshots
+    # ------------------------------------------------------------------
+
+    def get_lxc_snapshots(self, node, vmid):
+        """Return list of snapshot dicts for an LXC container.
+
+        Filters out the 'current' pseudo-snapshot that Proxmox always includes.
+        """
+        result = self._get(f"/nodes/{node}/lxc/{vmid}/snapshot")
+        if not isinstance(result, list):
+            return []
+        return [s for s in result if s.get("name") != "current"]
+
+    def create_lxc_snapshot(self, node, vmid, snapname, description=""):
+        """Create a snapshot of an LXC container. Returns task UPID string."""
+        data = {"snapname": snapname}
+        if description:
+            data["description"] = description
+        return self._post(f"/nodes/{node}/lxc/{vmid}/snapshot", data)
+
+    def delete_lxc_snapshot(self, node, vmid, snapname):
+        """Delete a snapshot from an LXC container. Returns task UPID string."""
+        return self._delete(f"/nodes/{node}/lxc/{vmid}/snapshot/{snapname}")
+
+    def rollback_lxc_snapshot(self, node, vmid, snapname):
+        """Rollback an LXC container to a snapshot. Returns task UPID string."""
+        return self._post(f"/nodes/{node}/lxc/{vmid}/snapshot/{snapname}/rollback")

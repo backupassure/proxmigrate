@@ -3,12 +3,13 @@ import logging
 import os
 import shlex
 import tempfile
+import time
 
 from celery import shared_task
 
 from apps.proxmox.api import ProxmoxAPIError
 from apps.proxmox.ssh import SSHCommandError
-from apps.lxc.models import LxcCreateJob
+from apps.lxc.models import LxcCloneJob, LxcCreateJob
 from apps.wizard.models import ProxmoxConfig
 
 logger = logging.getLogger(__name__)
@@ -236,3 +237,146 @@ def run_lxc_create_pipeline(self, job_id):
     except Exception as exc:
         _fail_create(job, str(exc), assigned_vmid, config, node)
         logger.error("LxcCreateJob %d: unexpected error", job_id, exc_info=True)
+
+
+# =========================================================================
+# LXC Clone Pipeline
+# =========================================================================
+
+def _fail_clone(job, error_message):
+    logger.error("LxcCloneJob %d FAILED: %s", job.pk, error_message)
+    job.stage = LxcCloneJob.STAGE_FAILED
+    job.error = error_message
+    job.save(update_fields=["stage", "error", "updated_at"])
+
+
+@shared_task(bind=True, name="lxc.run_lxc_clone_pipeline")
+def run_lxc_clone_pipeline(self, job_id):
+    """Clone an LXC container via the Proxmox API.
+
+    Stages: CLONING → CONFIGURING → [STARTING] → DONE
+    """
+    try:
+        job = LxcCloneJob.objects.get(pk=job_id)
+    except LxcCloneJob.DoesNotExist:
+        logger.error("run_lxc_clone_pipeline: LxcCloneJob %d not found", job_id)
+        return
+
+    config = ProxmoxConfig.get_config()
+    node = job.node or config.default_node
+
+    temp_snap = None  # track temp snapshot for cleanup
+
+    try:
+        api = config.get_api_client()
+
+        # ── 1. CLONING ─────────────────────────────────────────────────
+        job.set_stage(LxcCloneJob.STAGE_CLONING, "Preparing clone...", percent=0)
+
+        if not job.vmid:
+            job.vmid = api.get_next_vmid()
+            job.save(update_fields=["vmid", "updated_at"])
+
+        # Proxmox cannot full-clone a running container without a snapshot.
+        # Create a temporary snapshot if the source is running and this is
+        # a full clone, then clone from that snapshot.
+        source_status = api.get_lxc_status(node, job.source_vmid)
+        source_running = source_status.get("status") == "running"
+
+        clone_kwargs = {
+            "hostname": job.ct_name,
+            "full": 1 if job.full_clone else 0,
+        }
+        if job.target_node and job.target_node != node:
+            clone_kwargs["target"] = job.target_node
+        if job.target_storage:
+            clone_kwargs["storage"] = job.target_storage
+
+        if source_running and job.full_clone:
+            temp_snap = f"proxmigrate-clone-{job.pk}"
+            job.set_stage(LxcCloneJob.STAGE_CLONING,
+                          "Creating temporary snapshot of running container...", percent=5)
+            with config.get_ssh_client() as ssh:
+                ssh.run_checked([
+                    "pct", "snapshot", str(job.source_vmid), temp_snap,
+                ])
+            clone_kwargs["snapname"] = temp_snap
+
+        job.set_stage(LxcCloneJob.STAGE_CLONING, "Cloning container...", percent=15)
+        api.clone_lxc(node, job.source_vmid, job.vmid, **clone_kwargs)
+
+        # Wait for the clone to finish — the container may appear in the API
+        # while still locked ("CT is locked (create)"). We need to wait until
+        # the lock clears before we can configure it.
+        target_node = job.target_node or node
+        for attempt in range(180):  # up to ~6 minutes
+            time.sleep(2)
+            try:
+                ct_config = api.get_lxc_config(target_node, job.vmid)
+                if ct_config and not ct_config.get("lock"):
+                    break
+            except ProxmoxAPIError:
+                pass
+            pct = min(90, 20 + attempt)
+            job.set_stage(LxcCloneJob.STAGE_CLONING,
+                          "Waiting for clone to complete...", percent=pct)
+        else:
+            _fail_clone(job, "Clone timed out — container still locked after 6 minutes.")
+            return
+
+        job.set_stage(LxcCloneJob.STAGE_CLONING, "Clone complete.", percent=100)
+
+        # Clean up temporary snapshot
+        if temp_snap:
+            try:
+                with config.get_ssh_client() as ssh:
+                    ssh.run_checked([
+                        "pct", "delsnapshot", str(job.source_vmid), temp_snap,
+                    ])
+                temp_snap = None  # cleaned up successfully
+            except Exception as exc:
+                logger.warning("LxcCloneJob %d: failed to delete temp snapshot %s: %s",
+                               job.pk, temp_snap, exc)
+
+        # ── 2. CONFIGURING ──────────────────────────────────────────────
+        job.set_stage(LxcCloneJob.STAGE_CONFIGURING, "Applying configuration...")
+
+        with config.get_ssh_client() as ssh:
+            description = f"Cloned from CTID {job.source_vmid}"
+            if job.source_name:
+                description = f"Cloned from {job.source_name} (CTID {job.source_vmid})"
+            ssh.run_checked([
+                "pct", "set", str(job.vmid),
+                "--description", description,
+            ])
+
+        # ── 3. STARTING (optional) ──────────────────────────────────────
+        # Start the clone if the source container was running
+        if source_running:
+            job.set_stage(LxcCloneJob.STAGE_STARTING, "Starting cloned container...")
+            try:
+                api.start_lxc(target_node, job.vmid)
+            except ProxmoxAPIError as exc:
+                logger.warning("LxcCloneJob %d: start failed (non-fatal): %s", job.pk, exc)
+
+        # ── DONE ────────────────────────────────────────────────────────
+        job.set_stage(LxcCloneJob.STAGE_DONE,
+                      f"Container {job.vmid} cloned successfully.", percent=100)
+        logger.info("LxcCloneJob %d: complete. vmid=%d", job.pk, job.vmid)
+
+    except ProxmoxAPIError as exc:
+        _fail_clone(job, f"Proxmox API error: {exc.message}")
+    except SSHCommandError as exc:
+        _fail_clone(job, f"SSH command failed: {exc}")
+    except Exception as exc:
+        _fail_clone(job, str(exc))
+        logger.error("LxcCloneJob %d: unexpected error", job_id, exc_info=True)
+    finally:
+        # Best-effort cleanup of temp snapshot on failure
+        if temp_snap:
+            try:
+                with config.get_ssh_client() as ssh:
+                    ssh.run(["pct", "delsnapshot", str(job.source_vmid), temp_snap])
+            except Exception:
+                logger.warning("LxcCloneJob %d: could not clean up temp snapshot %s",
+                               job.pk, temp_snap)

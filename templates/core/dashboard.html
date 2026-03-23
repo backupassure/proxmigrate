@@ -203,6 +203,10 @@
                     <span style="font-size:0.72rem;background:#f0f4ff;color:#3273dc;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">Import</span>
                   {% elif job.job_type == 'lxc_create' %}
                     <span style="font-size:0.72rem;background:#faf5ff;color:#7c3aed;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">New LXC</span>
+                  {% elif job.job_type == 'lxc_clone' %}
+                    <span style="font-size:0.72rem;background:#fff7ed;color:#c2410c;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">Clone</span>
+                  {% elif job.job_type == 'lxc_snapshot' %}
+                    <span style="font-size:0.72rem;background:#ecfdf5;color:#047857;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">Snapshot</span>
                   {% else %}
                     <span style="font-size:0.72rem;background:#f0fdf4;color:#257953;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">New VM</span>
                   {% endif %}
@@ -225,10 +229,16 @@
                 </td>
                 <td style="vertical-align:middle;text-align:right;white-space:nowrap;">
                   {% if job.stage == 'DONE' %}
-                    {% if job.job_type == 'lxc_create' %}
-                      <a href="{% url 'lxc_list' %}" class="button is-small is-light" title="View Container Inventory">
-                        <i class="fas fa-cube"></i>
-                      </a>
+                    {% if job.job_type == 'lxc_create' or job.job_type == 'lxc_clone' or job.job_type == 'lxc_snapshot' %}
+                      {% if job.vmid %}
+                        <a href="{% url 'lxc_detail' job.vmid %}" class="button is-small is-light" title="View Container">
+                          <i class="fas fa-cube"></i>
+                        </a>
+                      {% else %}
+                        <a href="{% url 'lxc_list' %}" class="button is-small is-light" title="View Container Inventory">
+                          <i class="fas fa-cube"></i>
+                        </a>
+                      {% endif %}
                     {% elif job.vmid %}
                       <a href="{% url 'vm_detail' job.vmid %}" class="button is-small is-light" title="View VM">
                         <i class="fas fa-external-link-alt"></i>
@@ -244,6 +254,14 @@
                     {% elif job.job_type == 'lxc_create' %}
                       <a href="{% url 'lxc_configure' job.id %}" class="button is-small is-warning is-light" title="Retry — edit config and re-run">
                         <i class="fas fa-redo"></i>
+                      </a>
+                    {% elif job.job_type == 'lxc_clone' %}
+                      <a href="{% url 'lxc_clone' job.source_vmid %}" class="button is-small is-warning is-light" title="Retry clone">
+                        <i class="fas fa-redo"></i>
+                      </a>
+                    {% elif job.job_type == 'lxc_snapshot' %}
+                      <a href="{% url 'lxc_detail' job.vmid %}" class="button is-small is-warning is-light" title="View container">
+                        <i class="fas fa-cube"></i>
                       </a>
                     {% else %}
                       <a href="{% url 'vmcreator_configure' job.id %}" class="button is-small is-warning is-light" title="Retry — edit config and re-run">
@@ -281,6 +299,10 @@
                           <i class="fas fa-ban"></i>
                         </button>
                       </form>
+                    {% elif job.job_type == 'lxc_clone' %}
+                      <a href="{% url 'lxc_clone_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
+                        <i class="fas fa-tasks"></i>
+                      </a>
                     {% elif job.job_type == 'import' %}
                       <form method="post" action="{% url 'importer_cancel_job' job.id %}" style="display:inline;" onsubmit="return confirm('Cancel this job?')">
                         {% csrf_token %}
@@ -319,6 +341,10 @@
                           <i class="fas fa-ban"></i>
                         </button>
                       </form>
+                    {% elif job.job_type == 'lxc_clone' %}
+                      <a href="{% url 'lxc_clone_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
+                        <i class="fas fa-spinner fa-spin"></i>
+                      </a>
                     {% else %}
                       <a href="{% url 'vmcreator_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
                         <i class="fas fa-spinner fa-spin"></i>

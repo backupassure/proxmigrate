@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Creating {{ job.ct_name }} — ProxMigrate{% endblock %}
-{% block page_title %}Creating Container{% endblock %}
-{% block help_slug %}lxc-progress{% endblock %}
+{% block title %}Cloning {{ job.ct_name }} — ProxMigrate{% endblock %}
+{% block page_title %}Cloning Container{% endblock %}
+{% block help_slug %}lxc-clone{% endblock %}
 
 {% block content %}
 <div class="columns">
@@ -34,7 +34,7 @@
                 CTID <span class="is-monospace" style="font-weight:600;color:#1a1a2e;">{{ job.vmid }}</span>
                 &nbsp;&bull;&nbsp;
               {% endif %}
-              <i class="fas fa-cube" style="margin-right:0.2rem;"></i>LXC Container
+              <i class="fas fa-clone" style="margin-right:0.2rem;"></i>Clone of {{ job.source_name|default:job.source_vmid }} (CTID {{ job.source_vmid }})
               &nbsp;&bull;&nbsp;
               Started {{ job.created_at|timesince }} ago
             </div>
@@ -54,26 +54,32 @@
     </div>
 
     {# ===== Pipeline stages (HTMX polling) ===== #}
-    {% include "lxc/partials/lxc_job_status.html" %}
+    {% include "lxc/partials/clone_job_status.html" %}
 
     {# ===== Terminal state actions ===== #}
     {% if job.stage == 'DONE' %}
       <div class="proxmigrate-card" style="margin-top:1.5rem;">
         <div class="card-body" style="padding:1.5rem;text-align:center;">
           <i class="fas fa-check-circle" style="font-size:2rem;color:#48c78e;margin-bottom:1rem;display:block;"></i>
-          <h3 style="font-size:1.1rem;font-weight:700;color:#1a1a2e;margin-bottom:0.5rem;">Container Created Successfully!</h3>
+          <h3 style="font-size:1.1rem;font-weight:700;color:#1a1a2e;margin-bottom:0.5rem;">Container Cloned Successfully!</h3>
           <p style="color:#7a7a7a;font-size:0.875rem;margin-bottom:1.5rem;">
-            <strong>{{ job.ct_name }}</strong>{% if job.vmid %} (CTID {{ job.vmid }}){% endif %} is ready on node <strong>{{ job.node }}</strong>.
+            <strong>{{ job.ct_name }}</strong>{% if job.vmid %} (CTID {{ job.vmid }}){% endif %} is ready.
           </p>
           <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-            <a href="{% url 'lxc_list' %}" class="button is-primary is-medium" style="font-weight:600;">
+            {% if job.vmid %}
+            <a href="{% url 'lxc_detail' job.vmid %}" class="button is-primary is-medium" style="font-weight:600;">
               <span class="icon"><i class="fas fa-cube"></i></span>
-              <span>View Containers</span>
+              <span>View Cloned Container</span>
               <span class="icon"><i class="fas fa-arrow-right"></i></span>
             </a>
-            <a href="{% url 'lxc_create' %}" class="button is-light is-medium" style="font-weight:600;">
-              <span class="icon"><i class="fas fa-plus-circle"></i></span>
-              <span>Create Another</span>
+            {% endif %}
+            <a href="{% url 'lxc_detail' job.source_vmid %}" class="button is-light is-medium" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-arrow-left"></i></span>
+              <span>Back to Source</span>
+            </a>
+            <a href="{% url 'lxc_list' %}" class="button is-light is-medium" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-list"></i></span>
+              <span>All Containers</span>
             </a>
           </div>
         </div>
@@ -83,19 +89,19 @@
       <div class="proxmigrate-card" style="margin-top:1.5rem;border-left:4px solid #f14668;border-radius:0 10px 10px 0;">
         <div class="card-body" style="padding:1.5rem;">
           <h3 style="font-size:1rem;font-weight:700;color:#cc0f35;margin-bottom:0.75rem;">
-            <i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i>Container Creation Failed
+            <i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i>Clone Failed
           </h3>
           {% if job.error %}
             <div style="background:#f9fafb;border:1px solid #e8ecf0;border-radius:6px;padding:1rem;font-family:monospace;font-size:0.8rem;color:#4a4a4a;white-space:pre-wrap;word-break:break-all;margin-bottom:1rem;">{{ job.error }}</div>
           {% endif %}
           <div style="display:flex;gap:1rem;flex-wrap:wrap;">
-            <a href="{% url 'lxc_configure' job.id %}" class="button is-danger is-light" style="font-weight:600;">
+            <a href="{% url 'lxc_clone' job.source_vmid %}" class="button is-danger is-light" style="font-weight:600;">
               <span class="icon"><i class="fas fa-redo"></i></span>
               <span>Try Again</span>
             </a>
-            <a href="{% url 'lxc_create' %}" class="button is-light" style="font-weight:600;">
-              <span class="icon"><i class="fas fa-plus-circle"></i></span>
-              <span>Start Over</span>
+            <a href="{% url 'lxc_detail' job.source_vmid %}" class="button is-light" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-cube"></i></span>
+              <span>Back to Container</span>
             </a>
           </div>
         </div>
@@ -108,8 +114,6 @@
 
 {% block extra_scripts %}
 <script>
-  // When the HTMX partial swaps in a terminal state, reload the full page
-  // so the header card and action buttons update.
   document.addEventListener('htmx:afterSwap', function(evt) {
     var el = document.getElementById('pipeline-status');
     if (el && el.dataset.terminal === 'true') {

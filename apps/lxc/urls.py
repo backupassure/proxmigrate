@@ -23,6 +23,16 @@ urlpatterns = [
     path("new/<int:job_id>/status/", views.lxc_job_status, name="lxc_job_status"),
     path("new/<int:job_id>/cancel/", views.cancel_job, name="lxc_cancel_job"),
 
+    # Clone
+    path("<int:vmid>/clone/", views.lxc_clone, name="lxc_clone"),
+    path("clone/<int:job_id>/progress/", views.lxc_clone_progress, name="lxc_clone_progress"),
+    path("clone/<int:job_id>/status/", views.lxc_clone_status, name="lxc_clone_status"),
+
+    # Snapshots
+    path("<int:vmid>/snapshots/", views.lxc_snapshots, name="lxc_snapshots"),
+    path("<int:vmid>/snapshot/create/", views.lxc_snapshot_create, name="lxc_snapshot_create"),
+    path("<int:vmid>/snapshot/<str:snapname>/<str:action>/", views.lxc_snapshot_action, name="lxc_snapshot_action"),
+
     # Export & Import
     path("export/", exporter_views.lxc_export_index, name="lxc_export_index"),
     path("export/options/<int:vmid>/", exporter_views.lxc_export_options, name="lxc_export_options"),
