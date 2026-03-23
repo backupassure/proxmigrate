@@ -1,5 +1,7 @@
 import json
 import logging
+import re
+from datetime import datetime, timezone
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -10,7 +12,7 @@ from apps.proxmox.api import ProxmoxAPIError
 from apps.vmcreator.stages import build_stages
 from apps.wizard.models import ProxmoxConfig
 
-from .models import LxcCreateJob
+from .models import LxcCloneJob, LxcCreateJob, LxcSnapshotLog
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +118,11 @@ def _parse_ct_nic(interface, raw_value):
         "mac": opts.get("hwaddr", "—"),
         "ip": opts.get("ip", "—"),
         "gateway": opts.get("gw", ""),
+        "firewall": bool(int(opts.get("firewall", 0))),
+        "rate": opts.get("rate", ""),
+        "mtu": opts.get("mtu", ""),
+        "tag": opts.get("tag", ""),
+        "type": opts.get("type", ""),
     }
 
 
@@ -181,6 +188,10 @@ def _build_ct(raw_config, ct_status, node, vmid):
         "unprivileged": bool(int(raw_config.get("unprivileged", 0))),
         "features": features_list,
         "features_raw": features_raw,
+        "startup": raw_config.get("startup", ""),
+        "hookscript": raw_config.get("hookscript", ""),
+        "lock": raw_config.get("lock", ""),
+        "tags": raw_config.get("tags", "").strip(),
         # CPU
         "cores": raw_config.get("cores", ""),
         "cpulimit": raw_config.get("cpulimit", ""),
@@ -241,12 +252,17 @@ def lxc_detail(request, vmid):
         "vmid": vmid, "name": str(vmid), "status": "unknown",
         "storage_items": [], "networks": [],
     }
+    snapshots = []
 
     try:
         api = config.get_api_client()
         raw_config = api.get_lxc_config(node, vmid)
         ct_status = api.get_lxc_status(node, vmid)
         ct = _build_ct(raw_config, ct_status, node, vmid)
+        try:
+            snapshots = _enrich_snapshots(api.get_lxc_snapshots(node, vmid))
+        except ProxmoxAPIError:
+            pass  # non-fatal — show detail page without snapshots
     except ProxmoxAPIError as exc:
         error = f"Could not load container {vmid}: {exc.message}"
         logger.error("lxc_detail vmid=%d: %s", vmid, exc)
@@ -254,8 +270,9 @@ def lxc_detail(request, vmid):
     return render(request, "lxc/detail.html", {
         "vmid": vmid,
         "ct": ct,
+        "snapshots": snapshots,
         "error": error,
-        "help_slug": "lxc",
+        "help_slug": "lxc-detail",
     })
 
 
@@ -787,3 +804,312 @@ def cancel_job(request, job_id):
     logger.info("LxcCreateJob %d: cancelled by user %s", job.pk, request.user.username)
     messages.success(request, f'Job "{job.ct_name}" has been cancelled.')
     return redirect("dashboard")
+
+
+# =========================================================================
+# LXC Clone
+# =========================================================================
+
+LXC_CLONE_STAGES = [
+    ("CLONING", "Cloning Container"),
+    ("CONFIGURING", "Configuring"),
+    ("STARTING", "Starting Container"),
+]
+
+
+@login_required
+def lxc_clone(request, vmid):
+    """Show clone options for a container, or process the clone form."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    ct_name = str(vmid)
+    ct_status = "unknown"
+    error = None
+
+    try:
+        api = config.get_api_client()
+        status = api.get_lxc_status(node, vmid)
+        ct_name = status.get("name", str(vmid))
+        ct_status = status.get("status", "unknown")
+    except ProxmoxAPIError as exc:
+        error = f"Could not fetch container info: {exc.message}"
+
+    if request.method == "POST" and not error:
+        hostname = request.POST.get("hostname", "").strip()
+        if not hostname:
+            hostname = f"{ct_name}-clone"
+
+        vmid_raw = request.POST.get("vmid", "").strip()
+        target_node = request.POST.get("target_node", "").strip() or node
+        target_storage = request.POST.get("target_storage", "").strip()
+        full_clone = request.POST.get("clone_mode", "full") == "full"
+
+        job = LxcCloneJob.objects.create(
+            source_vmid=vmid,
+            source_name=ct_name,
+            ct_name=hostname,
+            vmid=int(vmid_raw) if vmid_raw else None,
+            node=node,
+            target_node=target_node,
+            target_storage=target_storage,
+            full_clone=full_clone,
+            created_by=request.user,
+        )
+
+        from apps.lxc.tasks import run_lxc_clone_pipeline
+        result = run_lxc_clone_pipeline.delay(job.pk)
+        job.task_id = result.id
+        job.save(update_fields=["task_id"])
+
+        return redirect("lxc_clone_progress", job_id=job.pk)
+
+    # GET: render clone options form
+    nodes = []
+    storage_pools = []
+    suggested_vmid = ""
+
+    try:
+        api = config.get_api_client()
+        nodes = [n.get("node") for n in api.get_nodes() if n.get("node")]
+        all_storage = api.get_storage(node)
+        storage_pools = [
+            s for s in all_storage
+            if "rootdir" in (s.get("content", "") or "")
+            or "images" in (s.get("content", "") or "")
+        ]
+        suggested_vmid = api.get_next_vmid()
+    except ProxmoxAPIError as exc:
+        if not error:
+            error = f"Could not load Proxmox data: {exc.message}"
+
+    return render(request, "lxc/clone_options.html", {
+        "vmid": vmid,
+        "ct_name": ct_name,
+        "ct_status": ct_status,
+        "nodes": nodes,
+        "storage_pools": storage_pools,
+        "suggested_vmid": suggested_vmid,
+        "default_node": node,
+        "error": error,
+    })
+
+
+@login_required
+def lxc_clone_progress(request, job_id):
+    """Display live clone progress."""
+    job = get_object_or_404(LxcCloneJob, pk=job_id)
+    stages, done_count = build_stages(job, LXC_CLONE_STAGES)
+
+    return render(request, "lxc/clone_progress.html", {
+        "job": job,
+        "stages": stages,
+        "stages_done_count": done_count,
+    })
+
+
+@login_required
+def lxc_clone_status(request, job_id):
+    """HTMX polling endpoint for clone progress."""
+    job = get_object_or_404(LxcCloneJob, pk=job_id)
+    stages, done_count = build_stages(job, LXC_CLONE_STAGES)
+
+    return render(request, "lxc/partials/clone_job_status.html", {
+        "job": job,
+        "stages": stages,
+        "stages_done_count": done_count,
+    })
+
+
+# =========================================================================
+# LXC Snapshots
+# =========================================================================
+
+_SNAP_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,39}$")
+
+
+def _enrich_snapshots(snapshots):
+    """Convert snaptime unix timestamps to datetime objects for template rendering."""
+    for snap in snapshots:
+        ts = snap.get("snaptime")
+        if ts:
+            try:
+                snap["snaptime"] = datetime.fromtimestamp(int(ts), tz=timezone.utc)
+            except (ValueError, TypeError, OSError):
+                snap["snaptime"] = None
+    return snapshots
+
+
+def _get_snapshots_context(vmid):
+    """Fetch snapshots and return template context dict."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    api = config.get_api_client()
+    snapshots = _enrich_snapshots(api.get_lxc_snapshots(node, vmid))
+    return {"vmid": vmid, "snapshots": snapshots, "snap_error": None}
+
+
+@login_required
+def lxc_snapshots(request, vmid):
+    """HTMX endpoint: return the snapshots partial.
+
+    When called with ?wait=<action>&snap=<name>&attempt=<n>, keeps the
+    transitioning spinner until the expected change is detected or max
+    attempts (10 = ~30s) are exhausted.
+    """
+    try:
+        ctx = _get_snapshots_context(vmid)
+    except ProxmoxAPIError as exc:
+        ctx = {"vmid": vmid, "snapshots": [], "snap_error": exc.message}
+        return render(request, "lxc/partials/ct_snapshots.html", ctx)
+
+    wait_action = request.GET.get("wait", "")
+    wait_snap = request.GET.get("snap", "")
+    attempt = int(request.GET.get("attempt", 0))
+    max_attempts = 10  # ~30 seconds with 3s polling
+
+    if wait_action and wait_snap and attempt < max_attempts:
+        snap_names = {s["name"] for s in ctx["snapshots"]}
+        still_waiting = False
+
+        if wait_action == "delete" and wait_snap in snap_names:
+            still_waiting = True
+        elif wait_action == "create" and wait_snap not in snap_names:
+            still_waiting = True
+        # rollback: snapshot stays in list, just do one refresh cycle
+        elif wait_action == "rollback" and attempt < 1:
+            still_waiting = True
+
+        if still_waiting:
+            action_labels = {
+                "delete": f"Deleting snapshot '{wait_snap}'…",
+                "create": f"Creating snapshot '{wait_snap}'…",
+                "rollback": f"Rolling back to '{wait_snap}'…",
+            }
+            ctx["snap_transitioning"] = True
+            ctx["snap_wait_action"] = wait_action
+            ctx["snap_wait_name"] = wait_snap
+            ctx["snap_attempt"] = attempt + 1
+            ctx["snap_action_label"] = action_labels.get(wait_action, "Working…")
+
+    return render(request, "lxc/partials/ct_snapshots.html", ctx)
+
+
+def _log_snapshot(request, vmid, snapname, action, error=""):
+    """Record a snapshot operation for the dashboard recent-jobs feed."""
+    ct_name = str(vmid)
+    try:
+        config = ProxmoxConfig.get_config()
+        status = config.get_api_client().get_lxc_status(config.default_node, vmid)
+        ct_name = status.get("name", str(vmid))
+    except Exception:
+        pass
+    LxcSnapshotLog.objects.create(
+        vmid=vmid,
+        ct_name=ct_name,
+        snapname=snapname,
+        action=action,
+        stage=LxcSnapshotLog.STAGE_FAILED if error else LxcSnapshotLog.STAGE_DONE,
+        error=error,
+        created_by=request.user if request.user.is_authenticated else None,
+    )
+
+
+@login_required
+@require_POST
+def lxc_snapshot_create(request, vmid):
+    """Create a new snapshot and return the updated snapshots partial."""
+    snapname = request.POST.get("snapname", "").strip()
+    description = request.POST.get("description", "").strip()
+
+    if not snapname:
+        try:
+            ctx = _get_snapshots_context(vmid)
+        except ProxmoxAPIError:
+            ctx = {"vmid": vmid, "snapshots": [], "snap_error": None}
+        ctx["snap_error"] = "Snapshot name is required."
+        return render(request, "lxc/partials/ct_snapshots.html", ctx)
+
+    if not _SNAP_NAME_RE.match(snapname):
+        try:
+            ctx = _get_snapshots_context(vmid)
+        except ProxmoxAPIError:
+            ctx = {"vmid": vmid, "snapshots": [], "snap_error": None}
+        ctx["snap_error"] = "Name must be alphanumeric (hyphens/underscores allowed, max 40 chars)."
+        return render(request, "lxc/partials/ct_snapshots.html", ctx)
+
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+
+    try:
+        api = config.get_api_client()
+        api.create_lxc_snapshot(node, vmid, snapname, description)
+        _log_snapshot(request, vmid, snapname, "create")
+    except ProxmoxAPIError as exc:
+        _log_snapshot(request, vmid, snapname, "create", error=exc.message)
+        try:
+            ctx = _get_snapshots_context(vmid)
+        except ProxmoxAPIError:
+            ctx = {"vmid": vmid, "snapshots": [], "snap_error": None}
+        ctx["snap_error"] = f"Failed to create snapshot: {exc.message}"
+        return render(request, "lxc/partials/ct_snapshots.html", ctx)
+
+    # Return transitioning state — polling will pick up the new snapshot
+    try:
+        ctx = _get_snapshots_context(vmid)
+    except ProxmoxAPIError as exc:
+        ctx = {"vmid": vmid, "snapshots": [], "snap_error": exc.message}
+    ctx["snap_transitioning"] = True
+    ctx["snap_wait_action"] = "create"
+    ctx["snap_wait_name"] = snapname
+    ctx["snap_attempt"] = 0
+    ctx["snap_action_label"] = f"Creating snapshot '{snapname}'…"
+    return render(request, "lxc/partials/ct_snapshots.html", ctx)
+
+
+@login_required
+@require_POST
+def lxc_snapshot_action(request, vmid, snapname, action):
+    """Rollback or delete a snapshot and return the updated snapshots partial."""
+    if action not in ("rollback", "delete"):
+        try:
+            ctx = _get_snapshots_context(vmid)
+        except ProxmoxAPIError:
+            ctx = {"vmid": vmid, "snapshots": [], "snap_error": None}
+        ctx["snap_error"] = f"Unknown snapshot action: {action!r}"
+        return render(request, "lxc/partials/ct_snapshots.html", ctx)
+
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+
+    action_labels = {
+        "delete": f"Deleting snapshot '{snapname}'…",
+        "rollback": f"Rolling back to '{snapname}'…",
+    }
+
+    try:
+        api = config.get_api_client()
+        if action == "rollback":
+            api.rollback_lxc_snapshot(node, vmid, snapname)
+        elif action == "delete":
+            api.delete_lxc_snapshot(node, vmid, snapname)
+        _log_snapshot(request, vmid, snapname, action)
+    except ProxmoxAPIError as exc:
+        _log_snapshot(request, vmid, snapname, action, error=exc.message)
+        try:
+            ctx = _get_snapshots_context(vmid)
+        except ProxmoxAPIError:
+            ctx = {"vmid": vmid, "snapshots": [], "snap_error": None}
+        ctx["snap_error"] = f"Snapshot {action} failed: {exc.message}"
+        return render(request, "lxc/partials/ct_snapshots.html", ctx)
+
+    # Return transitioning state — polling will detect the change
+    try:
+        ctx = _get_snapshots_context(vmid)
+    except ProxmoxAPIError as exc:
+        ctx = {"vmid": vmid, "snapshots": [], "snap_error": exc.message}
+    ctx["snap_transitioning"] = True
+    ctx["snap_wait_action"] = action
+    ctx["snap_wait_name"] = snapname
+    ctx["snap_attempt"] = 0
+    ctx["snap_action_label"] = action_labels.get(action, "Working…")
+    return render(request, "lxc/partials/ct_snapshots.html", ctx)

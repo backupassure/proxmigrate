@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ ct.name }} — LXC Details — ProxMigrate{% endblock %}
 {% block page_title %}{{ ct.name }}{% endblock %}
-{% block help_slug %}lxc{% endblock %}
+{% block help_slug %}lxc-detail{% endblock %}
 
 {% block page_actions %}
   <a href="{% url 'lxc_list' %}" class="button is-light is-small">
@@ -51,6 +51,11 @@
     </button>
   {% endif %}
   &nbsp;
+  <a href="{% url 'lxc_clone' ct.vmid %}" class="button is-info is-small" title="Clone this container">
+    <span class="icon is-small"><i class="fas fa-clone"></i></span>
+    <span>Clone</span>
+  </a>
+  &nbsp;
   <a href="{% url 'lxc_export_options' ct.vmid %}" class="button is-link is-small" title="Export container as .px package">
     <span class="icon is-small"><i class="fas fa-file-export"></i></span>
     <span>Export Container</span>
@@ -94,10 +99,10 @@
     </div>
   </div>
 
-  {# Options (replaces Firmware & Boot) #}
+  {# Options #}
   <div class="column is-6">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-microchip" style="color:#7c3aed;"></i> Options</div>
+      <div class="card-header"><i class="fas fa-cogs" style="color:#7c3aed;"></i> Options</div>
       <div class="card-body" style="padding:1rem 1.5rem;">
         <div class="cert-detail-row">
           <div class="cert-detail-label">Unprivileged</div>
@@ -110,6 +115,10 @@
           <div class="cert-detail-value">
             {% if ct.onboot %}<span style="color:#48c78e;">Yes</span>{% else %}No{% endif %}
           </div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Startup Order</div>
+          <div class="cert-detail-value" style="font-family:monospace;font-size:0.82rem;">{{ ct.startup|default:"—" }}</div>
         </div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">Protection</div>
@@ -127,6 +136,24 @@
             {% endif %}
           </div>
         </div>
+        {% if ct.hookscript %}
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Hookscript</div>
+          <div class="cert-detail-value" style="font-family:monospace;font-size:0.82rem;">{{ ct.hookscript }}</div>
+        </div>
+        {% endif %}
+        {% if ct.lock %}
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Lock</div>
+          <div class="cert-detail-value"><span style="color:#f14668;">{{ ct.lock }}</span></div>
+        </div>
+        {% endif %}
+        {% if ct.tags %}
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Tags</div>
+          <div class="cert-detail-value">{{ ct.tags }}</div>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -164,6 +191,31 @@
         <div class="cert-detail-row">
           <div class="cert-detail-label">Swap</div>
           <div class="cert-detail-value">{{ ct.swap|default:"0" }} MB</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# DNS #}
+  <div class="column is-6">
+    <div class="proxmigrate-card">
+      <div class="card-header"><i class="fas fa-globe" style="color:#3273dc;"></i> DNS</div>
+      <div class="card-body" style="padding:1rem 1.5rem;">
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Hostname</div>
+          <div class="cert-detail-value">{{ ct.hostname|default:"—" }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">DNS Servers</div>
+          <div class="cert-detail-value" style="font-family:monospace;font-size:0.82rem;">{{ ct.nameserver|default:"Host settings" }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Search Domain</div>
+          <div class="cert-detail-value">{{ ct.searchdomain|default:"Host settings" }}</div>
+        </div>
+        <div class="cert-detail-row">
+          <div class="cert-detail-label">Timezone</div>
+          <div class="cert-detail-value">{{ ct.timezone|default:"Host settings" }}</div>
         </div>
       </div>
     </div>
@@ -211,9 +263,13 @@
             <tr style="background:#f5f7fa;">
               <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;padding:0.75rem 1.5rem;">Interface</th>
               <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Name</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Type</th>
               <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Bridge</th>
               <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">MAC Address</th>
               <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">IP Config</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">VLAN</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Firewall</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Rate Limit</th>
             </tr>
           </thead>
           <tbody>
@@ -221,9 +277,13 @@
             <tr>
               <td style="font-family:monospace;font-size:0.82rem;padding-left:1.5rem;font-weight:600;">{{ nic.interface }}</td>
               <td>{{ nic.name }}</td>
+              <td>{{ nic.type|default:"—" }}</td>
               <td>{{ nic.bridge }}</td>
               <td style="font-family:monospace;font-size:0.8rem;">{{ nic.mac }}</td>
               <td style="font-size:0.82rem;">{{ nic.ip }}{% if nic.gateway %} <span style="color:#7a7a7a;">(gw {{ nic.gateway }})</span>{% endif %}</td>
+              <td>{{ nic.tag|default:"—" }}</td>
+              <td>{% if nic.firewall %}<span style="color:#48c78e;">Yes</span>{% else %}No{% endif %}</td>
+              <td>{{ nic.rate|default:"—" }}{% if nic.rate %} MB/s{% endif %}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -231,6 +291,18 @@
         {% else %}
           <div style="padding:1.5rem;color:#7a7a7a;font-size:0.875rem;">No network interface information available.</div>
         {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# ── Snapshots ── #}
+  <div class="column is-12">
+    <div class="proxmigrate-card">
+      <div class="card-header">
+        <i class="fas fa-camera" style="color:#3273dc;"></i> Snapshots
+      </div>
+      <div class="card-body">
+        {% include "lxc/partials/ct_snapshots.html" %}
       </div>
     </div>
   </div>

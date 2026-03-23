@@ -1,6 +1,6 @@
 # ProxMigrate
 
-**Version 1.1.2** — Build `2026-03-22.1`
+**Version 1.1.2** — Build `2026-03-24.1`
 
 > **To update an existing install:** `git pull origin main && sudo ./update.sh`
 
@@ -315,6 +315,23 @@ ProxMigrate handles template downloading, container creation, and optional auto-
 ---
 
 ## Changelog
+
+### v1.1.2 — 2026-03-24.1
+- **Hardware presets** — categorized preset dropdown (Server OS, Appliances, Other) auto-fills CPU, memory, disk bus, NIC, and BIOS settings for common platforms including Cisco, Aruba, Palo Alto, Fortinet, Sophos, and BackupAssure appliances
+- **OVF parser** — OVA uploads auto-detect hardware from the OVF descriptor (CPU, memory, firmware/EFI, disk controller, NIC type, OS type, multi-disk layout)
+- **Multi-disk OVA import** — OVA files with multiple VMDKs are properly extracted and all disks imported automatically
+- **Platform detection** — VMware (.ova/.vmdk), Hyper-V (.vhd/.vhdx), and KVM (.qcow2/.raw/.img) uploads show colour-coded guidance banners
+- **VM name sanitisation** — filenames with underscores, dots, and spaces are auto-converted to valid Proxmox DNS hostnames
+- **Console button in inventory rows** — launch noVNC console directly from the VM and LXC inventory tables for running instances
+- **Upload error UX** — client-side file extension validation with prominent error banner; extra disk upload now checks HTTP status to prevent corrupted form entries
+- **Row disappear fix** — VM/container rows no longer vanish during stop/shutdown actions (fixed HTMX `hx-select` inheritance and missing `django.contrib.humanize`)
+- **Console disconnect fix** — nginx WebSocket proxy config regenerated on Gunicorn startup so consoles survive server reboots
+- **Serial port option** — new checkbox on import configure page, enabled by default for Cisco appliance presets
+- **LXC clone and snapshots** — clone containers, manage snapshots from the detail page
+- **LXC export/import** — export containers as .px packages, import on another Proxmox node
+- **Job cancellation** — cancel queued or in-progress import and VM create jobs
+- **Inventory sort** — tables sorted by VMID only for stable row positions during state transitions
+- **Git workflow cheat sheet** — team reference for feature/bugfix/hotfix branch workflows
 
 ### v1.1.2 — 2026-03-20.1
 - **LXC container management** — inventory, detail view, start/stop/shutdown/reboot actions, in-browser console

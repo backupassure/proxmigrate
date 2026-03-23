@@ -167,6 +167,15 @@ sudo ./update.sh
 | `git stash` | Temporarily save changes without committing |
 | `git stash pop` | Bring back stashed changes |
 
+## Release Process (dev → main)
+
+Before merging `dev` into `main`, update versioning on `dev`:
+
+1. Update `README.md` — bump the build date and add changelog entries for everything new since the last release
+2. Commit: `git commit -m "Update version and changelog for release"`
+3. Push to `dev`
+4. Create PR from `dev` → `main` and merge
+
 ## Golden Rules
 
 1. **Never work directly on `main` or `dev`** — always use a branch
@@ -174,3 +183,4 @@ sudo ./update.sh
 3. **Commit often** — small commits are easier to review and revert
 4. **Write meaningful commit messages** — future you will thank present you
 5. **Delete merged branches** — keep the repo tidy
+6. **Update the README changelog** — before every release merge to main

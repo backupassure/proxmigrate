@@ -180,6 +180,11 @@
                     <span>Start</span>
                   </button>
                 {% endif %}
+                {% if ct.status == 'running' %}
+                  <a href="{% url 'lxc_console' ct.vmid %}" target="_blank" class="button is-dark is-small" title="Console">
+                    <i class="fas fa-terminal"></i>
+                  </a>
+                {% endif %}
                 <a href="{% url 'lxc_detail' ct.vmid %}" class="button is-light is-small" title="Details">
                   <i class="fas fa-info-circle"></i>
                 </a>

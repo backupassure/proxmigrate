@@ -25,7 +25,7 @@ def dashboard(request):
     from apps.wizard.models import ProxmoxConfig
     from apps.importer.models import ImportJob
     from apps.vmcreator.models import VmCreateJob
-    from apps.lxc.models import LxcCreateJob
+    from apps.lxc.models import LxcCloneJob, LxcCreateJob, LxcSnapshotLog
     from apps.proxmox.api import ProxmoxAPIError
 
     config = ProxmoxConfig.objects.first()
@@ -71,6 +71,7 @@ def dashboard(request):
         import_jobs = list(ImportJob.objects.order_by("-created_at")[:5])
         create_jobs = list(VmCreateJob.objects.order_by("-created_at")[:5])
         lxc_jobs = list(LxcCreateJob.objects.order_by("-created_at")[:5])
+        lxc_clone_jobs = list(LxcCloneJob.objects.order_by("-created_at")[:5])
 
         # Tag each with job_type and normalise fields for the template
         for j in import_jobs:
@@ -83,8 +84,19 @@ def dashboard(request):
             j.job_type = "lxc_create"
             j.display_name = j.template or j.ct_name
             j.vm_name = j.ct_name
+        for j in lxc_clone_jobs:
+            j.job_type = "lxc_clone"
+            j.display_name = f"Clone of {j.source_name or j.source_vmid}"
+            j.vm_name = j.ct_name
 
-        combined = sorted(import_jobs + create_jobs + lxc_jobs, key=lambda j: j.created_at, reverse=True)
+        snap_action_labels = {"create": "Create", "rollback": "Rollback", "delete": "Delete"}
+        snapshot_logs = list(LxcSnapshotLog.objects.order_by("-created_at")[:5])
+        for j in snapshot_logs:
+            j.job_type = "lxc_snapshot"
+            j.display_name = f"{snap_action_labels.get(j.action, j.action)} \u2014 {j.snapname}"
+            j.vm_name = j.ct_name
+
+        combined = sorted(import_jobs + create_jobs + lxc_jobs + lxc_clone_jobs + snapshot_logs, key=lambda j: j.created_at, reverse=True)
         recent_jobs = combined[:8]
 
     context = {
