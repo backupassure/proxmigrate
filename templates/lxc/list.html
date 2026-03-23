@@ -144,9 +144,6 @@
             </td>
             <td style="vertical-align:middle;">
               <div class="vm-actions" style="justify-content:flex-end;">
-                <a href="{% url 'lxc_detail' ct.vmid %}" class="button is-light is-small" title="Details">
-                  <i class="fas fa-info-circle"></i>
-                </a>
                 {% if ct.status == 'running' %}
                   <button class="button is-warning is-light is-small"
                           hx-post="/lxc/{{ ct.vmid }}/action/shutdown/"
@@ -182,6 +179,9 @@
                     <span>Start</span>
                   </button>
                 {% endif %}
+                <a href="{% url 'lxc_detail' ct.vmid %}" class="button is-light is-small" title="Details">
+                  <i class="fas fa-info-circle"></i>
+                </a>
               </div>
             </td>
           </tr>
