@@ -427,6 +427,7 @@ bash -c "$(wget -qLO - https://github.com/backupassure/proxmigrate/raw/main/lxc-
 | `--port <n>` | `8443` | ProxMigrate web UI port |
 | `--ip <cidr>` | DHCP | Static IP with subnet (e.g. `192.168.1.50/24`) |
 | `--gateway <ip>` | — | Default gateway (required with `--ip`) |
+| `--dns <servers>` | Host DNS | DNS servers (e.g. `"192.168.1.78 8.8.8.8"`) |
 
 - [x] `lxc-install.sh` — creates a Debian 12 LXC container on the Proxmox host with sensible defaults, then runs `install.sh` inside it automatically
 - [x] Follows the [tteck/Proxmox helper scripts](https://github.com/community-scripts/ProxmoxVE) pattern — the primary distribution mechanism for non-technical Proxmox users
