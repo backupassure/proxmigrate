@@ -124,6 +124,8 @@ def auth_settings_toggle(request, auth_type):
         load_auth_backends_from_db()
         state = "enabled" if config.is_enabled else "disabled"
         logger.info("LDAP %s by %s", state, request.user)
+        messages.success(request, f"LDAP authentication {state}.")
+        return redirect(reverse("auth_settings") + "?tab=ldap")
     elif auth_type == "entra":
         config, _ = EntraIDConfig.objects.get_or_create(pk=1)
         config.is_enabled = not config.is_enabled
@@ -131,6 +133,8 @@ def auth_settings_toggle(request, auth_type):
         load_auth_backends_from_db()
         state = "enabled" if config.is_enabled else "disabled"
         logger.info("Entra ID %s by %s", state, request.user)
+        messages.success(request, f"Entra ID authentication {state}.")
+        return redirect(reverse("auth_settings") + "?tab=entra")
     elif auth_type == "mfa":
         from apps.core.models import MFAConfig
         config = MFAConfig.get_config()
@@ -151,8 +155,6 @@ def auth_settings_toggle(request, auth_type):
         return redirect(reverse("auth_settings") + "?tab=mfa")
     else:
         return HttpResponse("Unknown auth type", status=400)
-
-    return HttpResponse("", headers={"HX-Refresh": "true"})
 
 
 @_staff_required
