@@ -400,15 +400,34 @@ Export a complete VM (configuration + all disks) as a `.px` package — a tar.gz
 - [x] Automatic cleanup of export packages after 24 hours
 
 ### Distribution — LXC One-Liner Installer
-Deploy ProxMigrate as a Proxmox LXC container with a single command — no manual setup required.
+Deploy ProxMigrate as a Proxmox LXC container with a single command — no manual setup required. Run this on your **Proxmox VE host** (not inside a VM or container):
 
 ```bash
 bash -c "$(wget -qLO - https://github.com/backupassure/proxmigrate/raw/main/lxc-install.sh)"
 ```
 
-- [x] `lxc-install.sh` — creates a Debian 12 LXC container on the Proxmox host with sensible defaults (RAM, disk, CPU), then runs `install.sh` inside it automatically
+With options (use `--` to pass flags to the script):
+
+```bash
+bash -c "$(wget -qLO - https://github.com/backupassure/proxmigrate/raw/main/lxc-install.sh)" -- --storage nvme-pool2 --id 200 --ip 192.168.1.50/24 --gateway 192.168.1.1
+```
+
+| Option | Default | Description |
+|---|---|---|
+| `--id <n>` | Next available | Container ID (VMID) |
+| `--hostname <s>` | `proxmigrate` | Container hostname |
+| `--storage <s>` | Auto-detect | Proxmox storage for rootfs (e.g. `local`, `local-lvm`, `nvme-pool2`) |
+| `--bridge <s>` | `vmbr0` | Network bridge |
+| `--disk <n>` | `16` | Rootfs size in GB |
+| `--ram <n>` | `2048` | RAM in MB |
+| `--cores <n>` | `2` | CPU cores |
+| `--port <n>` | `8443` | ProxMigrate web UI port |
+| `--ip <cidr>` | DHCP | Static IP with subnet (e.g. `192.168.1.50/24`) |
+| `--gateway <ip>` | — | Default gateway (required with `--ip`) |
+
+- [x] `lxc-install.sh` — creates a Debian 12 LXC container on the Proxmox host with sensible defaults, then runs `install.sh` inside it automatically
 - [x] Follows the [tteck/Proxmox helper scripts](https://github.com/community-scripts/ProxmoxVE) pattern — the primary distribution mechanism for non-technical Proxmox users
-- [x] Configurable: container ID, hostname, storage, bridge, static IP, disk size, RAM, cores, port
+- [x] Storage auto-detection — tries `local-lvm`, then `local`, then first active storage
 - [x] No code changes required — `install.sh` already works inside LXC
 
 ### VM & Container Management Enhancements
