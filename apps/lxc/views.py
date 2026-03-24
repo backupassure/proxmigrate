@@ -441,9 +441,9 @@ def lxc_ip(request, vmid):
         from apps.inventory.views import _extract_ipv4
         ifaces = api.get_lxc_interfaces(node, vmid)
         ip = _extract_ipv4(ifaces, primary_only=True)
-        return HttpResponse(ip or "—")
+        return HttpResponse(f'<span id="ct-ip-{vmid}">{ip or "—"}</span>')
     except Exception:
-        return HttpResponse("—")
+        return HttpResponse(f'<span id="ct-ip-{vmid}">—</span>')
 
 
 @login_required

@@ -15,11 +15,12 @@
   </td>
   <td style="vertical-align:middle;">
     {% if ct.status == 'running' %}
-      <span style="font-size:0.82rem;color:#4a4a4a;"
+      <span id="ct-ip-{{ ct.vmid }}" style="font-size:0.82rem;color:#4a4a4a;"
             hx-get="/lxc/{{ ct.vmid }}/ip/"
             hx-trigger="load"
-            hx-swap="innerHTML"
-            hx-select="unset">—</span>
+            hx-target="#ct-ip-{{ ct.vmid }}"
+            hx-select="#ct-ip-{{ ct.vmid }}"
+            hx-swap="outerHTML">—</span>
     {% else %}
       <span style="font-size:0.82rem;color:#b5b5b5;">—</span>
     {% endif %}
