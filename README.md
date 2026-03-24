@@ -1,6 +1,6 @@
 # ProxMigrate
 
-**Version 1.1.2** — Build `2026-03-24.1`
+**Version 1.1.2** — Build `2026-03-24.2`
 
 > **To update an existing install:** `git pull origin main && sudo ./update.sh`
 
@@ -316,6 +316,15 @@ ProxMigrate handles template downloading, container creation, and optional auto-
 ---
 
 ## Changelog
+
+### v1.1.2 — 2026-03-24.2
+- **ISO boot detection** — OVA files containing ISO boot images (e.g. Cisco 8000v) are detected, ISO uploaded to user-selected Proxmox storage, attached as CD-ROM with boot order set to CD-ROM first
+- **Cisco 8000v preset** — Catalyst 8000V / CSR 1000v hardware preset (SeaBIOS, i440fx, VirtIO, serial port)
+- **Console button fix** — detail page now reloads after start/stop so Console and action buttons update correctly
+- **TOTP MFA** — authenticator app (Google Authenticator, Authy) for local and LDAP accounts, admin enforcement toggle, recovery codes, email bypass, per-user MFA status in user management
+- **Password recovery** — self-service password reset via email link for local accounts; email login support
+- **LDAP attribute sync** — email, first name, last name synced from LDAP on login
+- **Venv permissions fix** — install.sh and update.sh auto-fix venv ownership
 
 ### v1.1.2 — 2026-03-24.1
 - **Hardware presets** — categorized preset dropdown (Server OS, Appliances, Other) auto-fills CPU, memory, disk bus, NIC, and BIOS settings for common platforms including Cisco, Aruba, Palo Alto, Fortinet, Sophos, and BackupAssure appliances
