@@ -1,4 +1,8 @@
 {# Status banner for the VM detail page — self-polls every 5s (2s when transitioning) #}
+{# When a transition completes, reload the page so action buttons (Console, Start/Stop) update #}
+{% if was_transitioning and not transitioning %}
+<script>window.location.reload();</script>
+{% endif %}
 <div id="vm-status-banner"
      hx-get="/inventory/{{ vm.vmid }}/detail-status/{% if transitioning %}?action={{ action }}{% endif %}"
      hx-trigger="every {% if transitioning %}2s{% else %}5s{% endif %}"

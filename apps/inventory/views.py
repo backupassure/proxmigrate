@@ -257,6 +257,7 @@ def vm_detail_status(request, vmid):
         "action": action,
         "action_label": ACTION_LABELS.get(action, "Working"),
         "transitioning": transitioning,
+        "was_transitioning": bool(action) and not transitioning,
     })
 
 
