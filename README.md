@@ -376,7 +376,7 @@ ProxMigrate handles template downloading, container creation, and optional auto-
 
 ## Roadmap
 
-### Phase 1 — Core VM Management (current)
+### Phase 1 — Core VM Management (complete)
 - [x] Disk image import — qcow2, vmdk, vhd, vhdx, raw, OVA with automatic format conversion
 - [x] New VM creation wizard — ISO install (upload or browse Proxmox storage) or blank disk, full hardware configuration
 - [x] VM inventory dashboard — live status, start/stop/shutdown/reboot
@@ -387,8 +387,8 @@ ProxMigrate handles template downloading, container creation, and optional auto-
 - [x] VirtIO Windows driver ISO browser — automatically attach drivers to Windows VMs
 - [x] Email delivery — SMTP and Microsoft Graph API, with live test send and encrypted credential storage
 - [x] LXC container management — inventory, detail, console, start/stop/reboot, creation wizard
-- [ ] Password recovery — self-service password reset for local accounts via email
-- [ ] MFA — TOTP (authenticator app) for local and LDAP accounts, including TOTP recovery codes
+- [x] Password recovery — self-service password reset for local accounts via email, login with email address
+- [x] MFA — TOTP (authenticator app) for local and LDAP accounts, recovery codes, email bypass, admin enforcement
 
 ### Phase 2 — VM Export & Portable Packages
 Export a complete VM (configuration + all disks) as a `.px` package — a tar.gz archive with a JSON manifest — that can be imported on any ProxMigrate server to recreate the VM identically.
