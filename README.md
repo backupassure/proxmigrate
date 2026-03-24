@@ -1,6 +1,6 @@
 # ProxMigrate
 
-**Version 1.1.2** — Build `2026-03-24.2`
+**Version 1.1.2** — Build `2026-03-24.3`
 
 > **To update an existing install:** `git pull origin main && sudo ./update.sh`
 
@@ -317,6 +317,9 @@ ProxMigrate handles template downloading, container creation, and optional auto-
 
 ## Changelog
 
+### v1.1.2 — 2026-03-24.3
+- **LXC one-liner installer** — deploy ProxMigrate on Proxmox with a single command; auto-detects storage, configurable via flags (ID, hostname, IP, storage, disk, RAM, cores, port)
+
 ### v1.1.2 — 2026-03-24.2
 - **ISO boot detection** — OVA files containing ISO boot images (e.g. Cisco 8000v) are detected, ISO uploaded to user-selected Proxmox storage, attached as CD-ROM with boot order set to CD-ROM first
 - **Cisco 8000v preset** — Catalyst 8000V / CSR 1000v hardware preset (SeaBIOS, i440fx, VirtIO, serial port)
@@ -400,15 +403,40 @@ Export a complete VM (configuration + all disks) as a `.px` package — a tar.gz
 - [x] Automatic cleanup of export packages after 24 hours
 
 ### Distribution — LXC One-Liner Installer
-Deploy ProxMigrate as a Proxmox LXC container with a single command — no manual setup required.
+Deploy ProxMigrate as a Proxmox LXC container with a single command — no manual setup required. Run this on your **Proxmox VE host** (not inside a VM or container):
 
 ```bash
 bash -c "$(wget -qLO - https://github.com/backupassure/proxmigrate/raw/main/lxc-install.sh)"
 ```
 
-- [ ] `lxc-install.sh` — creates a Debian/Ubuntu LXC container on the Proxmox host with sensible defaults (RAM, disk, CPU), then runs `install.sh` inside it automatically
-- [ ] Follows the [tteck/Proxmox helper scripts](https://github.com/community-scripts/ProxmoxVE) pattern — the primary distribution mechanism for non-technical Proxmox users
-- [ ] No code changes required — `install.sh` already works inside LXC
+With options (use `--` to pass flags to the script):
+
+```bash
+bash -c "$(wget -qLO - https://github.com/backupassure/proxmigrate/raw/main/lxc-install.sh)" -- --storage nvme-pool2 --id 200 --ip 192.168.1.50/24 --gateway 192.168.1.1
+```
+
+| Option | Default | Description |
+|---|---|---|
+| `--id <n>` | Next available | Container ID (VMID) |
+| `--hostname <s>` | `proxmigrate` | Container hostname |
+| `--storage <s>` | Auto-detect | Proxmox storage for rootfs (e.g. `local`, `local-lvm`, `nvme-pool2`) |
+| `--bridge <s>` | `vmbr0` | Network bridge |
+| `--disk <n>` | `16` | Rootfs size in GB |
+| `--ram <n>` | `2048` | RAM in MB |
+| `--cores <n>` | `2` | CPU cores |
+| `--port <n>` | `8443` | ProxMigrate web UI port |
+| `--ip <cidr>` | DHCP | Static IP with subnet (e.g. `192.168.1.50/24`) |
+| `--gateway <ip>` | — | Default gateway (required with `--ip`) |
+
+- [x] `lxc-install.sh` — creates a Debian 12 LXC container on the Proxmox host with sensible defaults, then runs `install.sh` inside it automatically
+- [x] Follows the [tteck/Proxmox helper scripts](https://github.com/community-scripts/ProxmoxVE) pattern — the primary distribution mechanism for non-technical Proxmox users
+- [x] Storage auto-detection — tries `local-lvm`, then `local`, then first active storage
+- [x] No code changes required — `install.sh` already works inside LXC
+
+### VM & Container Management Enhancements
+- [ ] VM delete — remove VMs from Proxmox directly from the ProxMigrate UI
+- [ ] VM clone — clone an existing VM with new VMID and name
+- [ ] VM snapshots — create, rollback, and delete snapshots from the VM detail page
 
 ### Phase 3 — Proxmox Monitoring & Alerting
 Turn ProxMigrate into a comprehensive Proxmox observability platform.
