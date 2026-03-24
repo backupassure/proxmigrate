@@ -138,7 +138,7 @@ def auth_settings_toggle(request, auth_type):
         state = "enforced" if config.enforce_mfa else "optional"
         logger.info("MFA %s by %s", state, request.user)
         messages.success(request, f"MFA is now {state} for all local and LDAP users.")
-        return redirect(reverse("auth_settings") + "?tab=local")
+        return redirect(reverse("auth_settings") + "?tab=mfa")
     else:
         return HttpResponse("Unknown auth type", status=400)
 

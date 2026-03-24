@@ -28,6 +28,13 @@
         {% if entra_enabled %}<span class="tag is-success is-light" style="margin-left:0.5rem;font-size:0.65rem;">Enabled</span>{% endif %}
       </a>
     </li>
+    <li class="{% if active_tab == 'mfa' %}is-active{% endif %}" data-tab="mfa">
+      <a onclick="switchTab('mfa')">
+        <span class="icon is-small"><i class="fas fa-shield-alt"></i></span>
+        <span>MFA</span>
+        {% if mfa_enforced %}<span class="tag is-warning is-light" style="margin-left:0.5rem;font-size:0.65rem;">Enforced</span>{% endif %}
+      </a>
+    </li>
   </ul>
 </div>
 
@@ -57,39 +64,61 @@
           <span>Manage Local Users</span>
           <span class="icon"><i class="fas fa-arrow-right"></i></span>
         </a>
+      </div>
+    </div>
+  </div>
 
-        {# MFA Enforcement #}
-        <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid #e8ecf0;">
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div>
-              <div style="font-weight:600;font-size:0.9rem;color:#1a1a2e;">
-                <i class="fas fa-shield-alt" style="color:#f59e0b;margin-right:0.4rem;"></i>
-                Multi-Factor Authentication (MFA)
-              </div>
-              <p style="font-size:0.82rem;color:#7a7a7a;margin-top:0.3rem;">
-                {% if mfa_enforced %}
-                  All local and LDAP users are <strong>required</strong> to set up an authenticator app.
-                  Entra ID users are excluded (MFA is managed by their identity provider).
-                {% else %}
-                  MFA is optional. Users can enable it from their account settings.
-                  Toggle to require all local and LDAP users to set up MFA.
-                {% endif %}
-              </p>
+  {# ===== Tab: MFA ===== #}
+  <div class="tab-pane {% if active_tab == 'mfa' %}is-active{% endif %}" id="tab-mfa">
+    <div class="proxmigrate-card" style="border-radius:0 10px 10px 10px;">
+      <div class="card-header">
+        <i class="fas fa-shield-alt" style="color:#f59e0b;"></i> Multi-Factor Authentication
+      </div>
+      <div class="card-body">
+        <p style="font-size:0.875rem;color:#4a4a4a;margin-bottom:1.5rem;line-height:1.6;">
+          MFA adds a second layer of security by requiring an authenticator app code (Google Authenticator, Authy, Microsoft Authenticator)
+          after username and password. Applies to <strong>Local</strong> and <strong>LDAP</strong> accounts.
+          Entra ID users are excluded — MFA is managed by their identity provider.
+        </p>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#f5f7fa;border-radius:8px;padding:1.25rem 1.5rem;">
+          <div>
+            <div style="font-weight:600;font-size:0.95rem;color:#1a1a2e;">
+              Global Enforcement
             </div>
-            <form method="post" action="{% url 'auth_settings_toggle' 'mfa' %}" style="margin-left:1.5rem;flex-shrink:0;">
-              {% csrf_token %}
-              <button type="submit" class="button {% if mfa_enforced %}is-warning{% else %}is-light{% endif %} is-small"
-                      style="font-weight:600;"
-                      onclick="return confirm('{% if mfa_enforced %}Disable MFA enforcement? Users will be able to disable their MFA.{% else %}Enforce MFA for all local and LDAP users? They will be required to set up an authenticator app on their next login.{% endif %}')">
-                {% if mfa_enforced %}
-                  <span class="icon"><i class="fas fa-lock"></i></span>
-                  <span>Enforced</span>
-                {% else %}
-                  <span class="icon"><i class="fas fa-lock-open"></i></span>
-                  <span>Optional</span>
-                {% endif %}
-              </button>
-            </form>
+            <p style="font-size:0.82rem;color:#7a7a7a;margin-top:0.3rem;">
+              {% if mfa_enforced %}
+                All local and LDAP users are <strong>required</strong> to set up MFA on their next login.
+                Users cannot disable MFA while enforcement is active.
+              {% else %}
+                MFA is <strong>optional</strong>. Users can enable it from the MFA page in their account settings.
+              {% endif %}
+            </p>
+          </div>
+          <form method="post" action="{% url 'auth_settings_toggle' 'mfa' %}" style="margin-left:1.5rem;flex-shrink:0;">
+            {% csrf_token %}
+            <button type="submit" class="button {% if mfa_enforced %}is-warning{% else %}is-light{% endif %}"
+                    style="font-weight:600;"
+                    onclick="return confirm('{% if mfa_enforced %}Disable MFA enforcement? Users will be able to disable their MFA.{% else %}Enforce MFA for all local and LDAP users? They will be required to set up an authenticator app on their next login.{% endif %}')">
+              {% if mfa_enforced %}
+                <span class="icon"><i class="fas fa-lock"></i></span>
+                <span>Enforced</span>
+              {% else %}
+                <span class="icon"><i class="fas fa-lock-open"></i></span>
+                <span>Optional</span>
+              {% endif %}
+            </button>
+          </form>
+        </div>
+
+        <div style="margin-top:1.5rem;">
+          <div class="info-box" style="margin-bottom:1rem;">
+            <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+            <div style="font-size:0.82rem;">
+              <strong>Recovery options:</strong> Users get 8 one-time recovery codes at setup.
+              If email is configured, they can also receive a bypass code via email.
+              Admins can reset a user's MFA from the User Management page.
+            </div>
           </div>
         </div>
       </div>
