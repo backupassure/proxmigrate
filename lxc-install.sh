@@ -20,6 +20,7 @@
 #   --port <n>       ProxMigrate web UI port (default: 8443)
 #   --ip <cidr>      Static IP (e.g. 192.168.1.100/24) — default: DHCP
 #   --gateway <ip>   Default gateway (required with --ip)
+#   --dns <servers>  DNS servers (e.g. "192.168.1.78 8.8.8.8") — default: host DNS
 #   --help           Show this help
 #
 # Requirements:
@@ -74,6 +75,7 @@ CT_CORES=2
 CT_PORT=8443
 CT_IP="dhcp"
 CT_GW=""
+CT_DNS=""
 TEMPLATE="debian-12-standard"
 REPO_URL="https://github.com/backupassure/proxmigrate.git"
 REPO_BRANCH="main"
@@ -93,13 +95,14 @@ while [[ $# -gt 0 ]]; do
         --port)      CT_PORT="$2"; shift 2 ;;
         --ip)        CT_IP="$2"; shift 2 ;;
         --gateway)   CT_GW="$2"; shift 2 ;;
+        --dns)       CT_DNS="$2"; shift 2 ;;
         --help|-h)
             echo "Usage: bash $0 [OPTIONS]"
             echo ""
             echo "Options:"
             echo "  --id <n>         Container ID (default: next available)"
             echo "  --hostname <s>   Container hostname (default: proxmigrate)"
-            echo "  --storage <s>    Proxmox storage for rootfs (default: local-lvm)"
+            echo "  --storage <s>    Proxmox storage for rootfs (default: auto-detect)"
             echo "  --bridge <s>     Network bridge (default: vmbr0)"
             echo "  --disk <n>       Rootfs size in GB (default: 16)"
             echo "  --ram <n>        RAM in MB (default: 2048)"
@@ -107,6 +110,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --port <n>       ProxMigrate web UI port (default: 8443)"
             echo "  --ip <cidr>      Static IP (e.g. 192.168.1.100/24) — default: DHCP"
             echo "  --gateway <ip>   Default gateway (required with --ip)"
+            echo "  --dns <servers>  DNS servers (e.g. \"192.168.1.78 8.8.8.8\")"
             exit 0
             ;;
         *) err "Unknown option: $1"; exit 1 ;;
@@ -209,19 +213,27 @@ else
     fi
 fi
 
-pct create "${CT_ID}" \
-    "${TEMPLATE_STORAGE}:vztmpl/${TEMPLATE_FULL}" \
-    --hostname "${CT_HOSTNAME}" \
-    --storage "${CT_STORAGE}" \
-    --rootfs "${CT_STORAGE}:${CT_DISK}" \
-    --cores "${CT_CORES}" \
-    --memory "${CT_RAM}" \
-    --swap 512 \
-    --net0 "${NET_STR}" \
-    --unprivileged 1 \
-    --features nesting=1 \
-    --onboot 1 \
+PCT_CREATE_ARGS=(
+    pct create "${CT_ID}"
+    "${TEMPLATE_STORAGE}:vztmpl/${TEMPLATE_FULL}"
+    --hostname "${CT_HOSTNAME}"
+    --storage "${CT_STORAGE}"
+    --rootfs "${CT_STORAGE}:${CT_DISK}"
+    --cores "${CT_CORES}"
+    --memory "${CT_RAM}"
+    --swap 512
+    --net0 "${NET_STR}"
+    --unprivileged 1
+    --features nesting=1
+    --onboot 1
     --start 0
+)
+
+if [[ -n "${CT_DNS}" ]]; then
+    PCT_CREATE_ARGS+=(--nameserver "${CT_DNS}")
+fi
+
+"${PCT_CREATE_ARGS[@]}"
 
 msg "Container ${CT_ID} created."
 
