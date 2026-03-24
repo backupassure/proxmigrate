@@ -256,9 +256,9 @@ msg "Container is running."
 # ---------------------------------------------------------------------------
 info "Installing ProxMigrate inside container ${CT_ID}..."
 
-# Install git
-pct exec "${CT_ID}" -- bash -c "apt-get update -qq && apt-get install -y -qq git" >/dev/null 2>&1
-msg "Git installed."
+# Install prerequisites
+pct exec "${CT_ID}" -- bash -c "apt-get update -qq && apt-get install -y -qq git sudo curl" >/dev/null 2>&1
+msg "Prerequisites installed (git, sudo, curl)."
 
 # Clone the repository
 info "Cloning ProxMigrate repository..."
