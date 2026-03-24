@@ -434,6 +434,33 @@ bash -c "$(wget -qLO - https://github.com/backupassure/proxmigrate/raw/main/lxc-
 - [x] Storage auto-detection — tries `local-lvm`, then `local`, then first active storage
 - [x] No code changes required — `install.sh` already works inside LXC
 
+#### Managing the LXC container
+
+**Find your container ID:**
+```bash
+pct list | grep proxmigrate
+```
+
+**Enter the container** (no password needed — run from the Proxmox host shell or SSH):
+```bash
+pct enter <container-id>
+```
+
+**Update ProxMigrate to the latest version** (run from inside the container):
+```bash
+cd /opt/proxmigrate-src && git pull origin main && sudo ./update.sh
+```
+
+Or as a one-liner from the Proxmox host without entering the container:
+```bash
+pct exec <container-id> -- bash -c "cd /opt/proxmigrate-src && git pull origin main && sudo ./update.sh"
+```
+
+**Restart services** (from inside the container):
+```bash
+sudo systemctl restart proxmigrate-gunicorn proxmigrate-celery
+```
+
 ### VM & Container Management Enhancements
 - [ ] VM delete — remove VMs from Proxmox directly from the ProxMigrate UI
 - [ ] VM clone — clone an existing VM with new VMID and name
