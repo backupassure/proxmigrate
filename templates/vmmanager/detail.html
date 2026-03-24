@@ -225,6 +225,7 @@
               <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;padding:0.75rem 1.5rem;">Interface</th>
               <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Model</th>
               <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Bridge</th>
+              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">IP Address</th>
               <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">MAC Address</th>
               <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">VLAN</th>
             </tr>
@@ -235,6 +236,13 @@
               <td style="font-family:monospace;font-size:0.82rem;padding-left:1.5rem;font-weight:600;">{{ nic.interface }}</td>
               <td>{{ nic.model }}</td>
               <td>{{ nic.bridge }}</td>
+              <td style="font-size:0.82rem;color:#4a4a4a;">
+                {% if forloop.first and vm.ip_address %}
+                  {{ vm.ip_address }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
               <td style="font-family:monospace;font-size:0.8rem;">{{ nic.mac }}</td>
               <td>{{ nic.vlan|default:"—" }}</td>
             </tr>
