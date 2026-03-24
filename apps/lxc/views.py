@@ -335,6 +335,15 @@ def list_lxcs(request):
                 ct["node"] = node_name
                 ct["cpu_pct"] = round((ct.get("cpu") or 0) * 100, 1)
                 ct["uptime_human"] = _uptime_human(ct.get("uptime", 0))
+                # LXC interfaces are fast (no guest agent needed) — fetch synchronously
+                ct["ip_address"] = ""
+                if ct.get("status") == "running":
+                    try:
+                        from apps.inventory.views import _extract_ipv4
+                        ifaces = api.get_lxc_interfaces(node_name, ct["vmid"])
+                        ct["ip_address"] = _extract_ipv4(ifaces, primary_only=True)
+                    except Exception:
+                        pass
                 containers.append(ct)
 
             # Sort by VMID only — keeps rows stable during state transitions
