@@ -77,6 +77,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "apps.core.middleware.ForcePasswordChangeMiddleware",
+    "apps.core.middleware.ForceMFASetupMiddleware",
     "apps.core.middleware.WizardRedirectMiddleware",
 ]
 

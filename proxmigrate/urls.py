@@ -27,6 +27,7 @@ urlpatterns = [
     path("users/<int:user_id>/toggle-admin/", authconfig_views.user_toggle_admin, name="user_toggle_admin"),
     path("users/<int:user_id>/toggle-active/", authconfig_views.user_toggle_active, name="user_toggle_active"),
     path("users/<int:user_id>/reset-password/", authconfig_views.user_reset_password, name="user_reset_password"),
+    path("users/<int:user_id>/reset-mfa/", authconfig_views.user_reset_mfa, name="user_reset_mfa"),
     path("users/<int:user_id>/delete/", authconfig_views.user_delete, name="user_delete"),
 ]
 

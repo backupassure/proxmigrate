@@ -28,6 +28,13 @@
         {% if entra_enabled %}<span class="tag is-success is-light" style="margin-left:0.5rem;font-size:0.65rem;">Enabled</span>{% endif %}
       </a>
     </li>
+    <li class="{% if active_tab == 'mfa' %}is-active{% endif %}" data-tab="mfa">
+      <a onclick="switchTab('mfa')">
+        <span class="icon is-small"><i class="fas fa-shield-alt"></i></span>
+        <span>MFA</span>
+        {% if mfa_enforced %}<span class="tag is-warning is-light" style="margin-left:0.5rem;font-size:0.65rem;">Enforced</span>{% endif %}
+      </a>
+    </li>
   </ul>
 </div>
 
@@ -57,6 +64,91 @@
           <span>Manage Local Users</span>
           <span class="icon"><i class="fas fa-arrow-right"></i></span>
         </a>
+      </div>
+    </div>
+  </div>
+
+  {# ===== Tab: MFA ===== #}
+  <div class="tab-pane {% if active_tab == 'mfa' %}is-active{% endif %}" id="tab-mfa">
+    <div class="proxmigrate-card" style="border-radius:0 10px 10px 10px;">
+      <div class="card-header">
+        <i class="fas fa-shield-alt" style="color:#f59e0b;"></i> Multi-Factor Authentication
+      </div>
+      <div class="card-body">
+        <p style="font-size:0.875rem;color:#4a4a4a;margin-bottom:1.5rem;line-height:1.6;">
+          MFA adds a second layer of security by requiring an authenticator app code (Google Authenticator, Authy, Microsoft Authenticator)
+          after username and password. Applies to <strong>Local</strong> and <strong>LDAP</strong> accounts.
+          Entra ID users are excluded — MFA is managed by their identity provider.
+        </p>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#f5f7fa;border-radius:8px;padding:1.25rem 1.5rem;">
+          <div>
+            <div style="font-weight:600;font-size:0.95rem;color:#1a1a2e;">
+              Global Enforcement
+            </div>
+            <p style="font-size:0.82rem;color:#7a7a7a;margin-top:0.3rem;">
+              {% if mfa_enforced %}
+                All local and LDAP users are <strong>required</strong> to set up MFA on their next login.
+                Users cannot disable MFA while enforcement is active.
+              {% else %}
+                MFA is <strong>optional</strong>. Users can enable it from the MFA page in their account settings.
+              {% endif %}
+            </p>
+          </div>
+          <form method="post" action="{% url 'auth_settings_toggle' 'mfa' %}" style="margin-left:1.5rem;flex-shrink:0;">
+            {% csrf_token %}
+            <button type="submit" class="button {% if mfa_enforced %}is-warning{% else %}is-light{% endif %}"
+                    style="font-weight:600;"
+                    onclick="return confirm('{% if mfa_enforced %}Disable MFA enforcement? Users will be able to disable their MFA.{% else %}Enforce MFA for all local and LDAP users? They will be required to set up an authenticator app on their next login.{% endif %}')">
+              {% if mfa_enforced %}
+                <span class="icon"><i class="fas fa-lock"></i></span>
+                <span>Enforced</span>
+              {% else %}
+                <span class="icon"><i class="fas fa-lock-open"></i></span>
+                <span>Optional</span>
+              {% endif %}
+            </button>
+          </form>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#f5f7fa;border-radius:8px;padding:1.25rem 1.5rem;margin-top:1.25rem;">
+          <div>
+            <div style="font-weight:600;font-size:0.95rem;color:#1a1a2e;">
+              Email Recovery
+            </div>
+            <p style="font-size:0.82rem;color:#7a7a7a;margin-top:0.3rem;">
+              {% if mfa_email_recovery %}
+                Users can receive a one-time bypass code via email if they lose access to their authenticator.
+                Requires email to be configured (SMTP or Graph API).
+              {% else %}
+                Email recovery is <strong>disabled</strong>. Users can only recover access using their recovery codes or by contacting an administrator.
+              {% endif %}
+            </p>
+          </div>
+          <form method="post" action="{% url 'auth_settings_toggle' 'mfa_email' %}" style="margin-left:1.5rem;flex-shrink:0;">
+            {% csrf_token %}
+            <button type="submit" class="button {% if mfa_email_recovery %}is-info is-light{% else %}is-light{% endif %}"
+                    style="font-weight:600;">
+              {% if mfa_email_recovery %}
+                <span class="icon"><i class="fas fa-envelope"></i></span>
+                <span>Enabled</span>
+              {% else %}
+                <span class="icon"><i class="fas fa-envelope"></i></span>
+                <span>Disabled</span>
+              {% endif %}
+            </button>
+          </form>
+        </div>
+
+        <div style="margin-top:1.5rem;">
+          <div class="info-box" style="margin-bottom:1rem;">
+            <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+            <div style="font-size:0.82rem;">
+              <strong>Recovery options:</strong> Users always get 8 one-time recovery codes at setup.
+              Admins can reset a user's MFA from the User Management page.
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

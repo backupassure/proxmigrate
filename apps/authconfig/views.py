@@ -55,14 +55,18 @@ def _render_user_row(request, user):
 
 @_staff_required
 def auth_settings(request):
+    from apps.core.models import MFAConfig
     ldap_config = LDAPConfig.objects.first()
     entra_config = EntraIDConfig.objects.first()
+    mfa_config = MFAConfig.get_config()
     active_tab = request.GET.get("tab", "local")
     return render(request, "authconfig/settings.html", {
         "ldap_config": ldap_config,
         "entra_config": entra_config,
         "ldap_enabled": ldap_config.is_enabled if ldap_config else False,
         "entra_enabled": entra_config.is_enabled if entra_config else False,
+        "mfa_enforced": mfa_config.enforce_mfa,
+        "mfa_email_recovery": mfa_config.allow_email_recovery,
         "active_tab": active_tab,
     })
 
@@ -127,6 +131,24 @@ def auth_settings_toggle(request, auth_type):
         load_auth_backends_from_db()
         state = "enabled" if config.is_enabled else "disabled"
         logger.info("Entra ID %s by %s", state, request.user)
+    elif auth_type == "mfa":
+        from apps.core.models import MFAConfig
+        config = MFAConfig.get_config()
+        config.enforce_mfa = not config.enforce_mfa
+        config.save()
+        state = "enforced" if config.enforce_mfa else "optional"
+        logger.info("MFA %s by %s", state, request.user)
+        messages.success(request, f"MFA is now {state} for all local and LDAP users.")
+        return redirect(reverse("auth_settings") + "?tab=mfa")
+    elif auth_type == "mfa_email":
+        from apps.core.models import MFAConfig
+        config = MFAConfig.get_config()
+        config.allow_email_recovery = not config.allow_email_recovery
+        config.save()
+        state = "enabled" if config.allow_email_recovery else "disabled"
+        logger.info("MFA email recovery %s by %s", state, request.user)
+        messages.success(request, f"MFA email recovery is now {state}.")
+        return redirect(reverse("auth_settings") + "?tab=mfa")
     else:
         return HttpResponse("Unknown auth type", status=400)
 
@@ -319,6 +341,32 @@ def user_reset_password(request, user_id):
         f'<div class="notification is-success is-light" style="font-size:0.875rem;margin:0;">'
         f"Password for <strong>{user.username}</strong> updated successfully.</div>"
     )
+
+
+@_staff_required
+@require_POST
+def user_reset_mfa(request, user_id):
+    """Admin resets MFA for a user who has lost all recovery options."""
+    user = get_object_or_404(User, pk=user_id)
+    try:
+        profile = user.profile
+        profile.mfa_enabled = False
+        profile.mfa_secret = ""
+        profile.mfa_recovery_codes = ""
+        profile.mfa_confirmed_at = None
+        profile.save(update_fields=["mfa_enabled", "mfa_secret", "mfa_recovery_codes", "mfa_confirmed_at"])
+        logger.info("MFA reset for %s by %s", user.username, request.user)
+        return HttpResponse(
+            f'<div class="notification is-success is-light" style="font-size:0.875rem;margin:0;">'
+            f"MFA has been reset for <strong>{user.username}</strong>.</div>"
+        )
+    except Exception as exc:
+        logger.error("Failed to reset MFA for %s: %s", user.username, exc)
+        return HttpResponse(
+            '<div class="notification is-danger is-light" style="font-size:0.875rem;margin:0;">'
+            "Failed to reset MFA.</div>",
+            status=500,
+        )
 
 
 @_staff_required

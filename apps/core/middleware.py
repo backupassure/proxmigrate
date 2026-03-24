@@ -15,6 +15,9 @@ EXEMPT_PREFIXES = (
     "/help/",
     "/api/",
     "/change-password/",
+    "/forgot-password/",
+    "/reset-password/",
+    "/mfa/",
 )
 
 
@@ -64,6 +67,38 @@ class ForcePasswordChangeMiddleware:
                     return redirect("/change-password/")
             except Exception:
                 pass  # Profile not yet created — allow through
+
+        return self.get_response(request)
+
+    def _is_exempt(self, path):
+        for prefix in EXEMPT_PREFIXES:
+            if path.startswith(prefix):
+                return True
+        return False
+
+
+class ForceMFASetupMiddleware:
+    """Redirect users to MFA setup if global enforcement is on and they haven't set up MFA.
+
+    Only applies to local and LDAP users — Entra ID handles its own MFA.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.user.is_authenticated and not self._is_exempt(request.path):
+            try:
+                profile = request.user.profile
+                if (
+                    not profile.mfa_enabled
+                    and profile.auth_source in ("local", "ldap")
+                ):
+                    from apps.core.models import MFAConfig
+                    if MFAConfig.get_config().enforce_mfa:
+                        return redirect("/mfa/setup/")
+            except Exception:
+                pass
 
         return self.get_response(request)
 

@@ -26,6 +26,7 @@ Made by **[Backup Assure](https://backupassure.io)**.
 ## Requirements
 
 - **Proxmox VE 7.x, 8.x, or 9.x** reachable on the network (tested on 9.x)
+- **Python 3.10+** (installed automatically by `install.sh` — Ubuntu 22.04+, Debian 12+, Rocky 9+ all include a compatible version)
 - Internet access on the host during install (for package downloads)
 - **`install.sh` and `uninstall.sh` must be run as root** (via `sudo`)
 
