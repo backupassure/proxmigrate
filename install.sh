@@ -274,17 +274,20 @@ if [[ ! -d "${VENV}" ]]; then
     python3 -m venv "${VENV}"
 fi
 
+# Ensure the venv is owned by the app user so update.sh can install packages
+chown -R "${APP_USER}:${APP_USER}" "${VENV}"
+
 echo "==> Installing Python dependencies..."
-"${PIP}" install --quiet --upgrade pip
+sudo -u "${APP_USER}" "${PIP}" install --quiet --upgrade pip
 
 # Air-gap support: if vendor/ directory is present and non-empty, install offline
 if [[ -d "${SCRIPT_DIR}/vendor" ]] && [[ -n "$(ls -A "${SCRIPT_DIR}/vendor/" 2>/dev/null)" ]]; then
     echo "    Vendor directory detected — installing in offline mode."
-    "${PIP}" install --quiet --no-index \
+    sudo -u "${APP_USER}" "${PIP}" install --quiet --no-index \
         --find-links "${SCRIPT_DIR}/vendor/" \
         -r "${APP_HOME}/requirements.txt"
 else
-    "${PIP}" install --quiet -r "${APP_HOME}/requirements.txt"
+    sudo -u "${APP_USER}" "${PIP}" install --quiet -r "${APP_HOME}/requirements.txt"
 fi
 
 # ---------------------------------------------------------------------------
