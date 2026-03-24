@@ -12,7 +12,7 @@
 # Options:
 #   --id <n>         Container ID (default: next available)
 #   --hostname <s>   Container hostname (default: proxmigrate)
-#   --storage <s>    Proxmox storage for rootfs (default: local-lvm)
+#   --storage <s>    Proxmox storage for rootfs (default: auto-detect)
 #   --bridge <s>     Network bridge (default: vmbr0)
 #   --disk <n>       Rootfs size in GB (default: 16)
 #   --ram <n>        RAM in MB (default: 2048)
@@ -66,7 +66,7 @@ header() {
 # ---------------------------------------------------------------------------
 CT_ID=""
 CT_HOSTNAME="proxmigrate"
-CT_STORAGE="local-lvm"
+CT_STORAGE=""  # Auto-detect if not specified
 CT_BRIDGE="vmbr0"
 CT_DISK=16
 CT_RAM=2048
@@ -145,10 +145,31 @@ info "Network: ${CT_BRIDGE} | IP: ${CT_IP}"
 info "ProxMigrate port: ${CT_PORT}"
 echo ""
 
-# Check that the storage exists
-if ! pvesm status -storage "${CT_STORAGE}" &>/dev/null; then
-    err "Storage '${CT_STORAGE}' not found. Available storages:"
-    pvesm status 2>/dev/null | tail -n +2 | awk '{print "  " $1}'
+# Auto-detect storage if not specified — find first active storage that supports rootdir
+if [[ -z "${CT_STORAGE}" ]]; then
+    # Prefer local-lvm, then local, then first active storage with rootdir content
+    for candidate in local-lvm local; do
+        if pvesm status -storage "${candidate}" 2>/dev/null | grep -q "active"; then
+            CT_STORAGE="${candidate}"
+            break
+        fi
+    done
+    # Fallback: first active storage that supports rootdir content
+    if [[ -z "${CT_STORAGE}" ]]; then
+        CT_STORAGE=$(pvesm status 2>/dev/null | awk 'NR>1 && $3=="active" {print $1; exit}')
+    fi
+    if [[ -z "${CT_STORAGE}" ]]; then
+        err "No active storage found. Specify one with --storage <name>"
+        pvesm status 2>/dev/null
+        exit 1
+    fi
+    info "Auto-selected storage: ${CT_STORAGE}"
+fi
+
+# Check that the storage exists and is active
+if ! pvesm status -storage "${CT_STORAGE}" 2>/dev/null | grep -q "active"; then
+    err "Storage '${CT_STORAGE}' not found or inactive. Available storages:"
+    pvesm status 2>/dev/null | tail -n +2 | awk '{print "  " $1 " (" $3 ")"}'
     exit 1
 fi
 
