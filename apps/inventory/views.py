@@ -14,6 +14,19 @@ logger = logging.getLogger(__name__)
 VALID_ACTIONS = {"start", "stop", "shutdown", "reboot"}
 
 
+def _extract_ipv4(interfaces):
+    """Extract non-loopback IPv4 addresses from guest agent or LXC interface data."""
+    ips = []
+    for iface in interfaces or []:
+        if iface.get("name") == "lo":
+            continue
+        for addr in iface.get("ip-addresses", []):
+            ip_type = addr.get("ip-address-type", "")
+            if ip_type in ("ipv4", "inet"):
+                ips.append(addr.get("ip-address", ""))
+    return ", ".join(ips) if ips else ""
+
+
 def _uptime_human(seconds):
     """Convert seconds to a human-readable uptime string."""
     if not seconds:
@@ -49,6 +62,14 @@ def list_vms(request):
                 vm["node"] = node_name
                 vm["cpu_pct"] = round((vm.get("cpu") or 0) * 100, 1)
                 vm["uptime_human"] = _uptime_human(vm.get("uptime", 0))
+                # Try to get IP from QEMU guest agent (only for running VMs)
+                vm["ip_address"] = ""
+                if vm.get("status") == "running":
+                    try:
+                        ifaces = api.get_vm_agent_interfaces(node_name, vm["vmid"])
+                        vm["ip_address"] = _extract_ipv4(ifaces)
+                    except Exception:
+                        pass  # Guest agent not installed or not responding
                 vms.append(vm)
 
             # Sort by VMID only — keeps rows in a stable position during

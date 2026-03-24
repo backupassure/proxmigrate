@@ -153,6 +153,11 @@ class ProxmoxAPI:
         """Return VM status dict."""
         return self._get(f"/nodes/{node}/qemu/{vmid}/status/current")
 
+    def get_vm_agent_interfaces(self, node, vmid):
+        """Return VM guest agent network interfaces. Requires QEMU guest agent."""
+        data = self._get(f"/nodes/{node}/qemu/{vmid}/agent/network-get-interfaces")
+        return data.get("result", []) if isinstance(data, dict) else data
+
     def get_next_vmid(self):
         """Return the next available VMID as an int."""
         result = self._get("/cluster/nextid")
@@ -216,6 +221,10 @@ class ProxmoxAPI:
     def get_lxc_status(self, node, vmid):
         """Return LXC container status dict."""
         return self._get(f"/nodes/{node}/lxc/{vmid}/status/current")
+
+    def get_lxc_interfaces(self, node, vmid):
+        """Return LXC container network interfaces list."""
+        return self._get(f"/nodes/{node}/lxc/{vmid}/interfaces")
 
     def start_lxc(self, node, vmid):
         """Start an LXC container. Returns task UPID dict."""
