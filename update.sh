@@ -38,6 +38,10 @@ for f in manage.py requirements.txt; do
     fi
 done
 
+# Ensure venv is owned by app user (fixes permission issues from older installs
+# where install.sh ran pip as root)
+chown -R "${APP_USER}:${APP_USER}" "${VENV}"
+
 echo "==> Installing/upgrading Python dependencies..."
 sudo -u "${APP_USER}" "${PIP}" install -q -r "${APP_HOME}/requirements.txt"
 
