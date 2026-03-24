@@ -165,6 +165,7 @@ def _parse_ovf_xml(ovf_xml):
         "disk_controller": "sata",
         "nic_type": "",
         "disks": [],
+        "iso_file": "",  # ISO boot image from CD-ROM item
     }
 
     # ── Disk references from <References> and <DiskSection> ──────────
@@ -273,6 +274,17 @@ def _parse_ovf_xml(ovf_xml):
                 disk_entry = disk_info[ref_id]
                 # Attach controller type from parent
                 disk_entry["controller"] = controllers.get(parent, "")
+
+        elif rt == _RT_CDROM:
+            # CD-ROM item — check if it references an ISO file
+            host_res = _text(item, "rasd:HostResource")
+            parent = _text(item, "rasd:Parent")
+            # host_res may be "ovf:/file/fileN" or "ovf:/disk/diskN"
+            ref_id = host_res.rsplit("/", 1)[-1] if "/" in host_res else host_res
+            iso_href = file_refs.get(ref_id, "")
+            if iso_href and iso_href.lower().endswith(".iso"):
+                result["iso_file"] = iso_href
+                logger.info("OVF: detected ISO boot image: %s", iso_href)
 
         elif rt == _RT_ETHERNET:
             if sub_type:
