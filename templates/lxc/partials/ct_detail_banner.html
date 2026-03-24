@@ -1,4 +1,7 @@
 {# Status banner for the LXC detail page — self-polls every 5s (2s when transitioning) #}
+{% if was_transitioning and not transitioning %}
+<script>window.location.reload();</script>
+{% endif %}
 <div id="ct-status-banner"
      hx-get="/lxc/{{ ct.vmid }}/detail-status/{% if transitioning %}?action={{ action }}{% endif %}"
      hx-trigger="every {% if transitioning %}2s{% else %}5s{% endif %}"
