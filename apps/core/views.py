@@ -1,7 +1,14 @@
+import hashlib
+import io
 import logging
+import secrets
+import time
+from base64 import b64encode
 from pathlib import Path
 
 import markdown
+import pyotp
+import qrcode
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate
@@ -16,10 +23,12 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from django.utils.http import urlsafe_base64_encode
+from django.views.decorators.http import require_POST
 
 logger = logging.getLogger(__name__)
 
@@ -143,11 +152,24 @@ def login_view(request):
 
         user = authenticate(request, username=username, password=password)
         if user is not None:
-            login(request, user)
             next_url = request.POST.get("next") or request.GET.get("next") or "/"
-            # Safety: only allow relative redirects
             if not next_url.startswith("/"):
                 next_url = "/"
+
+            # Check if MFA is enabled for this user
+            try:
+                profile = user.profile
+                if profile.mfa_enabled and profile.auth_source != "entra":
+                    # Don't login yet — redirect to MFA challenge
+                    request.session["mfa_user_id"] = user.pk
+                    request.session["mfa_next"] = next_url
+                    request.session["mfa_expires"] = time.time() + 300  # 5 min
+                    request.session["mfa_attempts"] = 0
+                    return redirect("mfa_verify")
+            except Exception:
+                pass
+
+            login(request, user)
             return redirect(next_url)
         else:
             error = "Invalid username or password."
@@ -332,3 +354,270 @@ def password_reset_confirm(request, uidb64, token):
         "uidb64": uidb64,
         "token": token,
     })
+
+
+# ── MFA / TOTP ──────────────────────────────────────────────────────────────
+
+
+def _get_mfa_pending_user(request):
+    """Load the user from the MFA session. Returns None if expired or missing."""
+    user_id = request.session.get("mfa_user_id")
+    expires = request.session.get("mfa_expires", 0)
+    if not user_id or time.time() > expires:
+        # Clear stale session keys
+        for key in ("mfa_user_id", "mfa_next", "mfa_expires", "mfa_attempts"):
+            request.session.pop(key, None)
+        return None
+    try:
+        return User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return None
+
+
+def _hash_code(code):
+    return hashlib.sha256(code.encode()).hexdigest()
+
+
+def _generate_recovery_codes(count=8):
+    """Return (plaintext_list, hashed_json_string)."""
+    import json
+    codes = [secrets.token_hex(4) for _ in range(count)]
+    hashed = json.dumps([_hash_code(c) for c in codes])
+    return codes, hashed
+
+
+def mfa_verify(request):
+    """MFA challenge page shown after username/password succeeds."""
+    user = _get_mfa_pending_user(request)
+    if user is None:
+        return redirect("login")
+
+    error = None
+    if request.method == "POST":
+        code = request.POST.get("code", "").strip().replace(" ", "")
+        attempts = request.session.get("mfa_attempts", 0) + 1
+        request.session["mfa_attempts"] = attempts
+
+        if attempts > 5:
+            messages.error(request, "Too many failed attempts. Please sign in again.")
+            for key in ("mfa_user_id", "mfa_next", "mfa_expires", "mfa_attempts"):
+                request.session.pop(key, None)
+            return redirect("login")
+
+        verified = False
+
+        # Try TOTP code (6 digits)
+        if len(code) == 6 and code.isdigit():
+            totp = pyotp.TOTP(user.profile.mfa_secret)
+            if totp.verify(code, valid_window=1):
+                verified = True
+
+        # Try recovery code (8 hex chars)
+        if not verified and len(code) == 8:
+            import json
+            try:
+                stored = json.loads(user.profile.mfa_recovery_codes or "[]")
+                code_hash = _hash_code(code.lower())
+                if code_hash in stored:
+                    stored.remove(code_hash)
+                    user.profile.mfa_recovery_codes = json.dumps(stored)
+                    user.profile.save(update_fields=["mfa_recovery_codes"])
+                    verified = True
+                    logger.info("mfa_verify: user %s used recovery code (%d remaining)",
+                                user.username, len(stored))
+            except (ValueError, TypeError):
+                pass
+
+        if verified:
+            next_url = request.session.get("mfa_next", "/")
+            for key in ("mfa_user_id", "mfa_next", "mfa_expires", "mfa_attempts"):
+                request.session.pop(key, None)
+            login(request, user)
+            return redirect(next_url)
+        else:
+            error = "Invalid code. Please try again."
+
+    from apps.core.models import MFAConfig
+    mfa_config = MFAConfig.get_config()
+
+    return render(request, "core/mfa_verify.html", {
+        "error": error,
+        "allow_email_recovery": mfa_config.allow_email_recovery,
+    })
+
+
+def mfa_email_recovery(request):
+    """Send a one-time bypass code via email during MFA challenge."""
+    from apps.core.models import MFAConfig
+    from apps.emailconfig.models import EmailConfig
+
+    # Check if admin has enabled email recovery
+    mfa_config = MFAConfig.get_config()
+    if not mfa_config.allow_email_recovery:
+        messages.error(request, "Email recovery has been disabled by your administrator.")
+        return redirect("mfa_verify")
+
+    user = _get_mfa_pending_user(request)
+    if user is None:
+        return redirect("login")
+
+    email_config = EmailConfig.get_config()
+    email_enabled = email_config.is_enabled if email_config else False
+
+    error = None
+
+    if request.method == "POST":
+        submitted = request.POST.get("code", "").strip()
+
+        if submitted:
+            # Verify the emailed code
+            stored_hash = request.session.get("mfa_email_code_hash")
+            code_expires = request.session.get("mfa_email_code_expires", 0)
+
+            if not stored_hash or time.time() > code_expires:
+                error = "Code has expired. Please request a new one."
+            elif _hash_code(submitted) == stored_hash:
+                next_url = request.session.get("mfa_next", "/")
+                for key in ("mfa_user_id", "mfa_next", "mfa_expires", "mfa_attempts",
+                            "mfa_email_code_hash", "mfa_email_code_expires", "mfa_email_sent_at"):
+                    request.session.pop(key, None)
+                login(request, user)
+                messages.success(request, "Signed in via email recovery code.")
+                return redirect(next_url)
+            else:
+                error = "Invalid code. Please check your email and try again."
+        else:
+            # Send the code
+            if not email_enabled:
+                error = "Email is not configured. Contact your administrator."
+            elif not user.email:
+                error = "No email address on file for this account. Contact your administrator."
+            else:
+                last_sent = request.session.get("mfa_email_sent_at", 0)
+                if time.time() - last_sent < 60:
+                    error = "A code was sent recently. Please wait before requesting another."
+                else:
+                    code = f"{secrets.randbelow(1000000):06d}"
+                    request.session["mfa_email_code_hash"] = _hash_code(code)
+                    request.session["mfa_email_code_expires"] = time.time() + 300
+                    request.session["mfa_email_sent_at"] = time.time()
+
+                    try:
+                        send_mail(
+                            "ProxMigrate — MFA Recovery Code",
+                            render_to_string("core/email/mfa_bypass_code.txt", {
+                                "user": user,
+                                "code": code,
+                            }),
+                            None,
+                            [user.email],
+                            fail_silently=False,
+                        )
+                        messages.success(request, f"A recovery code has been sent to {user.email}.")
+                        logger.info("mfa_email_recovery: sent code to %s for user %s", user.email, user.username)
+                    except Exception as exc:
+                        logger.error("mfa_email_recovery: failed to send: %s", exc)
+                        error = "Failed to send email. Please try again or contact your administrator."
+
+    return render(request, "core/mfa_email_recovery.html", {
+        "error": error,
+        "email_enabled": email_enabled,
+        "user_email": user.email if user else "",
+    })
+
+
+@login_required
+def mfa_setup(request):
+    """MFA setup page — show QR code and verify first TOTP code."""
+    profile = request.user.profile
+    if profile.auth_source == "entra":
+        messages.info(request, "MFA is managed by your Entra ID provider.")
+        return redirect("dashboard")
+
+    # Generate or retrieve pending secret
+    pending_secret = request.session.get("mfa_pending_secret")
+    if not pending_secret:
+        pending_secret = pyotp.random_base32()
+        request.session["mfa_pending_secret"] = pending_secret
+
+    # Build provisioning URI and QR code
+    name = request.user.email or request.user.username
+    totp = pyotp.TOTP(pending_secret)
+    uri = totp.provisioning_uri(name=name, issuer_name="ProxMigrate")
+
+    img = qrcode.make(uri, box_size=6, border=2)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    qr_data_uri = "data:image/png;base64," + b64encode(buf.getvalue()).decode()
+
+    from apps.core.models import MFAConfig
+    enforced = MFAConfig.get_config().enforce_mfa
+
+    return render(request, "core/mfa_setup.html", {
+        "qr_data_uri": qr_data_uri,
+        "secret": pending_secret,
+        "already_enabled": profile.mfa_enabled,
+        "enforced": enforced,
+    })
+
+
+@login_required
+@require_POST
+def mfa_setup_confirm(request):
+    """Verify the first TOTP code and enable MFA."""
+    pending_secret = request.session.get("mfa_pending_secret")
+    if not pending_secret:
+        messages.error(request, "MFA setup expired. Please try again.")
+        return redirect("mfa_setup")
+
+    code = request.POST.get("code", "").strip()
+    totp = pyotp.TOTP(pending_secret)
+
+    if not totp.verify(code, valid_window=1):
+        messages.error(request, "Invalid code. Please scan the QR code again and enter the current code.")
+        return redirect("mfa_setup")
+
+    # Enable MFA
+    profile = request.user.profile
+    profile.mfa_secret = pending_secret
+    profile.mfa_enabled = True
+    profile.mfa_confirmed_at = timezone.now()
+
+    # Generate recovery codes
+    codes, hashed_json = _generate_recovery_codes()
+    profile.mfa_recovery_codes = hashed_json
+    profile.save(update_fields=["mfa_secret", "mfa_enabled", "mfa_confirmed_at", "mfa_recovery_codes"])
+
+    request.session.pop("mfa_pending_secret", None)
+    logger.info("mfa_setup: MFA enabled for user %s", request.user.username)
+
+    return render(request, "core/mfa_recovery_codes.html", {
+        "codes": codes,
+    })
+
+
+@login_required
+@require_POST
+def mfa_disable(request):
+    """Disable MFA for the current user (requires password confirmation)."""
+    from apps.core.models import MFAConfig
+
+    if MFAConfig.get_config().enforce_mfa:
+        messages.error(request, "MFA is enforced globally and cannot be disabled.")
+        return redirect("dashboard")
+
+    password = request.POST.get("password", "")
+    if not request.user.check_password(password):
+        messages.error(request, "Incorrect password. MFA was not disabled.")
+        return redirect("mfa_setup")
+
+    profile = request.user.profile
+    profile.mfa_enabled = False
+    profile.mfa_secret = ""
+    profile.mfa_recovery_codes = ""
+    profile.mfa_confirmed_at = None
+    profile.save(update_fields=["mfa_enabled", "mfa_secret", "mfa_recovery_codes", "mfa_confirmed_at"])
+
+    logger.info("mfa_disable: MFA disabled for user %s", request.user.username)
+    messages.success(request, "MFA has been disabled for your account.")
+    return redirect("dashboard")

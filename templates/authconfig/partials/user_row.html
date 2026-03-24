@@ -45,6 +45,15 @@ Context: u (User), current_user (request.user)
       <span class="status-badge vm-status-stopped" style="font-size:0.65rem;">Inactive</span>
     {% endif %}
   </td>
+  <td style="vertical-align:middle;text-align:center;">
+    {% if u.profile.auth_source == 'entra' %}
+      <span style="font-size:0.65rem;color:#b5b5b5;" title="MFA managed by Entra ID">—</span>
+    {% elif u.profile.mfa_enabled %}
+      <i class="fas fa-shield-alt" style="color:#48c78e;" title="MFA enabled"></i>
+    {% else %}
+      <i class="fas fa-shield-alt" style="color:#dbdbdb;" title="MFA not set up"></i>
+    {% endif %}
+  </td>
   <td style="vertical-align:middle;font-size:0.82rem;color:#7a7a7a;">
     {% if u.last_login %}{{ u.last_login|timesince }} ago{% else %}Never{% endif %}
   </td>
@@ -72,6 +81,15 @@ Context: u (User), current_user (request.user)
           <button class="button is-small is-light" title="Reset password"
                   onclick="showResetPasswordModal({{ u.id }}, '{{ u.username }}')">
             <i class="fas fa-key" style="color:#f59e0b;"></i>
+          </button>
+        {% endif %}
+        {% if u.profile.mfa_enabled %}
+          <button class="button is-small is-light" title="Reset MFA"
+                  hx-post="{% url 'user_reset_mfa' u.id %}"
+                  hx-target="#user-row-{{ u.id }}"
+                  hx-swap="outerHTML"
+                  hx-confirm="Reset MFA for {{ u.username }}? They will need to set up their authenticator again.">
+            <i class="fas fa-shield-alt" style="color:#f59e0b;"></i>
           </button>
         {% endif %}
         <button class="button is-small is-light" title="Delete user"
