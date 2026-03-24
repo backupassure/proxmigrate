@@ -93,6 +93,7 @@
             <th>VMID</th>
             <th>Name</th>
             <th>Status</th>
+            <th>IP Address</th>
             <th>CPU</th>
             <th>RAM</th>
             <th>Uptime</th>
@@ -102,7 +103,7 @@
         </thead>
         <tbody id="vm-tbody">
           <tr id="vm-empty-row" style="display:none;">
-            <td colspan="8" style="text-align:center;padding:2rem;color:#7a7a7a;font-size:0.875rem;">
+            <td colspan="9" style="text-align:center;padding:2rem;color:#7a7a7a;font-size:0.875rem;">
               <i class="fas fa-search" style="margin-right:0.4rem;"></i>
               No VMs matched your filter. <a href="#" onclick="document.getElementById('vm-filter-input').value='';applyVmFilter();return false;">Clear</a>
             </td>
@@ -124,6 +125,17 @@
                 <span class="status-badge vm-status-paused">Paused</span>
               {% else %}
                 <span class="status-badge vm-status-unknown">{{ vm.status }}</span>
+              {% endif %}
+            </td>
+            <td style="vertical-align:middle;">
+              {% if vm.status == 'running' %}
+                <span style="font-size:0.82rem;color:#4a4a4a;"
+                      hx-get="/inventory/{{ vm.vmid }}/ip/"
+                      hx-trigger="load"
+                      hx-swap="innerHTML"
+                      hx-select="unset">—</span>
+              {% else %}
+                <span style="font-size:0.82rem;color:#b5b5b5;">—</span>
               {% endif %}
             </td>
             <td style="vertical-align:middle;">

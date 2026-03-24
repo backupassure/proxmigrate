@@ -19,6 +19,17 @@
     {% endif %}
   </td>
   <td style="vertical-align:middle;">
+    {% if vm.status == 'running' %}
+      <span style="font-size:0.82rem;color:#4a4a4a;"
+            hx-get="/inventory/{{ vm.vmid }}/ip/"
+            hx-trigger="load"
+            hx-swap="innerHTML"
+            hx-select="unset">—</span>
+    {% else %}
+      <span style="font-size:0.82rem;color:#b5b5b5;">—</span>
+    {% endif %}
+  </td>
+  <td style="vertical-align:middle;">
     <span style="font-size:0.875rem;color:#4a4a4a;">
       {% if vm.status == 'running' %}
         {{ vm.cpu_pct }}%

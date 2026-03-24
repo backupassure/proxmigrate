@@ -229,6 +229,15 @@ def vm_detail(request, vmid):
         raw_config = api.get_vm_config(node, vmid)
         vm_status = api.get_vm_status(node, vmid)
         vm = _build_vm(raw_config, vm_status, node, vmid)
+
+        # Get IP from guest agent if running
+        if vm.get("status") == "running":
+            try:
+                from apps.inventory.views import _extract_ipv4
+                ifaces = api.get_vm_agent_interfaces(node, vmid)
+                vm["ip_address"] = _extract_ipv4(ifaces)
+            except Exception:
+                vm["ip_address"] = ""
     except ProxmoxAPIError as exc:
         error = f"Could not load VM {vmid}: {exc.message}"
         logger.error("vm_detail vmid=%d: %s", vmid, exc)

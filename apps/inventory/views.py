@@ -14,6 +14,29 @@ logger = logging.getLogger(__name__)
 VALID_ACTIONS = {"start", "stop", "shutdown", "reboot"}
 
 
+def _extract_ipv4(interfaces, primary_only=False):
+    """Extract non-loopback IPv4 addresses from guest agent or LXC interface data.
+
+    If primary_only=True, return just the first IP (for inventory tables).
+    Otherwise return all IPs comma-separated (for detail views).
+    """
+    ips = []
+    for iface in interfaces or []:
+        if iface.get("name") == "lo":
+            continue
+        for addr in iface.get("ip-addresses", []):
+            ip_type = addr.get("ip-address-type", "")
+            if ip_type in ("ipv4", "inet"):
+                ip = addr.get("ip-address", "")
+                if ip:
+                    if primary_only:
+                        return ip
+                    ips.append(ip)
+    if primary_only:
+        return ""
+    return ", ".join(ips) if ips else ""
+
+
 def _uptime_human(seconds):
     """Convert seconds to a human-readable uptime string."""
     if not seconds:
@@ -259,6 +282,20 @@ def vm_detail_status(request, vmid):
         "transitioning": transitioning,
         "was_transitioning": bool(action) and not transitioning,
     })
+
+
+@login_required
+def vm_ip(request, vmid):
+    """HTMX endpoint: return the IP address for a single VM via guest agent."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    try:
+        api = config.get_api_client()
+        ifaces = api.get_vm_agent_interfaces(node, vmid)
+        ip = _extract_ipv4(ifaces, primary_only=True)
+        return HttpResponse(ip or "—")
+    except Exception:
+        return HttpResponse("—")
 
 
 @login_required

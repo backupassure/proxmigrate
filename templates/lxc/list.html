@@ -88,6 +88,7 @@
             <th>CTID</th>
             <th>Name</th>
             <th>Status</th>
+            <th>IP Address</th>
             <th>CPU</th>
             <th>RAM</th>
             <th>Uptime</th>
@@ -97,7 +98,7 @@
         </thead>
         <tbody id="ct-tbody">
           <tr id="ct-empty-row" style="display:none;">
-            <td colspan="8" style="text-align:center;padding:2rem;color:#7a7a7a;font-size:0.875rem;">
+            <td colspan="9" style="text-align:center;padding:2rem;color:#7a7a7a;font-size:0.875rem;">
               <i class="fas fa-search" style="margin-right:0.4rem;"></i>
               No containers matched your filter. <a href="#" onclick="document.getElementById('ct-filter-input').value='';applyCtFilter();return false;">Clear</a>
             </td>
@@ -115,6 +116,13 @@
                 <span class="status-badge vm-status-stopped">Stopped</span>
               {% else %}
                 <span class="status-badge vm-status-unknown">{{ ct.status }}</span>
+              {% endif %}
+            </td>
+            <td style="vertical-align:middle;">
+              {% if ct.ip_address %}
+                <span style="font-size:0.82rem;color:#4a4a4a;">{{ ct.ip_address }}</span>
+              {% else %}
+                <span style="font-size:0.82rem;color:#b5b5b5;">—</span>
               {% endif %}
             </td>
             <td style="vertical-align:middle;">
