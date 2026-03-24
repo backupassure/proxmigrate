@@ -8,6 +8,8 @@ A free, open-source, self-hosted web UI for Proxmox VE — built for administrat
 
 Made by **[Backup Assure](https://backupassure.io)**.
 
+![ProxMigrate Dashboard](docs/screenshots/dashboard.png)
+
 ---
 
 ## Features
@@ -22,6 +24,27 @@ Made by **[Backup Assure](https://backupassure.io)**.
 - **Authentication** — local accounts, LDAP, and Microsoft Entra ID (Azure AD); login with username or email address
 - **Password recovery** — self-service password reset via email (requires SMTP or Microsoft Graph API to be configured); local accounts only — LDAP/Entra ID users manage passwords in their directory
 - **Self-signed or custom TLS** — runs HTTPS on port 8443 by default (configurable)
+
+### VM Inventory
+![VM Inventory](docs/screenshots/vm-inventory.png)
+
+### Import Disk Images
+![Import Upload](docs/screenshots/import_1.png)
+
+### Hardware Presets & OVF Detection
+![Hardware Presets](docs/screenshots/presets.png)
+
+### In-Browser VNC Console
+![Console](docs/screenshots/console-with-copy-paste.png)
+
+### LXC Container Management
+![LXC Inventory](docs/screenshots/lxc-inventory.png)
+
+### VM Export & Import
+![Export Import](docs/screenshots/packaging.png)
+
+### Authentication
+![Login](docs/screenshots/login.png)
 
 ## Requirements
 
