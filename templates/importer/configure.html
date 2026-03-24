@@ -62,6 +62,34 @@
           Settings are pre-filled from the OVA. For vendor appliances (Cisco, Aruba, etc.),
           select a <strong>hardware preset</strong> below to override with KVM-compatible settings.
         </div>
+        {% if ova_iso_file %}
+        <div style="margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(255,255,255,0.7);border-radius:6px;border:1px solid #86efac;">
+          <div style="font-weight:600;font-size:0.85rem;color:#1a1a2e;margin-bottom:0.4rem;">
+            <i class="fas fa-compact-disc" style="color:#22c55e;margin-right:0.3rem;"></i>
+            ISO Boot Image: <code>{{ ova_iso_file }}</code>
+          </div>
+          <p style="font-size:0.78rem;color:#4a4a4a;margin-bottom:0.5rem;">
+            This OVA contains an ISO that the appliance boots from to install. Select a Proxmox storage to upload it to:
+          </p>
+          <div class="control" style="max-width:250px;">
+            <div class="select is-small is-fullwidth">
+              <select name="ova_iso_storage">
+                {% for st in iso_storages %}
+                  <option value="{{ st }}">{{ st }}</option>
+                {% empty %}
+                  <option value="" disabled>No ISO-capable storage found</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          {% if not iso_storages %}
+            <p style="font-size:0.75rem;color:#f14668;margin-top:0.3rem;">
+              <i class="fas fa-exclamation-triangle" style="margin-right:0.2rem;"></i>
+              No storage with ISO content type enabled. Enable "ISO image" content on a storage pool in Proxmox.
+            </p>
+          {% endif %}
+        </div>
+        {% endif %}
       </div>
     </div>
     {% elif source_platform == "vmware" %}

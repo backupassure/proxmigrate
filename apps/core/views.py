@@ -9,9 +9,17 @@ from django.contrib.auth import login
 from django.contrib.auth import logout
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.shortcuts import render
+from django.template.loader import render_to_string
+from django.utils.encoding import force_bytes
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_encode
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +133,14 @@ def login_view(request):
     if request.method == "POST":
         username = request.POST.get("username", "").strip()
         password = request.POST.get("password", "")
+
+        # Allow login with email address — look up the username
+        if "@" in username:
+            try:
+                username = User.objects.get(email__iexact=username).username
+            except User.DoesNotExist:
+                pass  # Let authenticate() fail normally
+
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
@@ -215,3 +231,104 @@ def change_password_view(request):
             return redirect("/")
 
     return render(request, "core/change_password.html", {"error": error})
+
+
+def password_reset_request(request):
+    """Ask the user for their email and send a password reset link."""
+    from apps.emailconfig.models import EmailConfig
+
+    email_config = EmailConfig.get_config()
+    email_enabled = email_config.is_enabled if email_config else False
+
+    if request.method == "POST":
+        email = request.POST.get("email", "").strip().lower()
+
+        if not email_enabled:
+            messages.error(request, "Password recovery is unavailable — email is not configured.")
+            return redirect("password_reset_request")
+
+        # Only send for local auth users with a matching email
+        try:
+            user = User.objects.get(email__iexact=email, is_active=True)
+            # Tell directory users to reset via their provider
+            auth_source = getattr(getattr(user, "profile", None), "auth_source", "local")
+            if auth_source != "local":
+                logger.info("password_reset: directory user %s (source=%s)", user.username, auth_source)
+                messages.warning(
+                    request,
+                    "This is an external directory account. "
+                    "Password recovery is disabled for this account — "
+                    "please reset your password through your organisation's directory (LDAP or Entra ID).",
+                )
+                return redirect("password_reset_request")
+
+            # Build reset link
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            protocol = "https" if request.is_secure() else "http"
+            reset_url = f"{protocol}://{request.get_host()}/reset-password/{uid}/{token}/"
+
+            subject = "ProxMigrate — Password Reset"
+            body = render_to_string("core/email/password_reset.txt", {
+                "user": user,
+                "reset_url": reset_url,
+            })
+
+            send_mail(subject, body, None, [user.email], fail_silently=False)
+            logger.info("password_reset: sent reset email to %s for user %s", email, user.username)
+
+        except User.DoesNotExist:
+            logger.info("password_reset: no user found for email %s", email)
+        except Exception as exc:
+            logger.error("password_reset: failed to send email: %s", exc)
+
+        # Generic message for local users and unknown emails (no account enumeration)
+        messages.success(
+            request,
+            "If a local account exists with that email address, a password reset link has been sent.",
+        )
+        return redirect("password_reset_request")
+
+    return render(request, "core/password_reset_request.html", {
+        "email_enabled": email_enabled,
+    })
+
+
+def password_reset_confirm(request, uidb64, token):
+    """Validate the reset token and let the user set a new password."""
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user is None or not default_token_generator.check_token(user, token):
+        return render(request, "core/password_reset_invalid.html")
+
+    error = None
+    if request.method == "POST":
+        password = request.POST.get("new_password", "")
+        confirm = request.POST.get("confirm_password", "")
+
+        if len(password) < 8:
+            error = "Password must be at least 8 characters."
+        elif password != confirm:
+            error = "Passwords do not match."
+        else:
+            user.set_password(password)
+            user.save()
+            # Clear must_change_password flag if set
+            try:
+                user.profile.must_change_password = False
+                user.profile.save()
+            except Exception:
+                pass
+            messages.success(request, "Your password has been reset. You can now sign in.")
+            logger.info("password_reset: password changed for user %s", user.username)
+            return redirect("login")
+
+    return render(request, "core/password_reset_confirm.html", {
+        "error": error,
+        "uidb64": uidb64,
+        "token": token,
+    })

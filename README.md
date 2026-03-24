@@ -19,7 +19,8 @@ Made by **[Backup Assure](https://backupassure.io)**.
 - **VM console** — full in-browser VNC console with clipboard support (paste text into any OS including IOS-XE and Linux terminals)
 - **LXC container management** — browse, start/stop/reboot, and view detailed config of existing LXC containers; create new containers from Proxmox templates with full network, storage, and credential configuration
 - **Setup wizard** — guided first-run setup for Proxmox API token, SSH key deployment, and environment discovery
-- **Authentication** — local accounts, LDAP, and Microsoft Entra ID (Azure AD)
+- **Authentication** — local accounts, LDAP, and Microsoft Entra ID (Azure AD); login with username or email address
+- **Password recovery** — self-service password reset via email (requires SMTP or Microsoft Graph API to be configured); local accounts only — LDAP/Entra ID users manage passwords in their directory
 - **Self-signed or custom TLS** — runs HTTPS on port 8443 by default (configurable)
 
 ## Requirements

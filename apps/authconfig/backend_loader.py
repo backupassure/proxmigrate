@@ -105,6 +105,15 @@ def _configure_ldap(config):
     )
     settings.AUTH_LDAP_ALWAYS_UPDATE_USER = True
 
+    # Sync common LDAP attributes to the Django user on each login.
+    # This enables email-based login for LDAP users when their directory
+    # has a mail attribute populated.
+    settings.AUTH_LDAP_USER_ATTR_MAP = {
+        "email": "mail",
+        "first_name": "givenName",
+        "last_name": "sn",
+    }
+
     # STARTTLS only applies to plain ldap:// — ldaps:// is already TLS
     settings.AUTH_LDAP_START_TLS = (
         config.use_tls and not config.server_uri.lower().startswith("ldaps://")

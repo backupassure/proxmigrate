@@ -109,34 +109,51 @@ def _is_ova(local_path):
 
 
 def _extract_ova(local_path, extract_dir):
-    """Extract disk files from an OVA archive.
+    """Extract disk and ISO files from an OVA archive.
 
     Uses the OVF descriptor to determine disk order when available.
-    Returns a list of extracted VMDK paths in import order (first = boot disk).
+    Returns (disk_paths, iso_path) where disk_paths is a list of extracted
+    VMDK paths in import order and iso_path is the path to an extracted
+    ISO boot image (or None).
     """
     os.makedirs(extract_dir, exist_ok=True)
 
     # Get ordered disk list from OVF if available
     ovf_disk_names = list_ova_disk_files(local_path)
 
+    # Check OVF for ISO boot image
+    from apps.importer.ovf_parser import parse_ovf_from_ova
+    ovf_data = parse_ovf_from_ova(local_path)
+    ovf_iso_name = (ovf_data.get("iso_file", "") if ovf_data else "").strip()
+
     disk_exts = {".vmdk", ".raw", ".qcow2", ".img", ".vhd", ".vhdx"}
     extracted = []
+    iso_path = None
 
     with tarfile.open(local_path, "r") as tar:
         for member in tar.getmembers():
             # Safety: reject path traversal
             if member.name.startswith("/") or ".." in member.name:
                 continue
-            _, ext = os.path.splitext(member.name.lower())
-            if ext in disk_exts:
-                # Extract to flat directory (strip any subdirectory from tar)
-                member.name = os.path.basename(member.name)
-                tar.extract(member, extract_dir)
-                extracted.append(os.path.join(extract_dir, member.name))
-                logger.info("OVA extract: %s", member.name)
+            basename = os.path.basename(member.name)
+            _, ext = os.path.splitext(basename.lower())
 
-    if not extracted:
-        raise ValueError(f"No disk images found in OVA: {local_path}")
+            if ext in disk_exts:
+                member.name = basename
+                tar.extract(member, extract_dir)
+                extracted.append(os.path.join(extract_dir, basename))
+                logger.info("OVA extract: %s", basename)
+
+            elif ext == ".iso":
+                # Extract ISO — either the one referenced by OVF or any ISO found
+                if not ovf_iso_name or basename == ovf_iso_name:
+                    member.name = basename
+                    tar.extract(member, extract_dir)
+                    iso_path = os.path.join(extract_dir, basename)
+                    logger.info("OVA extract ISO: %s", basename)
+
+    if not extracted and not iso_path:
+        raise ValueError(f"No disk images or ISO found in OVA: {local_path}")
 
     # Reorder by OVF disk order if available
     if ovf_disk_names:
@@ -147,10 +164,10 @@ def _extract_ova(local_path, extract_dir):
                 ordered.append(name_to_path.pop(name))
         # Append any disks not listed in OVF
         ordered.extend(name_to_path.values())
-        return ordered
+        return ordered, iso_path
 
     # Fallback: sort alphabetically (disk1 before disk2)
-    return sorted(extracted)
+    return sorted(extracted), iso_path
 
 
 def build_net_arg(vm_config):
@@ -516,6 +533,23 @@ def _create_vm_and_import(job, config, remote_qcow2_path, job_id):
         except Exception as exc:
             logger.warning("ImportJob %d: failed to attach VirtIO ISO: %s", job_id, exc)
 
+    # ── OVA ISO boot image — attach as CD-ROM and update boot order ─────────
+    ova_iso_ref = (vm_config.get("_ova_iso_ref") or "").strip()
+    if ova_iso_ref:
+        try:
+            with config.get_ssh_client() as ssh:
+                ssh.run_checked([
+                    "qm", "set", str(vmid),
+                    "--ide2", f"{ova_iso_ref},media=cdrom",
+                    "--boot", f"order=ide2;{disk_bus}0",
+                ])
+            logger.info(
+                "ImportJob %d: attached OVA ISO %s as ide2, boot order: ide2;%s0",
+                job_id, ova_iso_ref, disk_bus,
+            )
+        except Exception as exc:
+            logger.warning("ImportJob %d: failed to attach OVA ISO: %s", job_id, exc)
+
     # ── 7. CLOUD-INIT ────────────────────────────────────────────────────────
     if vm_config.get("cloud_init_enabled"):
         try:
@@ -588,27 +622,37 @@ def run_import_pipeline(self, job_id):
 
             ova_extra_disk_paths = []  # Populated only for multi-disk OVAs
 
+            ova_iso_path = None  # ISO boot image from OVA (e.g. Cisco 8000v)
+
             if _is_ova(local_input_path):
-                # ── OVA: extract disks from tar archive ──────────────────────
+                # ── OVA: extract disks and ISOs from tar archive ─────────────
                 job.set_stage(ImportJob.STAGE_DETECTING, "Extracting OVA archive...")
                 extract_dir = os.path.join(
                     os.path.dirname(local_input_path), "ova_extract"
                 )
-                disk_paths = _extract_ova(local_input_path, extract_dir)
+                disk_paths, ova_iso_path = _extract_ova(local_input_path, extract_dir)
                 logger.info(
-                    "ImportJob %d: OVA extracted %d disk(s): %s",
-                    job_id, len(disk_paths), [os.path.basename(p) for p in disk_paths],
+                    "ImportJob %d: OVA extracted %d disk(s)%s: %s",
+                    job_id, len(disk_paths),
+                    f" + ISO: {os.path.basename(ova_iso_path)}" if ova_iso_path else "",
+                    [os.path.basename(p) for p in disk_paths],
                 )
 
-                # First disk is the primary boot disk
-                local_input_path = disk_paths[0]
-                detected_format = _detect_format(local_input_path)
+                if disk_paths:
+                    # First disk is the primary boot disk
+                    local_input_path = disk_paths[0]
+                    detected_format = _detect_format(local_input_path)
 
-                # Additional disks will be imported as extra disks after VM creation
-                if len(disk_paths) > 1:
-                    ova_extra_disk_paths = disk_paths[1:]
+                    # Additional disks will be imported as extra disks after VM creation
+                    if len(disk_paths) > 1:
+                        ova_extra_disk_paths = disk_paths[1:]
+                elif ova_iso_path:
+                    # ISO-only OVA (e.g. Cisco 8000v) — no primary disk to import
+                    # Create an empty disk; the appliance installs to it from ISO
+                    detected_format = None
+                    local_input_path = None
 
-                # Remove the OVA tar now that we have extracted the disks
+                # Remove the OVA tar now that we have extracted the contents
                 try:
                     os.remove(job.local_input_path)
                 except OSError:
@@ -636,16 +680,47 @@ def run_import_pipeline(self, job_id):
                     job.percent = pct
                     job.save(update_fields=["percent", "updated_at"])
 
-            with config.get_sftp_client() as sftp:
-                sftp.mkdir_p(remote_dir)
-                sftp.put(local_input_path, remote_raw_path, progress_callback=sftp_progress)
+            # Transfer ISO to Proxmox ISO storage if present
+            remote_iso_ref = ""
+            if ova_iso_path:
+                job.set_stage(ImportJob.STAGE_TRANSFERRING, "Transferring ISO boot image to Proxmox...")
+                iso_filename = os.path.basename(ova_iso_path)
+                # Use user-selected ISO storage from the configure form, or fall back
+                iso_storage = job.vm_config.get("ova_iso_storage") or config.default_storage or "local"
+                # Find the ISO storage path on Proxmox
+                with config.get_ssh_client() as ssh:
+                    pvesm_out, _, _ = ssh.run(["pvesm", "path", f"{iso_storage}:iso/{iso_filename}"])
+                    iso_dest_path = pvesm_out.strip() if pvesm_out.strip() else f"/var/lib/vz/template/iso/{iso_filename}"
+                    iso_dest_dir = os.path.dirname(iso_dest_path)
+                    ssh.run(["mkdir", "-p", iso_dest_dir])
 
-            logger.info("ImportJob %d: transfer complete -> %s", job_id, remote_raw_path)
+                remote_iso_tmp = f"{remote_dir}/{iso_filename}"
+                with config.get_sftp_client() as sftp:
+                    sftp.mkdir_p(remote_dir)
+                    sftp.put(ova_iso_path, remote_iso_tmp, progress_callback=sftp_progress)
+                # Move from temp to ISO storage
+                with config.get_ssh_client() as ssh:
+                    ssh.run_checked(["mv", remote_iso_tmp, iso_dest_path])
+                remote_iso_ref = f"{iso_storage}:iso/{iso_filename}"
+                logger.info("ImportJob %d: ISO uploaded to %s", job_id, remote_iso_ref)
 
-            try:
-                os.remove(local_input_path)
-            except OSError as exc:
-                logger.warning("ImportJob %d: could not remove local input: %s", job_id, exc)
+                try:
+                    os.remove(ova_iso_path)
+                except OSError:
+                    pass
+
+            # Transfer primary disk (if present — ISO-only OVAs may not have one)
+            if local_input_path:
+                with config.get_sftp_client() as sftp:
+                    sftp.mkdir_p(remote_dir)
+                    sftp.put(local_input_path, remote_raw_path, progress_callback=sftp_progress)
+
+                logger.info("ImportJob %d: transfer complete -> %s", job_id, remote_raw_path)
+
+                try:
+                    os.remove(local_input_path)
+                except OSError as exc:
+                    logger.warning("ImportJob %d: could not remove local input: %s", job_id, exc)
 
             # Transfer extra OVA disks to Proxmox temp dir
             ova_extra_remote_paths = []
@@ -722,6 +797,14 @@ def run_import_pipeline(self, job_id):
                 job.save(update_fields=["vm_config_json", "updated_at"])
                 logger.info("ImportJob %d: injected %d OVA extra disks into vm_config",
                             job_id, len(ova_extra_remote_paths))
+
+            # Inject ISO ref into vm_config for CD-ROM attachment
+            if remote_iso_ref:
+                vm_config = job.vm_config
+                vm_config["_ova_iso_ref"] = remote_iso_ref
+                job.vm_config_json = json.dumps(vm_config)
+                job.save(update_fields=["vm_config_json", "updated_at"])
+                logger.info("ImportJob %d: ISO ref injected: %s", job_id, remote_iso_ref)
 
         _check_cancelled(job)
         assigned_vmid = _create_vm_and_import(job, config, remote_qcow2_path, job_id)

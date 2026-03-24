@@ -99,6 +99,7 @@ def configure(request, job_id):
     nodes = []
     storage_pools = []
     network_bridges = []
+    iso_storages = []
 
     try:
         env = DiscoveredEnvironment.objects.get(config=config)
@@ -112,6 +113,12 @@ def configure(request, job_id):
             if "images" in s.get("content", "").split(",")
         ]
         storage_choices = [(s["storage"], s["storage"]) for s in images_pools]
+
+        # Storage pools that can hold ISO files (for OVA ISO boot images)
+        iso_storages = [
+            s["storage"] for s in env.storage_pools
+            if "iso" in s.get("content", "").split(",")
+        ]
         nodes = [n["node"] for n in env.nodes]
         storage_pools = [
             {
@@ -199,6 +206,8 @@ def configure(request, job_id):
             "virtio_iso": config.virtio_iso or "",
             "source_platform": source_platform,
             "ovf_data": ovf_data,
+            "ova_iso_file": ovf_data.get("iso_file", "") if ovf_data else "",
+            "iso_storages": iso_storages,
             "hardware_presets": HARDWARE_PRESETS,
             "hardware_presets_json": json.dumps(HARDWARE_PRESETS),
         },

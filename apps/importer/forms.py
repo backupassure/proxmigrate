@@ -229,6 +229,18 @@ HARDWARE_PRESETS = {
             },
         },
         {
+            "key": "cisco-8000v",
+            "label": "Cisco — Catalyst 8000V / CSR 1000v",
+            "config": {
+                "cpu_type": "host", "cores": 2, "sockets": 1,
+                "memory_mb": 4096, "net_model": "virtio", "disk_bus": "scsi",
+                "os_type": "l26", "machine": "pc", "bios": "seabios",
+                "vga_type": "std", "disk_cache": "none",
+                "disk_iothread": False, "ballooning": False, "qemu_agent": False,
+                "serial_port": True,
+            },
+        },
+        {
             "key": "cisco-expressway",
             "label": "Cisco — Expressway / VCS",
             "config": {
@@ -596,6 +608,7 @@ class VMConfigForm(forms.Form):
     )
     start_after_import = forms.BooleanField(required=False)
     virtio_iso_ref = forms.CharField(required=False, max_length=500)
+    ova_iso_storage = forms.CharField(required=False, max_length=200)
 
     # --- Cloud-Init ---
     cloud_init_enabled = forms.BooleanField(required=False)

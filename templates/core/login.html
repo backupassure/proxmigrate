@@ -50,14 +50,14 @@
 
         {# Username #}
         <div class="field" style="margin-bottom:1.25rem;">
-          <label class="label" style="font-size:0.85rem;color:#4a4a4a;font-weight:600;">Username</label>
+          <label class="label" style="font-size:0.85rem;color:#4a4a4a;font-weight:600;">Username or Email</label>
           <div class="control has-icons-left">
             <input
               class="input is-medium {% if form.username.errors %}is-danger{% endif %}"
               type="text"
               name="username"
               id="id_username"
-              placeholder="Enter your username"
+              placeholder="Username or email address"
               value="{{ form.username.value|default:'' }}"
               autofocus
               autocomplete="username"
@@ -100,6 +100,12 @@
               <span>Sign In</span>
             </button>
           </div>
+        </div>
+
+        <div style="text-align:center;margin-top:1rem;">
+          <a href="{% url 'password_reset_request' %}" style="color:#3273dc;font-size:0.82rem;">
+            Forgot your password?
+          </a>
         </div>
       </form>
 
