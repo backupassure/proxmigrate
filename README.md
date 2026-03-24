@@ -43,6 +43,12 @@ Made by **[Backup Assure](https://backupassure.io)**.
 ### VM Export & Import
 ![Export Import](docs/screenshots/packaging.png)
 
+### VM Detail
+![VM Detail](docs/screenshots/vm-info.png)
+
+### Multi-Factor Authentication
+![MFA Verify](docs/screenshots/mfa-2.png)
+
 ### Authentication
 ![Login](docs/screenshots/login.png)
 
