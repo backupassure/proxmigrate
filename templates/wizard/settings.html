@@ -237,15 +237,24 @@
             <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">
               Upload Temp Directory
             </label>
-            <div class="control has-icons-left">
-              <input
-                class="input is-monospace"
-                type="text"
-                name="upload_temp_dir"
-                value="{{ config.upload_temp_dir|default:'' }}"
-                placeholder="Leave blank to use OS default (/tmp)"
-              >
-              <span class="icon is-left"><i class="fas fa-folder" style="color:#b5b5b5;"></i></span>
+            <div class="field has-addons" style="margin-bottom:0;">
+              <div class="control is-expanded has-icons-left">
+                <input
+                  class="input is-monospace"
+                  type="text"
+                  id="upload_temp_dir"
+                  name="upload_temp_dir"
+                  value="{{ config.upload_temp_dir|default:'' }}"
+                  placeholder="Leave blank to use OS default (/tmp)"
+                >
+                <span class="icon is-left"><i class="fas fa-folder" style="color:#b5b5b5;"></i></span>
+              </div>
+              <div class="control">
+                <button type="button" class="button is-light" onclick="openLocalBrowser('upload_temp_dir', '{{ config.upload_temp_dir|default:'/' }}')">
+                  <span class="icon"><i class="fas fa-folder-open"></i></span>
+                  <span>Browse</span>
+                </button>
+              </div>
             </div>
             <p class="field-hint">
               Where this server writes large upload temp files during HTTP transfer.
@@ -652,6 +661,22 @@
   </div>
 </div>
 
+{# Browse modal for local directory (upload temp dir) #}
+<div class="modal" id="local-browse-modal">
+  <div class="modal-background" onclick="document.getElementById('local-browse-modal').classList.remove('is-active')"></div>
+  <div class="modal-card" style="max-width:540px;">
+    <header class="modal-card-head" style="background:#1a1a2e;border-bottom:1px solid #2a2a4a;">
+      <p class="modal-card-title" style="color:#e0e0e0;font-size:1rem;">
+        <i class="fas fa-folder-open" style="margin-right:0.5rem;color:#48c78e;"></i>Browse Local Directory
+      </p>
+      <button class="delete" onclick="document.getElementById('local-browse-modal').classList.remove('is-active')"></button>
+    </header>
+    <section class="modal-card-body" style="padding:0;" id="local-browser-body">
+      <p style="color:#888;font-size:0.875rem;padding:1rem;">Loading...</p>
+    </section>
+  </div>
+</div>
+
 <script>
   function selectDir(path) {
     document.getElementById('temp-dir-input').value = path;
@@ -665,6 +690,20 @@
       selectDir(btn.dataset.pickDir);
     }
   });
+
+  function openLocalBrowser(field, startPath) {
+    var path = document.getElementById(field).value.trim() || startPath || '/';
+    document.getElementById('local-browse-modal').classList.add('is-active');
+    htmx.ajax('GET', '{% url "wizard_local_browse" %}?path=' + encodeURIComponent(path) + '&field=' + encodeURIComponent(field), {
+      target: '#local-browser-body',
+      swap: 'innerHTML'
+    });
+  }
+
+  function selectLocalDir(path, field) {
+    document.getElementById(field).value = path;
+    document.getElementById('local-browse-modal').classList.remove('is-active');
+  }
 
   function settingsScanVirtioIso() {
     const btn = document.getElementById('settings-virtio-scan-btn');

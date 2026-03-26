@@ -439,6 +439,51 @@ def step5_browse(request):
 
 
 @login_required
+def local_browse(request):
+    """HTMX endpoint: list directories on the local server for the dir browser."""
+    import re as _re
+
+    path = request.GET.get("path", "/").strip() or "/"
+    field = request.GET.get("field", "upload_temp_dir")
+
+    # Sanitise: must be an absolute path, no shell metacharacters
+    if not path.startswith("/"):
+        path = "/"
+    path = _re.sub(r"[^a-zA-Z0-9/_.\- ]", "", path).rstrip("/") or "/"
+
+    parent = os.path.dirname(path) if path != "/" else "/"
+    dirs = []
+    error = None
+    free_bytes = None
+
+    try:
+        entries = sorted(os.listdir(path))
+        dirs = [e for e in entries if os.path.isdir(os.path.join(path, e)) and not e.startswith(".")]
+    except PermissionError:
+        error = f"Permission denied: {path}"
+    except FileNotFoundError:
+        error = f"Directory not found: {path}"
+    except OSError as exc:
+        error = str(exc)
+
+    # Show free space for current directory
+    try:
+        stat = os.statvfs(path)
+        free_bytes = stat.f_bavail * stat.f_frsize
+    except OSError:
+        pass
+
+    return render(request, "wizard/local_browse.html", {
+        "path": path,
+        "parent": parent,
+        "dirs": dirs,
+        "error": error,
+        "field": field,
+        "free_bytes": free_bytes,
+    })
+
+
+@login_required
 def proxmox_settings(request):
     """Edit Proxmox connection settings, API token, SSH key, and VM defaults."""
     config = _get_or_create_config()

@@ -271,20 +271,60 @@
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
-  // Upload progress via XHR
+  function resetUploadBtn() {
+    uploadBtn.disabled = false;
+    uploadBtn.innerHTML = '<span class="icon"><i class="fas fa-upload"></i></span><span>Upload &amp; Continue</span>';
+    document.getElementById('upload-progress').style.display = 'none';
+  }
+
+  // Upload progress via XHR with pre-flight space check
   document.getElementById('upload-form').addEventListener('submit', function(e) {
     if (!fileInput.files.length) return;
 
     e.preventDefault();
+    clearUploadError();
 
-    const formData = new FormData(this);
+    const file = fileInput.files[0];
+    const form = this;
+
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<span class="spinner"></span>&nbsp; Checking space...';
+
+    // Pre-flight: verify the server has enough temp space for this file
+    fetch('{% url "importer_check_upload_space" %}', {credentials: 'same-origin'})
+      .then(function(resp) { return resp.json(); })
+      .then(function(data) {
+        // Need roughly file size for the temp file Django creates during upload
+        if (data.free_bytes < file.size) {
+          resetUploadBtn();
+          const need = formatBytes(file.size);
+          const have = formatBytes(data.free_bytes);
+          const dir  = data.temp_dir || '/tmp';
+          showUploadError(
+            'Not enough temporary disk space to receive this upload. ' +
+            'Your file is <strong>' + need + '</strong> but only <strong>' + have +
+            '</strong> is available in <code>' + dir + '</code>.<br><br>' +
+            'Go to <strong><a href="/wizard/settings/">Settings → Storage</a></strong> and ' +
+            'set the <em>Upload temp directory</em> to a path on a disk with enough free space.'
+          );
+          return;
+        }
+        startUpload(form, file);
+      })
+      .catch(function() {
+        // Space check failed — proceed with upload anyway (don't block on pre-flight failure)
+        startUpload(form, file);
+      });
+  });
+
+  function startUpload(form, file) {
+    const formData = new FormData(form);
     const xhr = new XMLHttpRequest();
     const progressDiv = document.getElementById('upload-progress');
     const progressBar = document.getElementById('upload-bar');
     const progressPct = document.getElementById('progress-pct');
 
     progressDiv.style.display = 'block';
-    uploadBtn.disabled = true;
     uploadBtn.innerHTML = '<span class="spinner"></span>&nbsp; Uploading...';
 
     xhr.upload.addEventListener('progress', function(evt) {
@@ -300,22 +340,31 @@
         // Server will redirect to configure page
         window.location.href = xhr.responseURL || '{% url "importer_upload" %}';
       } else {
-        uploadBtn.disabled = false;
-        uploadBtn.innerHTML = '<span class="icon"><i class="fas fa-upload"></i></span><span>Upload &amp; Continue</span>';
-        progressDiv.style.display = 'none';
+        resetUploadBtn();
+        // Try to parse a JSON error from the server (e.g. disk_full)
+        try {
+          const err = JSON.parse(xhr.responseText);
+          if (err.message) {
+            showUploadError(err.message);
+            return;
+          }
+        } catch (_) {}
         showUploadError('Upload failed. Please check the file format and try again.');
       }
     });
 
     xhr.addEventListener('error', function() {
-      uploadBtn.disabled = false;
-      uploadBtn.innerHTML = '<span class="icon"><i class="fas fa-upload"></i></span><span>Upload &amp; Continue</span>';
-      progressDiv.style.display = 'none';
-      showUploadError('Upload failed — could not connect to server.');
+      resetUploadBtn();
+      showUploadError(
+        'Upload failed — the connection to the server was lost. ' +
+        'For large files this often means the server ran out of temporary disk space. ' +
+        'Check <strong><a href="/wizard/settings/">Settings → Storage</a></strong> to ensure ' +
+        'the upload temp directory has enough free space.'
+      );
     });
 
-    xhr.open('POST', this.action);
+    xhr.open('POST', form.action);
     xhr.send(formData);
-  });
+  }
 </script>
 {% endblock %}

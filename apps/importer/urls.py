@@ -6,6 +6,7 @@ from . import views
 
 urlpatterns = [
     path("", views.upload, name="importer_upload"),
+    path("check-upload-space/", views.check_upload_space, name="importer_check_upload_space"),
     path("<int:job_id>/configure/", views.configure, name="importer_configure"),
     path("<int:job_id>/progress/", views.progress, name="importer_progress"),
     path("<int:job_id>/status/", views.job_status, name="importer_status"),
