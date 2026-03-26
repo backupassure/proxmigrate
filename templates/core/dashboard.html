@@ -288,7 +288,7 @@
                     {% endif %}
 
                   {% elif job.stage == 'QUEUED' %}
-                    {# Queued — cancel button for all job types #}
+                    {# Queued — continue / cancel buttons #}
                     {% if job.job_type == 'lxc_create' %}
                       <a href="{% url 'lxc_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
                         <i class="fas fa-tasks"></i>
@@ -304,6 +304,9 @@
                         <i class="fas fa-tasks"></i>
                       </a>
                     {% elif job.job_type == 'import' %}
+                      <a href="{% url 'importer_configure' job.id %}" class="button is-small is-primary is-light" title="Continue — configure and deploy">
+                        <i class="fas fa-play"></i>
+                      </a>
                       <form method="post" action="{% url 'importer_cancel_job' job.id %}" style="display:inline;" onsubmit="return confirm('Cancel this job?')">
                         {% csrf_token %}
                         <button type="submit" class="button is-small is-warning is-light" title="Cancel job">
