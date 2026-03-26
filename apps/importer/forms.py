@@ -84,6 +84,7 @@ MACHINE_TYPE_CHOICES = [
 
 DISK_BUS_CHOICES = [
     ("scsi", "VirtIO-SCSI (recommended)"),
+    ("virtio", "VirtIO Block"),
     ("sata", "SATA"),
     ("ide", "IDE"),
 ]
