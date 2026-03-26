@@ -33,9 +33,30 @@ logger = logging.getLogger(__name__)
 UPLOAD_ROOT = getattr(settings, "UPLOAD_ROOT", "/opt/proxmigrate/uploads")
 
 
+def _sync_upload_temp_dir():
+    """Read upload_temp_dir from DB and apply it to this worker's settings.
+
+    Gunicorn prefork workers each have their own copy of settings.
+    When the user changes upload_temp_dir via the UI, only the worker
+    that handled the save gets the update.  This ensures every worker
+    picks up the current value before handling an upload.
+    """
+    try:
+        config = ProxmoxConfig.objects.first()
+        if config and config.upload_temp_dir:
+            path = config.upload_temp_dir
+            os.makedirs(path, exist_ok=True)
+            settings.FILE_UPLOAD_TEMP_DIR = path
+        else:
+            settings.FILE_UPLOAD_TEMP_DIR = None
+    except Exception:
+        pass
+
+
 @login_required
 def check_upload_space(request):
     """Return JSON with free space in the upload temp directory."""
+    _sync_upload_temp_dir()
     temp_dir = getattr(settings, "FILE_UPLOAD_TEMP_DIR", None) or tempfile.gettempdir()
     try:
         stat = os.statvfs(temp_dir)
@@ -51,6 +72,7 @@ def check_upload_space(request):
 @login_required
 def upload(request):
     """Upload a disk image and create an ImportJob."""
+    _sync_upload_temp_dir()
     if request.method == "POST":
         try:
             form = UploadForm(request.POST, request.FILES)
