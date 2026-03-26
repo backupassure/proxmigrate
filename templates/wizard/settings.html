@@ -705,6 +705,40 @@
     document.getElementById('local-browse-modal').classList.remove('is-active');
   }
 
+  function createLocalDir(parentPath, field) {
+    var nameInput = document.getElementById('new-dir-name');
+    var name = (nameInput.value || '').trim();
+    if (!name) return;
+    var fullPath = parentPath.replace(/\/+$/, '') + '/' + name;
+    fetch('{% url "wizard_local_mkdir" %}', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+      },
+      body: 'path=' + encodeURIComponent(fullPath)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.ok) {
+        // Refresh the browser at the new directory
+        htmx.ajax('GET', '{% url "wizard_local_browse" %}?path=' + encodeURIComponent(fullPath) + '&field=' + encodeURIComponent(field), {
+          target: '#local-browser-body',
+          swap: 'innerHTML'
+        });
+      } else {
+        nameInput.value = '';
+        nameInput.placeholder = data.error || 'Could not create directory';
+        nameInput.classList.add('is-danger');
+        setTimeout(function() {
+          nameInput.placeholder = 'New folder name';
+          nameInput.classList.remove('is-danger');
+        }, 3000);
+      }
+    });
+  }
+
   function settingsScanVirtioIso() {
     const btn = document.getElementById('settings-virtio-scan-btn');
     const result = document.getElementById('settings-virtio-scan-result');

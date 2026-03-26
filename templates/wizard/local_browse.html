@@ -62,3 +62,15 @@
     {% endfor %}
   </ul>
 {% endif %}
+
+{# Create new subdirectory #}
+<div style="display:flex;align-items:center;gap:0.5rem;padding:0.6rem 1rem;border-top:1px solid #e8ecf0;background:#f9fafb;">
+  <i class="fas fa-folder-plus" style="color:#3273dc;flex-shrink:0;"></i>
+  <input type="text" class="input is-small is-monospace" id="new-dir-name"
+         placeholder="New folder name" style="flex:1;"
+         onkeydown="if(event.key==='Enter'){event.preventDefault();createLocalDir('{{ path }}','{{ field }}');}">
+  <button class="button is-small is-primary is-light" onclick="createLocalDir('{{ path }}', '{{ field }}')">
+    <span class="icon is-small"><i class="fas fa-plus"></i></span>
+    <span>Create</span>
+  </button>
+</div>
