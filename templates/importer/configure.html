@@ -160,7 +160,7 @@
           <label class="label" style="font-size:0.875rem;font-weight:600;">Select a Preset</label>
           <div class="control">
             <div class="select is-fullwidth">
-              <select id="hardware-preset-select" onchange="applyPreset(this.value)">
+              <select id="hardware-preset-select" onchange="onPresetSelect(this.value)">
                 <option value="">— No preset (manual configuration) —</option>
                 {% for category, presets in hardware_presets.items %}
                   <optgroup label="{{ category }}">
@@ -173,6 +173,17 @@
             </div>
           </div>
           <p class="field-hint">Auto-fills CPU, memory, disk, network, and display settings. You can override any value after selecting.</p>
+        </div>
+        {# Size sub-preset dropdown — shown when a product has multiple sizes #}
+        <div class="field" id="size-preset-field" style="display:none;margin-top:0.75rem;">
+          <label class="label" style="font-size:0.875rem;font-weight:600;">Select Size</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select id="size-preset-select" onchange="applySizePreset(this.value)">
+              </select>
+            </div>
+          </div>
+          <p class="field-hint" id="size-preset-hint"></p>
         </div>
       </div>
     </div>
@@ -976,16 +987,61 @@
   // ── Hardware Presets ──────────────────────────────────────────────────
   const HARDWARE_PRESETS = {{ hardware_presets_json|safe }};
 
-  function applyPreset(key) {
-    if (!key) return;
-    // Find the preset config by key across all categories
-    let config = null;
+  // Find a preset object by key across all categories
+  function findPreset(key) {
     for (const category of Object.values(HARDWARE_PRESETS)) {
       for (const preset of category) {
-        if (preset.key === key) { config = preset.config; break; }
+        if (preset.key === key) return preset;
+        // Also check inside sizes
+        if (preset.sizes) {
+          for (const size of preset.sizes) {
+            if (size.key === key) return size;
+          }
+        }
       }
-      if (config) break;
     }
+    return null;
+  }
+
+  function onPresetSelect(key) {
+    const sizeField = document.getElementById('size-preset-field');
+    const sizeSelect = document.getElementById('size-preset-select');
+    const sizeHint = document.getElementById('size-preset-hint');
+
+    if (!key) {
+      sizeField.style.display = 'none';
+      return;
+    }
+
+    const preset = findPreset(key);
+    if (!preset) return;
+
+    // If preset has sizes, show the size picker
+    if (preset.sizes && preset.sizes.length > 0) {
+      sizeSelect.innerHTML = '<option value="">— Select a size —</option>';
+      for (const size of preset.sizes) {
+        const opt = document.createElement('option');
+        opt.value = size.key;
+        opt.textContent = size.label;
+        sizeSelect.appendChild(opt);
+      }
+      sizeHint.textContent = 'Choose a deployment size for ' + preset.label.replace(/^.*—\s*/, '') + '.';
+      sizeField.style.display = '';
+      return;
+    }
+
+    // No sizes — apply directly and hide size picker
+    sizeField.style.display = 'none';
+    applyConfig(preset.config);
+  }
+
+  function applySizePreset(key) {
+    if (!key) return;
+    const preset = findPreset(key);
+    if (preset && preset.config) applyConfig(preset.config);
+  }
+
+  function applyConfig(config) {
     if (!config) return;
 
     for (const [field, value] of Object.entries(config)) {
@@ -1010,6 +1066,12 @@
     if (config.os_type) {
       if (typeof updateVirtioIsoRow === 'function') updateVirtioIsoRow();
     }
+  }
+
+  // Backwards compat — applyPreset by key (used nowhere now but kept safe)
+  function applyPreset(key) {
+    const preset = findPreset(key);
+    if (preset && preset.config) applyConfig(preset.config);
   }
 
   // UEFI/EFI field visibility
