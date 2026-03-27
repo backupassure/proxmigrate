@@ -204,6 +204,11 @@ def configure(request, job_id):
     except Exception:
         suggested_vmid = ""
 
+    # Parse OVF from OVA uploads (needed for both GET and POST render)
+    ovf_data = None
+    if job.local_input_path and job.upload_filename.lower().endswith(".ova"):
+        ovf_data = parse_ovf_from_ova(job.local_input_path)
+
     if request.method == "POST":
         form = VMConfigForm(
             request.POST,
@@ -236,13 +241,10 @@ def configure(request, job_id):
             "net_bridge": config.default_bridge,
         }
 
-        # Parse OVF from OVA uploads and merge into form defaults
-        ovf_data = None
-        if job.local_input_path and job.upload_filename.lower().endswith(".ova"):
-            ovf_data = parse_ovf_from_ova(job.local_input_path)
-            if ovf_data:
-                ovf_defaults = ovf_to_form_defaults(ovf_data)
-                initial.update(ovf_defaults)
+        # Merge OVF-parsed values into form defaults
+        if ovf_data:
+            ovf_defaults = ovf_to_form_defaults(ovf_data)
+            initial.update(ovf_defaults)
 
         form = VMConfigForm(
             initial=initial,
