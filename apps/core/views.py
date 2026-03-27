@@ -133,6 +133,43 @@ def dashboard(request):
     return render(request, "core/dashboard.html", context)
 
 
+@login_required
+def dashboard_job_status(request, job_type, job_id):
+    """HTMX endpoint: return an updated job row partial for dashboard polling."""
+    from apps.importer.models import ImportJob
+    from apps.vmcreator.models import VmCreateJob
+    from apps.lxc.models import LxcCloneJob, LxcCreateJob
+
+    snap_action_labels = {"create": "Create", "rollback": "Rollback", "delete": "Delete"}
+
+    if job_type == "import":
+        from django.shortcuts import get_object_or_404
+        job = get_object_or_404(ImportJob, pk=job_id)
+        job.job_type = "import"
+        job.display_name = job.upload_filename or job.vm_name
+    elif job_type == "create":
+        from django.shortcuts import get_object_or_404
+        job = get_object_or_404(VmCreateJob, pk=job_id)
+        job.job_type = "create"
+        job.display_name = job.iso_filename if job.source_type == VmCreateJob.SOURCE_ISO else "Blank VM"
+    elif job_type == "lxc_create":
+        from django.shortcuts import get_object_or_404
+        job = get_object_or_404(LxcCreateJob, pk=job_id)
+        job.job_type = "lxc_create"
+        job.display_name = job.template or job.ct_name
+        job.vm_name = job.ct_name
+    elif job_type == "lxc_clone":
+        from django.shortcuts import get_object_or_404
+        job = get_object_or_404(LxcCloneJob, pk=job_id)
+        job.job_type = "lxc_clone"
+        job.display_name = f"Clone of {job.source_name or job.source_vmid}"
+        job.vm_name = job.ct_name
+    else:
+        return HttpResponse(status=404)
+
+    return render(request, "core/partials/dashboard_job_row.html", {"job": job})
+
+
 def login_view(request):
     """Login page. Wraps Django auth login."""
     if request.user.is_authenticated:
