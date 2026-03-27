@@ -87,6 +87,11 @@
           <span class="icon is-small"><i class="fas fa-play"></i></span>
           <span>Start</span>
         </button>
+        <button class="button is-danger is-light is-small"
+                onclick="openDeleteModal('{{ vm.vmid }}', '{{ vm.name|escapejs }}')"
+                title="Delete VM">
+          <i class="fas fa-trash-alt"></i>
+        </button>
       {% elif vm.status == 'paused' %}
         <button class="button is-warning is-light is-small"
                 hx-post="/inventory/{{ vm.vmid }}/action/resume/"

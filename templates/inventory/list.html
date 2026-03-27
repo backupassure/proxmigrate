@@ -200,6 +200,11 @@
                     <span class="icon is-small"><i class="fas fa-play"></i></span>
                     <span>Start</span>
                   </button>
+                  <button class="button is-danger is-light is-small"
+                          onclick="openDeleteModal('{{ vm.vmid }}', '{{ vm.name|escapejs }}')"
+                          title="Delete VM">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
                 {% elif vm.status == 'paused' %}
                   <button class="button is-warning is-light is-small"
                           hx-post="/inventory/{{ vm.vmid }}/action/resume/"
@@ -245,6 +250,46 @@
       {% endif %}
     </div>
   {% endif %}
+</div>
+
+{# ===== Delete VM Confirmation Modal ===== #}
+<div class="modal" id="delete-vm-modal">
+  <div class="modal-background" onclick="closeDeleteModal()"></div>
+  <div class="modal-card" style="max-width:480px;border-radius:12px;">
+    <header class="modal-card-head" style="background:var(--danger-color, #f14668);border-radius:12px 12px 0 0;">
+      <p class="modal-card-title" style="color:#fff;font-size:1rem;font-weight:600;">
+        <i class="fas fa-exclamation-triangle"></i>&nbsp; Delete VM
+      </p>
+      <button class="delete" onclick="closeDeleteModal()"></button>
+    </header>
+    <section class="modal-card-body">
+      <div class="content">
+        <p>You are about to <strong>permanently delete</strong> the virtual machine:</p>
+        <div style="background:var(--bg-card, #f5f5f5);border-radius:8px;padding:1rem;margin:1rem 0;">
+          <strong id="delete-modal-name"></strong> (VMID <span id="delete-modal-vmid-display"></span>)
+        </div>
+        <p style="color:var(--danger-color, #f14668);font-weight:600;">
+          <i class="fas fa-exclamation-circle"></i>
+          This will destroy all disks and data. This action cannot be undone.
+        </p>
+        <div style="margin-top:1rem;">
+          <label class="label" style="font-size:0.85rem;">Type the VMID to confirm:</label>
+          <input class="input" type="text" id="delete-confirm-input" placeholder="Enter VMID" autocomplete="off"
+                 oninput="checkDeleteConfirm()">
+        </div>
+      </div>
+    </section>
+    <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
+      <button class="button is-light" onclick="closeDeleteModal()">Cancel</button>
+      <form id="delete-vm-form" method="post" action="" style="margin:0;">
+        <input type="hidden" name="csrfmiddlewaretoken" value="">
+        <button type="submit" id="delete-confirm-btn" class="button is-danger" disabled>
+          <span class="icon is-small"><i class="fas fa-trash-alt"></i></span>
+          <span>Delete VM</span>
+        </button>
+      </form>
+    </footer>
+  </div>
 </div>
 
 {% endblock %}
@@ -318,6 +363,40 @@
     if (evt.detail.target && evt.detail.target.id === 'vm-table-wrapper') {
       applyVmFilter();
     }
+  });
+
+  // ===== Delete VM modal =====
+  let deleteTargetVmid = '';
+
+  function openDeleteModal(vmid, name) {
+    deleteTargetVmid = String(vmid);
+    document.getElementById('delete-modal-name').textContent = name;
+    document.getElementById('delete-modal-vmid-display').textContent = vmid;
+    document.getElementById('delete-confirm-input').value = '';
+    document.getElementById('delete-confirm-btn').disabled = true;
+    // Set form action and CSRF token
+    const form = document.getElementById('delete-vm-form');
+    form.action = '/vm/' + vmid + '/delete/';
+    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
+    if (csrfToken) {
+      form.querySelector('[name=csrfmiddlewaretoken]').value = csrfToken[1];
+    }
+    document.getElementById('delete-vm-modal').classList.add('is-active');
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('delete-vm-modal').classList.remove('is-active');
+    deleteTargetVmid = '';
+  }
+
+  function checkDeleteConfirm() {
+    const input = document.getElementById('delete-confirm-input').value.trim();
+    document.getElementById('delete-confirm-btn').disabled = (input !== deleteTargetVmid);
+  }
+
+  // Close modal on Escape key
+  document.addEventListener('keydown', function(evt) {
+    if (evt.key === 'Escape') closeDeleteModal();
   });
 </script>
 {% endblock %}
