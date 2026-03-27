@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -260,7 +261,12 @@ def vm_detail(request, vmid):
 @login_required
 @require_POST
 def vm_delete(request, vmid):
-    """Delete a VM. The VM must be stopped first."""
+    """Delete a VM. The VM must be stopped first.
+
+    Proxmox delete is async — we poll the task for up to 30s to catch errors
+    like missing storage pools. If the first attempt fails due to disk cleanup,
+    retry without destroy-unreferenced-disks.
+    """
     config = ProxmoxConfig.get_config()
     node = config.default_node
 
@@ -273,10 +279,44 @@ def vm_delete(request, vmid):
             messages.error(request, f"VM {vm_name} ({vmid}) must be stopped before it can be deleted.")
             return redirect("vm_detail", vmid=vmid)
 
-        api.delete_vm(node, vmid)
+        # First attempt with full disk cleanup
+        upid = api.delete_vm(node, vmid)
+        result = _wait_for_task(api, node, upid)
+
+        if result and result.get("exitstatus") != "OK":
+            exit_msg = result.get("exitstatus", "unknown error")
+            logger.warning("vm_delete vmid=%d first attempt failed: %s — retrying without disk cleanup", vmid, exit_msg)
+            # Retry without destroy-unreferenced-disks (handles missing storage pools)
+            upid = api.delete_vm(node, vmid, destroy_unreferenced=False)
+            result = _wait_for_task(api, node, upid)
+
+            if result and result.get("exitstatus") != "OK":
+                messages.error(request, f"Failed to delete VM {vm_name} ({vmid}): {result.get('exitstatus', 'unknown error')}")
+                return redirect("vm_detail", vmid=vmid)
+
         messages.success(request, f"VM {vm_name} ({vmid}) has been deleted.")
         return redirect("inventory")
     except ProxmoxAPIError as exc:
         logger.error("vm_delete vmid=%d: %s", vmid, exc)
         messages.error(request, f"Failed to delete VM {vmid}: {exc.message}")
         return redirect("vm_detail", vmid=vmid)
+
+
+def _wait_for_task(api, node, upid, timeout=30, interval=2):
+    """Poll a Proxmox task until it finishes or timeout is reached.
+
+    Returns the final task status dict, or None if the UPID is not a string
+    (some endpoints return dicts instead of UPID strings).
+    """
+    if not isinstance(upid, str):
+        return None
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            task = api.get_task_status(node, upid)
+            if task.get("status") == "stopped":
+                return task
+        except ProxmoxAPIError:
+            pass
+        time.sleep(interval)
+    return None

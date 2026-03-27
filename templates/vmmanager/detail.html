@@ -278,8 +278,6 @@
 
 </div>
 
-{% endblock %}
-
 {# ===== Delete VM Confirmation Modal ===== #}
 {% if vm.status == 'stopped' %}
 <div class="modal" id="delete-vm-modal">
@@ -324,6 +322,8 @@
   </div>
 </div>
 {% endif %}
+
+{% endblock %}
 
 {% block extra_scripts %}
 <script>

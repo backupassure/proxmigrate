@@ -212,6 +212,14 @@ class ProxmoxAPI:
             path = f"{path}?{qs}"
         return self._delete(path, timeout=60)
 
+    def get_task_status(self, node, upid):
+        """Return task status dict for a given UPID.
+
+        Returns dict with 'status' ('running', 'stopped') and, if finished,
+        'exitstatus' ('OK' or error message).
+        """
+        return self._get(f"/nodes/{node}/tasks/{upid}/status")
+
     def check_vmid_available(self, node, vmid):
         """Return True if the given VMID is not currently in use on the node."""
         try:
