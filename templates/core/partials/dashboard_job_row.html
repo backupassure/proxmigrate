@@ -1,0 +1,194 @@
+{# Dashboard job row partial — self-polls via HTMX when in progress #}
+<tr id="job-row-{{ job.job_type }}-{{ job.id }}"
+    {% if job.stage != 'DONE' and job.stage != 'FAILED' and job.stage != 'CANCELLED' and job.stage != 'QUEUED' %}
+      hx-get="{% url 'dashboard_job_status' job.job_type job.id %}"
+      hx-trigger="every 3s"
+      hx-target="#job-row-{{ job.job_type }}-{{ job.id }}"
+      hx-swap="outerHTML"
+    {% endif %}>
+  <td style="vertical-align:middle;max-width:160px;">
+    <span style="font-family:monospace;font-size:0.78rem;color:#4a4a4a;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ job.display_name }}">
+      {{ job.display_name|truncatechars:28 }}
+    </span>
+  </td>
+  <td style="vertical-align:middle;font-weight:500;color:#1a1a2e;">
+    {{ job.vm_name|default:"—" }}
+  </td>
+  <td style="vertical-align:middle;">
+    {% if job.job_type == 'import' %}
+      <span style="font-size:0.72rem;background:#f0f4ff;color:#3273dc;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">Import</span>
+    {% elif job.job_type == 'lxc_create' %}
+      <span style="font-size:0.72rem;background:#faf5ff;color:#7c3aed;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">New LXC</span>
+    {% elif job.job_type == 'lxc_clone' %}
+      <span style="font-size:0.72rem;background:#fff7ed;color:#c2410c;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">Clone</span>
+    {% elif job.job_type == 'lxc_snapshot' %}
+      <span style="font-size:0.72rem;background:#ecfdf5;color:#047857;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">Snapshot</span>
+    {% else %}
+      <span style="font-size:0.72rem;background:#f0fdf4;color:#257953;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">New VM</span>
+    {% endif %}
+  </td>
+  <td style="vertical-align:middle;">
+    {% if job.stage == 'DONE' %}
+      <span class="status-badge vm-status-running">Done</span>
+    {% elif job.stage == 'FAILED' %}
+      <span class="status-badge vm-status-stopped">Failed</span>
+    {% elif job.stage == 'CANCELLED' %}
+      <span class="status-badge" style="background:#f5f5f5;color:#7a7a7a;">Cancelled</span>
+    {% elif job.stage == 'QUEUED' %}
+      <span class="status-badge" style="background:#fff8e1;color:#f57f17;">Awaiting Config</span>
+    {% else %}
+      {# In progress — show stage + mini progress bar #}
+      <div style="min-width:120px;">
+        <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.2rem;">
+          <i class="fas fa-spinner fa-spin" style="font-size:0.65rem;color:#3273dc;"></i>
+          <span style="font-size:0.7rem;color:#3273dc;font-weight:600;">{{ job.message|default:job.stage|truncatechars:22 }}</span>
+        </div>
+        <div style="background:#e8ecf0;border-radius:3px;height:4px;overflow:hidden;">
+          <div style="background:#3273dc;height:100%;border-radius:3px;width:{{ job.percent|default:0 }}%;transition:width 0.5s ease;"></div>
+        </div>
+        {% if job.percent %}<span style="font-size:0.65rem;color:#7a7a7a;">{{ job.percent }}%</span>{% endif %}
+      </div>
+    {% endif %}
+  </td>
+  <td style="vertical-align:middle;color:#7a7a7a;font-size:0.85rem;white-space:nowrap;">
+    {{ job.created_at|date:"M j, Y" }}
+  </td>
+  <td style="vertical-align:middle;text-align:right;white-space:nowrap;">
+    {% if job.stage == 'DONE' %}
+      {% if job.job_type == 'lxc_create' or job.job_type == 'lxc_clone' or job.job_type == 'lxc_snapshot' %}
+        {% if job.vmid %}
+          <a href="{% url 'lxc_detail' job.vmid %}" class="button is-small is-light" title="View Container">
+            <i class="fas fa-cube"></i>
+          </a>
+        {% else %}
+          <a href="{% url 'lxc_list' %}" class="button is-small is-light" title="View Container Inventory">
+            <i class="fas fa-cube"></i>
+          </a>
+        {% endif %}
+      {% elif job.vmid %}
+        <a href="{% url 'vm_detail' job.vmid %}" class="button is-small is-light" title="View VM">
+          <i class="fas fa-external-link-alt"></i>
+        </a>
+      {% endif %}
+
+    {% elif job.stage == 'FAILED' %}
+      {% if job.job_type == 'import' %}
+        <a href="{% url 'importer_configure' job.id %}" class="button is-small is-warning is-light" title="Retry — edit config and re-run">
+          <i class="fas fa-redo"></i>
+        </a>
+      {% elif job.job_type == 'lxc_create' %}
+        <a href="{% url 'lxc_configure' job.id %}" class="button is-small is-warning is-light" title="Retry — edit config and re-run">
+          <i class="fas fa-redo"></i>
+        </a>
+      {% elif job.job_type == 'lxc_clone' %}
+        <a href="{% url 'lxc_clone' job.source_vmid %}" class="button is-small is-warning is-light" title="Retry clone">
+          <i class="fas fa-redo"></i>
+        </a>
+      {% elif job.job_type == 'lxc_snapshot' %}
+        <a href="{% url 'lxc_detail' job.vmid %}" class="button is-small is-warning is-light" title="View container">
+          <i class="fas fa-cube"></i>
+        </a>
+      {% else %}
+        <a href="{% url 'vmcreator_configure' job.id %}" class="button is-small is-warning is-light" title="Retry — edit config and re-run">
+          <i class="fas fa-redo"></i>
+        </a>
+      {% endif %}
+      {# Delete button for failed jobs #}
+      {% if job.job_type == 'import' %}
+        <form method="post" action="{% url 'importer_delete_job' job.id %}" style="display:inline;" onsubmit="return confirm('Delete this job? This cannot be undone.')">
+          {% csrf_token %}
+          <button type="submit" class="button is-small is-danger is-light" title="Delete job">
+            <i class="fas fa-trash"></i>
+          </button>
+        </form>
+      {% elif job.job_type == 'create' %}
+        <form method="post" action="{% url 'vmcreator_delete_job' job.id %}" style="display:inline;" onsubmit="return confirm('Delete this job? This cannot be undone.')">
+          {% csrf_token %}
+          <button type="submit" class="button is-small is-danger is-light" title="Delete job">
+            <i class="fas fa-trash"></i>
+          </button>
+        </form>
+      {% endif %}
+
+    {% elif job.stage == 'QUEUED' %}
+      {# Queued — continue + cancel buttons #}
+      {% if job.job_type == 'import' %}
+        <a href="{% url 'importer_configure' job.id %}" class="button is-small is-primary is-light" title="Continue — configure and deploy">
+          <span class="icon is-small"><i class="fas fa-play"></i></span>
+          <span>Continue</span>
+        </a>
+        <form method="post" action="{% url 'importer_cancel_job' job.id %}" style="display:inline;" onsubmit="return confirm('Cancel this job?')">
+          {% csrf_token %}
+          <button type="submit" class="button is-small is-danger is-light" title="Cancel job">
+            <i class="fas fa-trash"></i>
+          </button>
+        </form>
+      {% elif job.job_type == 'lxc_create' %}
+        <a href="{% url 'lxc_configure' job.id %}" class="button is-small is-primary is-light" title="Continue — configure and deploy">
+          <span class="icon is-small"><i class="fas fa-play"></i></span>
+          <span>Continue</span>
+        </a>
+        <form method="post" action="{% url 'lxc_cancel_job' job.id %}" style="display:inline;" onsubmit="return confirm('Cancel this job?')">
+          {% csrf_token %}
+          <button type="submit" class="button is-small is-danger is-light" title="Cancel job">
+            <i class="fas fa-trash"></i>
+          </button>
+        </form>
+      {% elif job.job_type == 'lxc_clone' %}
+        <a href="{% url 'lxc_clone_progress' job.id %}" class="button is-small is-primary is-light" title="Continue — view progress">
+          <span class="icon is-small"><i class="fas fa-play"></i></span>
+          <span>Continue</span>
+        </a>
+      {% elif job.job_type == 'create' %}
+        <a href="{% url 'vmcreator_configure' job.id %}" class="button is-small is-primary is-light" title="Continue — configure and deploy">
+          <span class="icon is-small"><i class="fas fa-play"></i></span>
+          <span>Continue</span>
+        </a>
+        <form method="post" action="{% url 'vmcreator_cancel_job' job.id %}" style="display:inline;" onsubmit="return confirm('Cancel this job?')">
+          {% csrf_token %}
+          <button type="submit" class="button is-small is-danger is-light" title="Cancel job">
+            <i class="fas fa-trash"></i>
+          </button>
+        </form>
+      {% endif %}
+
+    {% else %}
+      {# In progress — view progress + cancel #}
+      {% if job.job_type == 'import' %}
+        <a href="{% url 'importer_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
+          <i class="fas fa-tasks"></i>
+        </a>
+        <form method="post" action="{% url 'importer_cancel_job' job.id %}" style="display:inline;" onsubmit="return confirm('Cancel this running job?')">
+          {% csrf_token %}
+          <button type="submit" class="button is-small is-warning is-light" title="Cancel job">
+            <i class="fas fa-ban"></i>
+          </button>
+        </form>
+      {% elif job.job_type == 'lxc_create' %}
+        <a href="{% url 'lxc_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
+          <i class="fas fa-tasks"></i>
+        </a>
+        <form method="post" action="{% url 'lxc_cancel_job' job.id %}" style="display:inline;" onsubmit="return confirm('Cancel this running job?')">
+          {% csrf_token %}
+          <button type="submit" class="button is-small is-warning is-light" title="Cancel job">
+            <i class="fas fa-ban"></i>
+          </button>
+        </form>
+      {% elif job.job_type == 'lxc_clone' %}
+        <a href="{% url 'lxc_clone_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
+          <i class="fas fa-tasks"></i>
+        </a>
+      {% else %}
+        <a href="{% url 'vmcreator_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
+          <i class="fas fa-tasks"></i>
+        </a>
+        <form method="post" action="{% url 'vmcreator_cancel_job' job.id %}" style="display:inline;" onsubmit="return confirm('Cancel this running job?')">
+          {% csrf_token %}
+          <button type="submit" class="button is-small is-warning is-light" title="Cancel job">
+            <i class="fas fa-ban"></i>
+          </button>
+        </form>
+      {% endif %}
+    {% endif %}
+  </td>
+</tr>

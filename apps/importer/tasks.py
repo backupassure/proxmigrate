@@ -347,6 +347,10 @@ def _create_vm_and_import(job, config, remote_qcow2_path, job_id):
         )
         logger.info("ImportJob %d: importdisk output: %s", job_id, import_output[:500])
 
+        # Remove the GUID-named temp file.  The friendly hard link survives
+        # (same inode), so this costs nothing but removes the confusing name.
+        ssh.run(["rm", "-f", remote_qcow2_path])
+
         # Parse the actual disk reference from importdisk output.
         # Output format: "Successfully imported disk as 'unused0:local-lvm:vm-100-disk-0'"
         # We need the part after "unused0:" to use in qm set.
@@ -377,7 +381,7 @@ def _create_vm_and_import(job, config, remote_qcow2_path, job_id):
     disk_cache = vm_config.get("disk_cache", "none")
 
     disk_options = f"{disk_ref},cache={disk_cache}"
-    if vm_config.get("disk_iothread") and disk_bus == "scsi":
+    if vm_config.get("disk_iothread") and disk_bus in ("scsi", "virtio"):
         disk_options += ",iothread=1"
     if vm_config.get("disk_discard"):
         disk_options += ",discard=on"
