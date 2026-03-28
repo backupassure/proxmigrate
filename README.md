@@ -522,9 +522,10 @@ sudo systemctl restart proxmigrate-gunicorn proxmigrate-celery
 - [x] Stuck VM detection — "Not Responding" warning after timeout
 
 ### LXC Management Enhancements
+- [ ] LXC settings editors — CPU, memory, network configuration from detail page
 - [ ] LXC disk management — add, resize, detach disks from container detail page
-- [ ] LXC settings editors — CPU, memory, network configuration
 - [ ] LXC kebab menu — state-aware dropdown with export in container inventory table
+- [ ] LXC NIC management — connect/disconnect network interfaces
 
 ### Phase 3 — Proxmox Monitoring & Alerting
 Turn ProxMigrate into a comprehensive Proxmox observability platform.
