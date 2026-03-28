@@ -106,6 +106,9 @@
           <i class="fas fa-terminal"></i>
         </a>
       {% endif %}
+      <a href="{% url 'vm_clone' vm.vmid %}" class="button is-primary is-light is-small" title="Clone">
+        <i class="fas fa-clone"></i>
+      </a>
       <a href="{% url 'vm_detail' vm.vmid %}" class="button is-light is-small" title="Details">
         <i class="fas fa-info-circle"></i>
       </a>
