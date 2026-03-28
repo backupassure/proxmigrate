@@ -954,6 +954,7 @@ def vm_iso_upload(request, vmid):
         # Auto-mount if requested
         mount_after = request.POST.get("mount_after") == "1"
         if mount_after:
+            api = config.get_api_client()
             raw_config = api.get_vm_config(node, vmid)
             slot = _find_next_cdrom_slot(raw_config)
             if slot:
