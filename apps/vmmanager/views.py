@@ -608,6 +608,8 @@ def vm_disk_resize(request, vmid):
         api = config.get_api_client()
         api.resize_vm_disk(node, vmid, disk, f"+{add_val}G")
         logger.info("vm_disk_resize vmid=%d: resized %s by +%dG", vmid, disk, add_val)
+        # Brief pause to let Proxmox commit the size change before we re-read config
+        time.sleep(1)
     except ProxmoxAPIError as exc:
         logger.error("vm_disk_resize vmid=%d %s: %s", vmid, disk, exc)
         return redirect(f"/vm/{vmid}/disks/?error=Failed+to+resize+{disk}:+{exc.message}")

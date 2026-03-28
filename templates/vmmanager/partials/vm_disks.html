@@ -137,10 +137,11 @@
             hx-post="{% url 'vm_disk_resize' vmid %}"
             hx-target="#disk-table"
             hx-swap="outerHTML"
-            id="resize-form">
+            id="resize-form"
+            onsubmit="startResizeSpinner()">
         {% csrf_token %}
         <input type="hidden" name="disk" id="resize-disk-name" value="">
-        <section class="modal-card-body">
+        <section class="modal-card-body" id="resize-modal-body">
           <p style="margin-bottom:1rem;font-size:0.9rem;">
             Increase <strong id="resize-disk-label"></strong> (currently <span id="resize-disk-current"></span>)
           </p>
@@ -153,8 +154,8 @@
           </div>
         </section>
         <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
-          <button type="button" class="button is-light" onclick="closeResizeModal()">Cancel</button>
-          <button type="submit" class="button is-primary" style="font-weight:600;">
+          <button type="button" class="button is-light" onclick="closeResizeModal()" id="resize-cancel-btn">Cancel</button>
+          <button type="submit" class="button is-primary" style="font-weight:600;" id="resize-submit-btn">
             <span class="icon is-small"><i class="fas fa-expand-arrows-alt"></i></span>
             <span>Resize</span>
           </button>
@@ -166,6 +167,22 @@
 </div>
 
 <script>
+  function startResizeSpinner() {
+    var btn = document.getElementById('resize-submit-btn');
+    btn.disabled = true;
+    btn.classList.add('is-loading');
+    document.getElementById('resize-cancel-btn').disabled = true;
+    var body = document.getElementById('resize-modal-body');
+    if (body) {
+      body.innerHTML =
+        '<div style="text-align:center;padding:2rem;">' +
+          '<span class="spinner" style="width:2rem;height:2rem;border-width:3px;display:inline-block;margin-bottom:1rem;"></span>' +
+          '<p style="font-weight:600;font-size:1rem;">Resizing disk...</p>' +
+          '<p style="color:var(--text-muted, #7a7a7a);font-size:0.85rem;">Waiting for Proxmox to update the disk size.</p>' +
+        '</div>';
+    }
+  }
+
   function openResizeModal(disk, currentSize) {
     document.getElementById('resize-disk-name').value = disk;
     document.getElementById('resize-disk-label').textContent = disk;
