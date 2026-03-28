@@ -67,7 +67,7 @@
         {% for snap in snapshots %}
         <tr>
           <td style="font-family:monospace;font-size:0.82rem;padding-left:1.5rem;font-weight:600;">{{ snap.name }}</td>
-          <td style="color:var(--text-semi, #555);">{{ snap.description|default:"\u2014" }}</td>
+          <td style="color:var(--text-semi, #555);">{{ snap.description|default:"—" }}</td>
           <td style="white-space:nowrap;color:var(--text-muted, #7a7a7a);">
             {% if snap.snaptime %}
               {{ snap.snaptime|date:"M j, Y H:i" }}

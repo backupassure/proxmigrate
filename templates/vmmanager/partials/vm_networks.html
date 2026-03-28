@@ -35,7 +35,7 @@
           {% endif %}
         </td>
         <td style="font-family:monospace;font-size:0.8rem;">{{ nic.mac }}</td>
-        <td>{{ nic.vlan|default:"\u2014" }}</td>
+        <td>{{ nic.vlan|default:"—" }}</td>
         <td>
           {% if nic.link_down %}
             <span style="color:var(--danger-color, #f14668);font-size:0.78rem;font-weight:600;">
