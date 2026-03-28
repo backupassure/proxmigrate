@@ -243,6 +243,40 @@ class ProxmoxAPI:
             return False
 
     # ------------------------------------------------------------------
+    # VM (QEMU) snapshots
+    # ------------------------------------------------------------------
+
+    def get_vm_snapshots(self, node, vmid):
+        """Return list of snapshot dicts for a VM.
+
+        Filters out the 'current' pseudo-snapshot that Proxmox always includes.
+        """
+        result = self._get(f"/nodes/{node}/qemu/{vmid}/snapshot")
+        if not isinstance(result, list):
+            return []
+        return [s for s in result if s.get("name") != "current"]
+
+    def create_vm_snapshot(self, node, vmid, snapname, description="", vmstate=False):
+        """Create a snapshot of a VM. Returns task UPID string.
+
+        vmstate: include RAM state (only if VM is running).
+        """
+        data = {"snapname": snapname}
+        if description:
+            data["description"] = description
+        if vmstate:
+            data["vmstate"] = 1
+        return self._post(f"/nodes/{node}/qemu/{vmid}/snapshot", data)
+
+    def delete_vm_snapshot(self, node, vmid, snapname):
+        """Delete a snapshot from a VM. Returns task UPID string."""
+        return self._delete(f"/nodes/{node}/qemu/{vmid}/snapshot/{snapname}")
+
+    def rollback_vm_snapshot(self, node, vmid, snapname):
+        """Rollback a VM to a snapshot. Returns task UPID string."""
+        return self._post(f"/nodes/{node}/qemu/{vmid}/snapshot/{snapname}/rollback")
+
+    # ------------------------------------------------------------------
     # LXC containers
     # ------------------------------------------------------------------
 

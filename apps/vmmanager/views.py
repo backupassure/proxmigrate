@@ -1,6 +1,8 @@
 import logging
 import re
 import time
+from datetime import datetime
+from datetime import timezone
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -445,6 +447,175 @@ def vm_clone_status(request, vmid):
             })
 
     return JsonResponse({"status": "running"})
+
+
+# =========================================================================
+# VM Snapshots
+# =========================================================================
+
+_SNAP_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,39}$")
+
+
+def _enrich_vm_snapshots(snapshots):
+    """Convert snaptime unix timestamps to datetime objects for template rendering."""
+    for snap in snapshots:
+        ts = snap.get("snaptime")
+        if ts:
+            try:
+                snap["snaptime"] = datetime.fromtimestamp(int(ts), tz=timezone.utc)
+            except (ValueError, TypeError, OSError):
+                snap["snaptime"] = None
+    return snapshots
+
+
+def _get_vm_snapshots_context(vmid):
+    """Fetch VM snapshots and return template context dict."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    api = config.get_api_client()
+    snapshots = _enrich_vm_snapshots(api.get_vm_snapshots(node, vmid))
+    return {"vmid": vmid, "snapshots": snapshots, "snap_error": None}
+
+
+@login_required
+def vm_snapshots(request, vmid):
+    """HTMX endpoint: return the snapshots partial.
+
+    When called with ?wait=<action>&snap=<name>&attempt=<n>, keeps the
+    transitioning spinner until the expected change is detected or max
+    attempts (10 = ~30s) are exhausted.
+    """
+    try:
+        ctx = _get_vm_snapshots_context(vmid)
+    except ProxmoxAPIError as exc:
+        ctx = {"vmid": vmid, "snapshots": [], "snap_error": exc.message}
+        return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+    wait_action = request.GET.get("wait", "")
+    wait_snap = request.GET.get("snap", "")
+    attempt = int(request.GET.get("attempt", 0))
+    max_attempts = 10
+
+    if wait_action and wait_snap and attempt < max_attempts:
+        snap_names = {s["name"] for s in ctx["snapshots"]}
+        still_waiting = False
+
+        if wait_action == "delete" and wait_snap in snap_names:
+            still_waiting = True
+        elif wait_action == "create" and wait_snap not in snap_names:
+            still_waiting = True
+        elif wait_action == "rollback" and attempt < 1:
+            still_waiting = True
+
+        if still_waiting:
+            action_labels = {
+                "delete": f"Deleting snapshot '{wait_snap}'...",
+                "create": f"Creating snapshot '{wait_snap}'...",
+                "rollback": f"Rolling back to '{wait_snap}'...",
+            }
+            ctx["snap_transitioning"] = True
+            ctx["snap_wait_action"] = wait_action
+            ctx["snap_wait_name"] = wait_snap
+            ctx["snap_attempt"] = attempt + 1
+            ctx["snap_action_label"] = action_labels.get(wait_action, "Working...")
+
+    return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+
+@login_required
+@require_POST
+def vm_snapshot_create(request, vmid):
+    """Create a new VM snapshot and return the updated snapshots partial."""
+    snapname = request.POST.get("snapname", "").strip()
+    description = request.POST.get("description", "").strip()
+    include_ram = request.POST.get("vmstate") == "1"
+
+    if not snapname:
+        try:
+            ctx = _get_vm_snapshots_context(vmid)
+        except ProxmoxAPIError:
+            ctx = {"vmid": vmid, "snapshots": [], "snap_error": None}
+        ctx["snap_error"] = "Snapshot name is required."
+        return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+    if not _SNAP_NAME_RE.match(snapname):
+        try:
+            ctx = _get_vm_snapshots_context(vmid)
+        except ProxmoxAPIError:
+            ctx = {"vmid": vmid, "snapshots": [], "snap_error": None}
+        ctx["snap_error"] = "Name must be alphanumeric (hyphens/underscores allowed, max 40 chars)."
+        return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+
+    try:
+        api = config.get_api_client()
+        api.create_vm_snapshot(node, vmid, snapname, description, vmstate=include_ram)
+    except ProxmoxAPIError as exc:
+        try:
+            ctx = _get_vm_snapshots_context(vmid)
+        except ProxmoxAPIError:
+            ctx = {"vmid": vmid, "snapshots": [], "snap_error": None}
+        ctx["snap_error"] = f"Failed to create snapshot: {exc.message}"
+        return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+    try:
+        ctx = _get_vm_snapshots_context(vmid)
+    except ProxmoxAPIError as exc:
+        ctx = {"vmid": vmid, "snapshots": [], "snap_error": exc.message}
+    ctx["snap_transitioning"] = True
+    ctx["snap_wait_action"] = "create"
+    ctx["snap_wait_name"] = snapname
+    ctx["snap_attempt"] = 0
+    ctx["snap_action_label"] = f"Creating snapshot '{snapname}'..."
+    return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+
+@login_required
+@require_POST
+def vm_snapshot_action(request, vmid, snapname, action):
+    """Rollback or delete a VM snapshot and return the updated snapshots partial."""
+    if action not in ("rollback", "delete"):
+        try:
+            ctx = _get_vm_snapshots_context(vmid)
+        except ProxmoxAPIError:
+            ctx = {"vmid": vmid, "snapshots": [], "snap_error": None}
+        ctx["snap_error"] = f"Unknown snapshot action: {action!r}"
+        return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+
+    action_labels = {
+        "delete": f"Deleting snapshot '{snapname}'...",
+        "rollback": f"Rolling back to '{snapname}'...",
+    }
+
+    try:
+        api = config.get_api_client()
+        if action == "rollback":
+            api.rollback_vm_snapshot(node, vmid, snapname)
+        elif action == "delete":
+            api.delete_vm_snapshot(node, vmid, snapname)
+    except ProxmoxAPIError as exc:
+        try:
+            ctx = _get_vm_snapshots_context(vmid)
+        except ProxmoxAPIError:
+            ctx = {"vmid": vmid, "snapshots": [], "snap_error": None}
+        ctx["snap_error"] = f"Snapshot {action} failed: {exc.message}"
+        return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+    try:
+        ctx = _get_vm_snapshots_context(vmid)
+    except ProxmoxAPIError as exc:
+        ctx = {"vmid": vmid, "snapshots": [], "snap_error": exc.message}
+    ctx["snap_transitioning"] = True
+    ctx["snap_wait_action"] = action
+    ctx["snap_wait_name"] = snapname
+    ctx["snap_attempt"] = 0
+    ctx["snap_action_label"] = action_labels.get(action, "Working...")
+    return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
 
 
 def _wait_for_task(api, node, upid, timeout=30, interval=2):

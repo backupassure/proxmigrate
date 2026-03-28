@@ -281,6 +281,23 @@
     </div>
   </div>
 
+  {# Snapshots #}
+  <div class="column is-12" id="snapshots">
+    <div class="proxmigrate-card">
+      <div class="card-header"><i class="fas fa-camera" style="color:var(--link-color, #3273dc);"></i> Snapshots</div>
+      <div class="card-body" style="padding:1rem 1.5rem;">
+        <div hx-get="{% url 'vm_snapshots' vmid %}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          <div style="padding:1rem;text-align:center;color:var(--text-muted, #7a7a7a);">
+            <span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:0.5rem;"></span>
+            Loading snapshots...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 {# ===== Delete VM Confirmation Modal ===== #}
