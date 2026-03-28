@@ -167,10 +167,15 @@
         <label style="font-size:0.8rem;color:var(--text-semi, #555);display:flex;align-items:center;gap:0.3rem;cursor:pointer;">
           <input type="checkbox" name="backup" value="1" checked> Include in Backup
         </label>
-        <div style="margin-left:auto;">
+        <div style="margin-left:auto;display:flex;gap:0.5rem;">
           <button type="submit" class="button is-small is-primary" style="font-weight:600;">
             <span class="icon is-small"><i class="fas fa-plus"></i></span>
             <span>Add Disk</span>
+          </button>
+          <button type="button" class="button is-small is-info is-light" style="font-weight:600;"
+                  onclick="openCdromModal('ide2')">
+            <span class="icon is-small"><i class="fas fa-compact-disc"></i></span>
+            <span>Add CD-ROM</span>
           </button>
         </div>
       </div>
@@ -318,9 +323,20 @@
         <input type="hidden" name="interface" id="cdrom-interface" value="ide2">
         <input type="hidden" name="volid" id="cdrom-volid" value="">
         <section class="modal-card-body">
-          <p style="margin-bottom:0.75rem;font-size:0.9rem;">
-            Select an ISO to mount on <strong id="cdrom-interface-label">ide2</strong>:
-          </p>
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
+            <span style="font-size:0.9rem;">Mount ISO on</span>
+            <div class="select is-small">
+              <select id="cdrom-iface-select" onchange="document.getElementById('cdrom-interface').value=this.value;document.getElementById('cdrom-interface-label').textContent=this.value;">
+                <option value="ide2">ide2</option>
+                <option value="ide0">ide0</option>
+                <option value="ide1">ide1</option>
+                <option value="ide3">ide3</option>
+                <option value="sata0">sata0</option>
+                <option value="sata1">sata1</option>
+                <option value="sata2">sata2</option>
+              </select>
+            </div>
+          </div>
           <div id="cdrom-selected" style="display:none;margin-bottom:1rem;padding:0.75rem 1rem;background:var(--bg-card, #f0fdf4);border:1px solid var(--success-color, #48c78e);border-radius:6px;">
             <div style="display:flex;align-items:center;gap:0.5rem;">
               <i class="fas fa-check-circle" style="color:var(--success-color, #48c78e);"></i>
@@ -338,12 +354,17 @@
             </div>
           </div>
         </section>
-        <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
-          <button type="button" class="button is-light" onclick="closeCdromModal()">Cancel</button>
-          <button type="submit" class="button is-primary" style="font-weight:600;" id="cdrom-mount-btn" disabled>
-            <span class="icon is-small"><i class="fas fa-compact-disc"></i></span>
-            <span>Mount</span>
-          </button>
+        <footer class="modal-card-foot" style="justify-content:space-between;align-items:center;">
+          <p style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);margin:0;">
+            <i class="fas fa-info-circle"></i> Upload new ISOs via the Proxmox UI storage browser.
+          </p>
+          <div style="display:flex;gap:0.75rem;">
+            <button type="button" class="button is-light" onclick="closeCdromModal()">Cancel</button>
+            <button type="submit" class="button is-primary" style="font-weight:600;" id="cdrom-mount-btn" disabled>
+              <span class="icon is-small"><i class="fas fa-compact-disc"></i></span>
+              <span>Mount</span>
+            </button>
+          </div>
         </footer>
       </form>
     </div>
@@ -404,6 +425,8 @@
   function openCdromModal(iface) {
     document.getElementById('cdrom-interface').value = iface;
     document.getElementById('cdrom-interface-label').textContent = iface;
+    var sel = document.getElementById('cdrom-iface-select');
+    if (sel) { for (var i=0;i<sel.options.length;i++) { if (sel.options[i].value===iface) sel.selectedIndex=i; } }
     document.getElementById('cdrom-volid').value = '';
     document.getElementById('cdrom-mount-btn').disabled = true;
     document.getElementById('cdrom-selected').style.display = 'none';
