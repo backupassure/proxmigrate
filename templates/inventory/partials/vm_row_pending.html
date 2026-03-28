@@ -1,6 +1,26 @@
 {# Pending row shown immediately after an action — polls itself until target status is reached #}
+{% if stuck %}
+<tr id="vm-row-{{ vmid }}">
+  <td class="vmid-col">{{ vmid }}</td>
+  <td style="vertical-align:middle;font-weight:600;color:#1a1a2e;">{{ vm_name }}</td>
+  <td style="vertical-align:middle;">
+    <span class="status-badge" style="background:#fff3cd;color:#856d00;">
+      <i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>
+      Not Responding
+    </span>
+  </td>
+  <td colspan="5" style="color:var(--text-muted, #7a7a7a);font-size:0.82rem;vertical-align:middle;">
+    VM is not responding to {{ action_label|lower }} command. This may require investigation in the Proxmox console.
+  </td>
+  <td style="vertical-align:middle;text-align:right;">
+    <a href="{% url 'vm_detail' vmid %}" class="button is-light is-small" title="Details">
+      <i class="fas fa-info-circle"></i>
+    </a>
+  </td>
+</tr>
+{% else %}
 <tr id="vm-row-{{ vmid }}"
-    hx-get="/inventory/{{ vmid }}/status/{% if action %}?action={{ action }}{% endif %}"
+    hx-get="/inventory/{{ vmid }}/status/?action={{ action }}&polls={{ polls|default:0 }}"
     hx-trigger="load delay:2s, every 3s"
     hx-target="#vm-row-{{ vmid }}"
     hx-swap="outerHTML">
@@ -14,3 +34,4 @@
   </td>
   <td colspan="6" style="color:#b5b5b5;font-size:0.82rem;vertical-align:middle;">Waiting for Proxmox…</td>
 </tr>
+{% endif %}

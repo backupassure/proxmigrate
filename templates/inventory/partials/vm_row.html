@@ -53,57 +53,74 @@
   </td>
   <td style="vertical-align:middle;">
     <div class="vm-actions" style="justify-content:flex-end;">
-      {% if vm.status == 'running' %}
-        <button class="button is-warning is-light is-small"
-                hx-post="/inventory/{{ vm.vmid }}/action/shutdown/"
-                hx-target="#vm-row-{{ vm.vmid }}"
-                hx-swap="outerHTML"
-                hx-confirm="Gracefully shut down {{ vm.name }}?"
-                title="Shutdown">
-          <i class="fas fa-power-off"></i>
-        </button>
-        <button class="button is-danger is-light is-small"
-                hx-post="/inventory/{{ vm.vmid }}/action/stop/"
-                hx-target="#vm-row-{{ vm.vmid }}"
-                hx-swap="outerHTML"
-                hx-confirm="Force stop {{ vm.name }}? Unsaved data may be lost."
-                title="Force Stop">
-          <i class="fas fa-stop"></i>
-        </button>
-        <button class="button is-info is-light is-small"
-                hx-post="/inventory/{{ vm.vmid }}/action/reboot/"
-                hx-target="#vm-row-{{ vm.vmid }}"
-                hx-swap="outerHTML"
-                hx-confirm="Reboot {{ vm.name }}?"
-                title="Reboot">
-          <i class="fas fa-redo"></i>
-        </button>
-      {% elif vm.status == 'stopped' %}
-        <button class="button is-success is-light is-small"
-                hx-post="/inventory/{{ vm.vmid }}/action/start/"
-                hx-target="#vm-row-{{ vm.vmid }}"
-                hx-swap="outerHTML"
-                title="Start">
-          <span class="icon is-small"><i class="fas fa-play"></i></span>
-          <span>Start</span>
-        </button>
-      {% elif vm.status == 'paused' %}
-        <button class="button is-warning is-light is-small"
-                hx-post="/inventory/{{ vm.vmid }}/action/resume/"
-                hx-target="#vm-row-{{ vm.vmid }}"
-                hx-swap="outerHTML"
-                title="Resume">
-          <i class="fas fa-play"></i>
-        </button>
-      {% endif %}
-      {% if vm.status == 'running' %}
-        <a href="{% url 'vm_console' vm.vmid %}" target="_blank" class="button is-dark is-small" title="Console">
-          <i class="fas fa-terminal"></i>
-        </a>
-      {% endif %}
-      <a href="{% url 'vm_detail' vm.vmid %}" class="button is-light is-small" title="Details">
-        <i class="fas fa-info-circle"></i>
-      </a>
+      <div class="dropdown is-right vm-kebab" onclick="toggleKebab(event, this)">
+        <div class="dropdown-trigger">
+          <button class="button is-small is-light" aria-haspopup="true" style="padding:0 0.6rem;">
+            <i class="fas fa-ellipsis-v"></i>
+          </button>
+        </div>
+        <div class="dropdown-menu" role="menu" style="min-width:180px;">
+          <div class="dropdown-content" style="padding:0.35rem 0;">
+            {% if vm.status == 'running' %}
+              <a class="dropdown-item" style="font-size:0.82rem;"
+                 hx-post="/inventory/{{ vm.vmid }}/action/shutdown/"
+                 hx-target="#vm-row-{{ vm.vmid }}"
+                 hx-swap="outerHTML"
+                 hx-confirm="Gracefully shut down {{ vm.name }}?">
+                <i class="fas fa-power-off" style="width:1.2rem;color:#f59e0b;"></i> Shutdown
+              </a>
+              <a class="dropdown-item" style="font-size:0.82rem;"
+                 hx-post="/inventory/{{ vm.vmid }}/action/stop/"
+                 hx-target="#vm-row-{{ vm.vmid }}"
+                 hx-swap="outerHTML"
+                 hx-confirm="Force stop {{ vm.name }}? Unsaved data may be lost.">
+                <i class="fas fa-stop" style="width:1.2rem;color:var(--danger-color, #f14668);"></i> Force Stop
+              </a>
+              <a class="dropdown-item" style="font-size:0.82rem;"
+                 hx-post="/inventory/{{ vm.vmid }}/action/reboot/"
+                 hx-target="#vm-row-{{ vm.vmid }}"
+                 hx-swap="outerHTML"
+                 hx-confirm="Reboot {{ vm.name }}?">
+                <i class="fas fa-redo" style="width:1.2rem;color:var(--info-color, #3273dc);"></i> Reboot
+              </a>
+              <a class="dropdown-item" href="{% url 'vm_console' vm.vmid %}" target="_blank" style="font-size:0.82rem;">
+                <i class="fas fa-terminal" style="width:1.2rem;color:#1a1a2e;"></i> Console
+              </a>
+            {% elif vm.status == 'stopped' %}
+              <a class="dropdown-item" style="font-size:0.82rem;"
+                 hx-post="/inventory/{{ vm.vmid }}/action/start/"
+                 hx-target="#vm-row-{{ vm.vmid }}"
+                 hx-swap="outerHTML">
+                <i class="fas fa-play" style="width:1.2rem;color:var(--success-color, #48c78e);"></i> Start
+              </a>
+            {% elif vm.status == 'paused' %}
+              <a class="dropdown-item" style="font-size:0.82rem;"
+                 hx-post="/inventory/{{ vm.vmid }}/action/resume/"
+                 hx-target="#vm-row-{{ vm.vmid }}"
+                 hx-swap="outerHTML">
+                <i class="fas fa-play" style="width:1.2rem;color:#f59e0b;"></i> Resume
+              </a>
+            {% endif %}
+            <hr class="dropdown-divider" style="margin:0.25rem 0;">
+            <a class="dropdown-item" href="{% url 'vm_clone' vm.vmid %}" style="font-size:0.82rem;">
+              <i class="fas fa-clone" style="width:1.2rem;color:var(--link-color, #3273dc);"></i> Clone
+            </a>
+            <a class="dropdown-item" href="{% url 'export_options' vm.vmid %}" style="font-size:0.82rem;">
+              <i class="fas fa-file-export" style="width:1.2rem;color:var(--info-color, #3273dc);"></i> Export VM
+            </a>
+            <a class="dropdown-item" href="{% url 'vm_detail' vm.vmid %}" style="font-size:0.82rem;">
+              <i class="fas fa-info-circle" style="width:1.2rem;color:var(--text-muted, #7a7a7a);"></i> Details
+            </a>
+            {% if vm.status == 'stopped' %}
+              <hr class="dropdown-divider" style="margin:0.25rem 0;">
+              <a class="dropdown-item" style="font-size:0.82rem;color:var(--danger-color, #f14668);"
+                 onclick="event.preventDefault();toggleKebab(event, this.closest('.vm-kebab'));openDeleteModal('{{ vm.vmid }}', '{{ vm.name|escapejs }}')">
+                <i class="fas fa-trash-alt" style="width:1.2rem;"></i> Delete
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
     </div>
   </td>
 </tr>

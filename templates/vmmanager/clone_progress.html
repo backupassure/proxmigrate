@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Cloning {{ clone_task.source_name }} — ProxMigrate{% endblock %}
+{% block page_title %}Cloning VM{% endblock %}
+{% block help_slug %}vm-clone{% endblock %}
+
+{% block content %}
+<div class="columns">
+  <div class="column is-8 is-offset-2">
+
+    {# ===== Header card ===== #}
+    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
+      <div class="card-body" style="padding:1.5rem;">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <div id="progress-icon"
+               style="width:52px;height:52px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-cog fa-spin" style="font-size:1.5rem;color:var(--link-color, #3273dc);"></i>
+          </div>
+          <div>
+            <div style="font-size:1.1rem;font-weight:700;color:var(--text-main, #1a1a2e);">
+              {{ clone_task.new_name }}
+            </div>
+            <div style="font-size:0.85rem;color:var(--text-muted, #7a7a7a);margin-top:0.2rem;">
+              VMID <span class="is-monospace" style="font-weight:600;color:var(--text-main, #1a1a2e);">{{ clone_task.new_vmid }}</span>
+              &nbsp;&bull;&nbsp;
+              <i class="fas fa-clone" style="margin-right:0.2rem;"></i>Clone of {{ clone_task.source_name }} (VMID {{ clone_task.source_vmid }})
+            </div>
+          </div>
+          <div style="margin-left:auto;">
+            <span id="status-badge" class="status-badge" style="background:var(--link-color, #3273dc);color:#fff;">In Progress</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ===== Progress area ===== #}
+    <div id="clone-progress" class="proxmigrate-card">
+      <div class="card-body" style="padding:2rem;text-align:center;">
+        <span class="spinner" style="width:2.5rem;height:2.5rem;border-width:3px;display:inline-block;margin-bottom:1rem;"></span>
+        <p id="progress-text" style="font-weight:600;font-size:1.05rem;color:var(--text-main, #1a1a2e);">Cloning VM...</p>
+        <p style="color:var(--text-muted, #7a7a7a);font-size:0.85rem;margin-top:0.5rem;">
+          Proxmox is creating a copy of the disk(s) and configuration. This may take several minutes for large disks.
+        </p>
+      </div>
+    </div>
+
+    {# ===== Actions (hidden until complete/failed) ===== #}
+    <div id="clone-actions" style="display:none;margin-top:1.5rem;"></div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  var pollInterval = setInterval(pollCloneStatus, 3000);
+
+  function pollCloneStatus() {
+    fetch('{% url "vm_clone_status" vmid %}')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.status === 'complete') {
+          clearInterval(pollInterval);
+          showComplete(data.new_vmid, data.new_name);
+        } else if (data.status === 'error') {
+          clearInterval(pollInterval);
+          showError(data.message);
+        }
+        // 'running' — keep polling
+      })
+      .catch(function() {
+        // Network error — keep trying
+      });
+  }
+
+  function showComplete(newVmid, newName) {
+    // Update icon
+    var iconDiv = document.getElementById('progress-icon');
+    iconDiv.style.background = '#f0fdf4';
+    iconDiv.innerHTML = '<i class="fas fa-check-circle" style="font-size:1.5rem;color:var(--success-color, #48c78e);"></i>';
+
+    // Update badge
+    var badge = document.getElementById('status-badge');
+    badge.style.background = 'var(--success-color, #48c78e)';
+    badge.textContent = 'Complete';
+
+    // Update progress card
+    var progress = document.getElementById('clone-progress');
+    progress.innerHTML =
+      '<div class="card-body" style="padding:2rem;text-align:center;">' +
+        '<i class="fas fa-check-circle" style="font-size:2.5rem;color:var(--success-color, #48c78e);margin-bottom:1rem;display:block;"></i>' +
+        '<h3 style="font-size:1.1rem;font-weight:700;color:var(--text-main, #1a1a2e);margin-bottom:0.5rem;">VM Cloned Successfully!</h3>' +
+        '<p style="color:var(--text-muted, #7a7a7a);font-size:0.875rem;">' +
+          '<strong>' + newName + '</strong> (VMID ' + newVmid + ') is ready.' +
+        '</p>' +
+      '</div>';
+
+    // Show actions
+    var actions = document.getElementById('clone-actions');
+    actions.style.display = 'block';
+    actions.innerHTML =
+      '<div class="proxmigrate-card">' +
+        '<div class="card-body" style="padding:1.5rem;text-align:center;">' +
+          '<div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">' +
+            '<a href="/vm/' + newVmid + '/" class="button is-primary is-medium" style="font-weight:600;">' +
+              '<span class="icon"><i class="fas fa-server"></i></span>' +
+              '<span>View Cloned VM</span>' +
+              '<span class="icon"><i class="fas fa-arrow-right"></i></span>' +
+            '</a>' +
+            '<a href="{% url "vm_detail" vmid %}" class="button is-light is-medium" style="font-weight:600;">' +
+              '<span class="icon"><i class="fas fa-arrow-left"></i></span>' +
+              '<span>Back to Source</span>' +
+            '</a>' +
+            '<a href="{% url "inventory" %}" class="button is-light is-medium" style="font-weight:600;">' +
+              '<span class="icon"><i class="fas fa-list"></i></span>' +
+              '<span>VM Inventory</span>' +
+            '</a>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function showError(message) {
+    // Update icon
+    var iconDiv = document.getElementById('progress-icon');
+    iconDiv.style.background = '#fff5f7';
+    iconDiv.innerHTML = '<i class="fas fa-times-circle" style="font-size:1.5rem;color:var(--danger-color, #f14668);"></i>';
+
+    // Update badge
+    var badge = document.getElementById('status-badge');
+    badge.style.background = 'var(--danger-color, #f14668)';
+    badge.textContent = 'Failed';
+
+    // Update progress card
+    var progress = document.getElementById('clone-progress');
+    progress.innerHTML =
+      '<div class="card-body" style="padding:1.5rem;">' +
+        '<h3 style="font-size:1rem;font-weight:700;color:#cc0f35;margin-bottom:0.75rem;">' +
+          '<i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i>Clone Failed' +
+        '</h3>' +
+        '<div style="background:var(--bg-card, #f9fafb);border:1px solid var(--border-color, #e8ecf0);border-radius:6px;padding:1rem;font-family:monospace;font-size:0.8rem;color:var(--text-main, #4a4a4a);white-space:pre-wrap;word-break:break-all;margin-bottom:1rem;">' +
+          message +
+        '</div>' +
+        '<div style="display:flex;gap:1rem;flex-wrap:wrap;">' +
+          '<a href="{% url "vm_clone" vmid %}" class="button is-danger is-light" style="font-weight:600;">' +
+            '<span class="icon"><i class="fas fa-redo"></i></span>' +
+            '<span>Try Again</span>' +
+          '</a>' +
+          '<a href="{% url "vm_detail" vmid %}" class="button is-light" style="font-weight:600;">' +
+            '<span class="icon"><i class="fas fa-server"></i></span>' +
+            '<span>Back to VM</span>' +
+          '</a>' +
+        '</div>' +
+      '</div>';
+  }
+</script>
+{% endblock %}

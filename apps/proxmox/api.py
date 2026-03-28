@@ -95,6 +95,28 @@ class ProxmoxAPI:
         except ValueError as exc:
             raise ProxmoxAPIError(f"Invalid JSON from POST {path}: {exc}")
 
+    def _put(self, path, data=None, timeout=15):
+        url = f"{self.base_url}{path}"
+        logger.debug("Proxmox API PUT %s data=%s", url, data)
+        try:
+            resp = self._session.put(url, json=data or {}, timeout=timeout)
+        except Timeout:
+            raise ProxmoxAPIError(f"Request timed out: PUT {path}")
+        except ConnError as exc:
+            raise ProxmoxAPIError(f"Connection error: PUT {path} — {exc}")
+        except RequestException as exc:
+            raise ProxmoxAPIError(f"Request failed: PUT {path} — {exc}")
+
+        if not resp.ok:
+            raise ProxmoxAPIError(
+                f"PUT {path} returned HTTP {resp.status_code}: {resp.text[:200]}",
+                status_code=resp.status_code,
+            )
+        try:
+            return resp.json().get("data", {})
+        except ValueError as exc:
+            raise ProxmoxAPIError(f"Invalid JSON from PUT {path}: {exc}")
+
     def _delete(self, path, timeout=15):
         url = f"{self.base_url}{path}"
         logger.debug("Proxmox API DELETE %s", url)
@@ -194,6 +216,45 @@ class ProxmoxAPI:
         """Thaw all guest filesystems via QEMU guest agent."""
         return self._post(f"/nodes/{node}/qemu/{vmid}/agent/fsfreeze-thaw")
 
+    def delete_vm(self, node, vmid, purge=True, destroy_unreferenced=True):
+        """Delete a VM and its disks. Returns task UPID string.
+
+        purge: remove from HA and replication configs.
+        destroy_unreferenced: destroy unreferenced disks owned by the VM.
+        VM must be stopped first.
+        """
+        params = []
+        if purge:
+            params.append("purge=1")
+        if destroy_unreferenced:
+            params.append("destroy-unreferenced-disks=1")
+        qs = "&".join(params)
+        path = f"/nodes/{node}/qemu/{vmid}"
+        if qs:
+            path = f"{path}?{qs}"
+        return self._delete(path, timeout=60)
+
+    def get_task_status(self, node, upid):
+        """Return task status dict for a given UPID.
+
+        Returns dict with 'status' ('running', 'stopped') and, if finished,
+        'exitstatus' ('OK' or error message).
+        """
+        return self._get(f"/nodes/{node}/tasks/{upid}/status")
+
+    def clone_vm(self, node, vmid, newid, **kwargs):
+        """Clone a VM. Returns task UPID string.
+
+        Required: node, vmid (source), newid (target VMID).
+        Optional kwargs: name, description, target (node), storage, pool,
+                         full (1 for full clone, 0 for linked), snapname.
+        """
+        data = {"newid": newid}
+        for key in ("name", "description", "target", "storage", "pool", "full", "snapname"):
+            if key in kwargs and kwargs[key] is not None:
+                data[key] = kwargs[key]
+        return self._post(f"/nodes/{node}/qemu/{vmid}/clone", data, timeout=300)
+
     def check_vmid_available(self, node, vmid):
         """Return True if the given VMID is not currently in use on the node."""
         try:
@@ -202,6 +263,69 @@ class ProxmoxAPI:
             return int(vmid) not in used_ids
         except ProxmoxAPIError:
             return False
+
+    # ------------------------------------------------------------------
+    # VM (QEMU) snapshots
+    # ------------------------------------------------------------------
+
+    def get_vm_snapshots(self, node, vmid):
+        """Return list of snapshot dicts for a VM.
+
+        Filters out the 'current' pseudo-snapshot that Proxmox always includes.
+        """
+        result = self._get(f"/nodes/{node}/qemu/{vmid}/snapshot")
+        if not isinstance(result, list):
+            return []
+        return [s for s in result if s.get("name") != "current"]
+
+    def create_vm_snapshot(self, node, vmid, snapname, description="", vmstate=False):
+        """Create a snapshot of a VM. Returns task UPID string.
+
+        vmstate: include RAM state (only if VM is running).
+        """
+        data = {"snapname": snapname}
+        if description:
+            data["description"] = description
+        if vmstate:
+            data["vmstate"] = 1
+        return self._post(f"/nodes/{node}/qemu/{vmid}/snapshot", data)
+
+    def delete_vm_snapshot(self, node, vmid, snapname):
+        """Delete a snapshot from a VM. Returns task UPID string."""
+        return self._delete(f"/nodes/{node}/qemu/{vmid}/snapshot/{snapname}")
+
+    def rollback_vm_snapshot(self, node, vmid, snapname):
+        """Rollback a VM to a snapshot. Returns task UPID string."""
+        return self._post(f"/nodes/{node}/qemu/{vmid}/snapshot/{snapname}/rollback")
+
+    # ------------------------------------------------------------------
+    # VM (QEMU) configuration
+    # ------------------------------------------------------------------
+
+    def update_vm_config(self, node, vmid, **kwargs):
+        """Update VM configuration. Accepts arbitrary key=value pairs.
+
+        Uses PUT /nodes/{node}/qemu/{vmid}/config which applies changes
+        immediately (no reboot needed for most settings like NIC link state).
+        """
+        return self._put(f"/nodes/{node}/qemu/{vmid}/config", kwargs)
+
+    def get_storage_content(self, node, storage, content_type="iso"):
+        """Return list of content items from a storage pool.
+
+        content_type: 'iso', 'images', 'vztmpl', 'backup', etc.
+        """
+        result = self._get(f"/nodes/{node}/storage/{storage}/content?content={content_type}")
+        if not isinstance(result, list):
+            return []
+        return result
+
+    def resize_vm_disk(self, node, vmid, disk, size):
+        """Resize a VM disk. Size format: '+10G' (add 10GB) or '50G' (set to 50GB).
+
+        Note: Proxmox only allows increasing disk size, never shrinking.
+        """
+        return self._put(f"/nodes/{node}/qemu/{vmid}/resize", {"disk": disk, "size": size})
 
     # ------------------------------------------------------------------
     # LXC containers
