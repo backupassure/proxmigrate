@@ -326,7 +326,7 @@
           <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
             <span style="font-size:0.9rem;">Mount ISO on</span>
             <div class="select is-small">
-              <select id="cdrom-iface-select" onchange="document.getElementById('cdrom-interface').value=this.value;document.getElementById('cdrom-interface-label').textContent=this.value;">
+              <select id="cdrom-iface-select" onchange="document.getElementById('cdrom-interface').value=this.value;">
                 <option value="ide2">ide2</option>
                 <option value="ide0">ide0</option>
                 <option value="ide1">ide1</option>
@@ -420,7 +420,7 @@
   // CD-ROM modal
   function openCdromModal(iface) {
     document.getElementById('cdrom-interface').value = iface;
-    document.getElementById('cdrom-interface-label').textContent = iface;
+    // Set the dropdown to match the interface
     var sel = document.getElementById('cdrom-iface-select');
     if (sel) { for (var i=0;i<sel.options.length;i++) { if (sel.options[i].value===iface) sel.selectedIndex=i; } }
     document.getElementById('cdrom-volid').value = '';
