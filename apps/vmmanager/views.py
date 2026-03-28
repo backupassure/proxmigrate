@@ -501,7 +501,7 @@ def vm_disks(request, vmid):
         api = config.get_api_client()
         raw_config = api.get_vm_config(node, vmid)
 
-        disk_prefixes = ("scsi", "sata", "ide", "virtio")
+        disk_prefixes = ("scsi", "sata", "ide", "virtio", "unused")
         for key in sorted(raw_config.keys()):
             for prefix in disk_prefixes:
                 if key.startswith(prefix) and key[len(prefix):].isdigit():
