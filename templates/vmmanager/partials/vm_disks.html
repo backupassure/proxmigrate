@@ -522,14 +522,28 @@
     document.getElementById('cdrom-mount-btn').disabled = true;
   }
 
-  // Mount ISO via HTMX (not regular form submit)
+  // Mount ISO via fetch, then refresh disk panel
   function mountIso() {
     var btn = document.getElementById('cdrom-mount-btn');
     btn.disabled = true;
     btn.classList.add('is-loading');
-    var form = document.getElementById('cdrom-form');
-    htmx.ajax('POST', form.action, {source: form, target: '#disk-table', swap: 'outerHTML'});
-    closeCdromModal();
+
+    var formData = new FormData();
+    formData.append('action', 'mount');
+    formData.append('interface', document.getElementById('cdrom-interface').value);
+    formData.append('volid', document.getElementById('cdrom-volid').value);
+    var csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
+    if (csrfToken) formData.append('csrfmiddlewaretoken', csrfToken[1]);
+
+    fetch('/vm/{{ vmid }}/disks/cdrom/', {method: 'POST', body: formData})
+      .then(function() {
+        closeCdromModal();
+        htmx.ajax('GET', '/vm/{{ vmid }}/disks/', {target: '#disk-table', swap: 'outerHTML'});
+      })
+      .catch(function() {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+      });
   }
 
   // Upload ISO with progress bar
