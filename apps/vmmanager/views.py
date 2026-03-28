@@ -461,6 +461,14 @@ DISK_BUS_CHOICES = [
     ("ide", "IDE"),
 ]
 
+DISK_CACHE_CHOICES = [
+    ("none", "No cache (recommended)"),
+    ("writeback", "Write back"),
+    ("writethrough", "Write through"),
+    ("directsync", "Direct sync"),
+    ("unsafe", "Unsafe"),
+]
+
 # Max device index per bus type in Proxmox
 DISK_BUS_MAX = {"scsi": 30, "virtio": 15, "sata": 5, "ide": 3}
 
@@ -514,6 +522,7 @@ def vm_disks(request, vmid):
         "disks": disks,
         "storage_pools": storage_pools,
         "disk_bus_choices": DISK_BUS_CHOICES,
+        "disk_cache_choices": DISK_CACHE_CHOICES,
         "disk_error": disk_error,
         "disk_success": disk_success,
     })
@@ -528,6 +537,11 @@ def vm_disk_add(request, vmid):
     storage = request.POST.get("storage", "").strip()
     size_gb = request.POST.get("size", "").strip()
     bus = request.POST.get("bus", "scsi").strip()
+    cache = request.POST.get("cache", "none").strip()
+    ssd = request.POST.get("ssd") == "1"
+    discard = request.POST.get("discard") == "1"
+    iothread = request.POST.get("iothread") == "1"
+    backup = request.POST.get("backup", "1") == "1"
 
     if not storage or not size_gb:
         return redirect(f"/vm/{vmid}/disks/?error=Storage+and+size+are+required.")
@@ -549,8 +563,19 @@ def vm_disk_add(request, vmid):
         if not slot:
             return redirect(f"/vm/{vmid}/disks/?error=No+available+{bus}+slots.")
 
-        # Format: storage:size_in_gb (e.g. "local-lvm:10")
+        # Build disk spec: storage:size,option=value,...
         disk_spec = f"{storage}:{size_val}"
+        if cache:
+            disk_spec += f",cache={cache}"
+        if iothread and bus in ("scsi", "virtio"):
+            disk_spec += ",iothread=1"
+        if discard:
+            disk_spec += ",discard=on"
+        if ssd:
+            disk_spec += ",ssd=1"
+        if not backup:
+            disk_spec += ",backup=0"
+
         api.update_vm_config(node, vmid, **{slot: disk_spec})
         logger.info("vm_disk_add vmid=%d: added %s = %s", vmid, slot, disk_spec)
     except ProxmoxAPIError as exc:

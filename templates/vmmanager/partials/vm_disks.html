@@ -61,37 +61,64 @@
     <form method="post" action="{% url 'vm_disk_add' vmid %}"
           hx-post="{% url 'vm_disk_add' vmid %}"
           hx-target="#disk-table"
-          hx-swap="outerHTML"
-          style="display:flex;align-items:flex-end;gap:0.75rem;flex-wrap:wrap;">
+          hx-swap="outerHTML">
       {% csrf_token %}
-      <div style="flex:1;min-width:140px;">
-        <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted, #7a7a7a);display:block;margin-bottom:0.25rem;">Storage</label>
-        <div class="select is-small is-fullwidth">
-          <select name="storage" required>
-            {% for s in storage_pools %}
-              <option value="{{ s.storage }}">{{ s.storage }} ({{ s.type }}{% if s.avail %}, {{ s.avail|filesizeformat }} free{% endif %})</option>
-            {% endfor %}
-          </select>
+      <div style="display:flex;align-items:flex-end;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+        <div style="flex:1;min-width:140px;">
+          <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted, #7a7a7a);display:block;margin-bottom:0.25rem;">Storage</label>
+          <div class="select is-small is-fullwidth">
+            <select name="storage" required>
+              {% for s in storage_pools %}
+                <option value="{{ s.storage }}">{{ s.storage }} ({{ s.type }}{% if s.avail %}, {{ s.avail|filesizeformat }} free{% endif %})</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div style="min-width:90px;max-width:110px;">
+          <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted, #7a7a7a);display:block;margin-bottom:0.25rem;">Size (GB)</label>
+          <input class="input is-small" type="number" name="size" min="1" value="32" required style="width:100%;">
+        </div>
+        <div style="min-width:130px;">
+          <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted, #7a7a7a);display:block;margin-bottom:0.25rem;">Bus Type</label>
+          <div class="select is-small is-fullwidth">
+            <select name="bus" id="add-disk-bus">
+              {% for val, label in disk_bus_choices %}
+                <option value="{{ val }}"{% if val == "scsi" %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div style="min-width:150px;">
+          <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted, #7a7a7a);display:block;margin-bottom:0.25rem;">Cache</label>
+          <div class="select is-small is-fullwidth">
+            <select name="cache">
+              {% for val, label in disk_cache_choices %}
+                <option value="{{ val }}"{% if val == "none" %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
       </div>
-      <div style="min-width:100px;max-width:120px;">
-        <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted, #7a7a7a);display:block;margin-bottom:0.25rem;">Size (GB)</label>
-        <input class="input is-small" type="number" name="size" min="1" value="32" required style="width:100%;">
-      </div>
-      <div style="min-width:140px;">
-        <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted, #7a7a7a);display:block;margin-bottom:0.25rem;">Bus Type</label>
-        <div class="select is-small is-fullwidth">
-          <select name="bus">
-            {% for val, label in disk_bus_choices %}
-              <option value="{{ val }}"{% if val == "scsi" %} selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
+      <div style="display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;">
+        <label style="font-size:0.8rem;color:var(--text-semi, #555);display:flex;align-items:center;gap:0.3rem;cursor:pointer;">
+          <input type="checkbox" name="ssd" value="1"> SSD Emulation
+        </label>
+        <label style="font-size:0.8rem;color:var(--text-semi, #555);display:flex;align-items:center;gap:0.3rem;cursor:pointer;">
+          <input type="checkbox" name="discard" value="1"> Discard (TRIM)
+        </label>
+        <label style="font-size:0.8rem;color:var(--text-semi, #555);display:flex;align-items:center;gap:0.3rem;cursor:pointer;" id="iothread-label">
+          <input type="checkbox" name="iothread" value="1"> IO Thread
+        </label>
+        <label style="font-size:0.8rem;color:var(--text-semi, #555);display:flex;align-items:center;gap:0.3rem;cursor:pointer;">
+          <input type="checkbox" name="backup" value="1" checked> Include in Backup
+        </label>
+        <div style="margin-left:auto;">
+          <button type="submit" class="button is-small is-primary" style="font-weight:600;">
+            <span class="icon is-small"><i class="fas fa-plus"></i></span>
+            <span>Add Disk</span>
+          </button>
         </div>
       </div>
-      <button type="submit" class="button is-small is-primary" style="font-weight:600;">
-        <span class="icon is-small"><i class="fas fa-plus"></i></span>
-        <span>Add Disk</span>
-      </button>
     </form>
   </div>
   {% endif %}
@@ -154,4 +181,21 @@
   document.addEventListener('keydown', function(evt) {
     if (evt.key === 'Escape') closeResizeModal();
   });
+
+  // Disable IO Thread checkbox for bus types that don't support it
+  (function() {
+    var busSelect = document.getElementById('add-disk-bus');
+    var ioLabel = document.getElementById('iothread-label');
+    if (!busSelect || !ioLabel) return;
+    var ioCb = ioLabel.querySelector('input[name=iothread]');
+    function toggleIoThread() {
+      var bus = busSelect.value;
+      var supported = (bus === 'scsi' || bus === 'virtio');
+      ioCb.disabled = !supported;
+      ioLabel.style.opacity = supported ? '1' : '0.4';
+      if (!supported) ioCb.checked = false;
+    }
+    busSelect.addEventListener('change', toggleIoThread);
+    toggleIoThread();
+  })();
 </script>
