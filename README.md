@@ -1,6 +1,6 @@
 # ProxMigrate
 
-**Version 1.1.2** — Build `2026-03-27.1`
+**Version 1.1.2** — Build `2026-03-29.1`
 
 > **To update an existing install:** `git pull origin main && sudo ./update.sh`
 
@@ -17,7 +17,10 @@ Made by **[Backup Assure](https://backupassure.io)**.
 - **Disk image import** — upload qcow2, vmdk, vhd, vhdx, raw, and OVA files; automatic conversion to qcow2 via `qemu-img`
 - **VM creation wizard** — full configuration including EFI/UEFI, TPM 2.0, CPU type, network, storage, and boot order
 - **ISO selection** — upload an ISO from your computer or browse and select ISOs already stored on Proxmox storage
-- **VM inventory dashboard** — live status, start/stop/shutdown/reboot actions with real-time updates
+- **VM inventory dashboard** — live status with kebab action menu: start/stop/shutdown/reboot, clone, export, and delete directly from the table
+- **VM management** — full VM lifecycle from the detail page: delete, clone (full/linked), snapshots (take/rollback/delete with RAM capture), rename, and editable settings for CPU, memory, firmware/boot, and description
+- **Disk management** — add disks (with SSD emulation, TRIM, IO thread, cache, backup options), resize, detach, re-attach with reconfigured options, delete unused disks, CD-ROM/ISO management (browse by storage pool, mount, eject, upload new ISOs with progress bar)
+- **Network management** — connect/disconnect NICs per interface with inline toggle
 - **VM console** — full in-browser VNC console with clipboard support (paste text into any OS including IOS-XE and Linux terminals)
 - **LXC container management** — browse, start/stop/reboot, and view detailed config of existing LXC containers; create new containers from Proxmox templates with full network, storage, and credential configuration
 - **Setup wizard** — guided first-run setup for Proxmox API token, SSH key deployment, and environment discovery
@@ -347,6 +350,21 @@ ProxMigrate handles template downloading, container creation, and optional auto-
 
 ## Changelog
 
+### v1.1.2 — 2026-03-29.1
+- **VM delete** — type-to-confirm VMID modal, async task polling with spinner, auto-retry on storage errors (e.g. missing logical volumes)
+- **VM clone** — full or linked clone with storage pool selection, VMID validation, real-time progress page polling Proxmox task status
+- **VM snapshots** — take (with optional RAM state capture), rollback, and delete snapshots from the VM detail page with HTMX live updates
+- **VM rename** — inline pencil-icon edit on the General card
+- **Disk management** — add disks with full options (storage pool, size, bus type, cache mode, SSD emulation, TRIM/discard, IO thread, backup), resize existing disks, detach disks (keeps volume on storage), re-attach unused disks with reconfigurable options, permanently delete unused disks
+- **CD-ROM/ISO management** — browse ISOs by storage pool, mount/eject/change ISOs, remove CD-ROM drives, upload new ISOs to Proxmox via SFTP with progress bar, auto-mount after upload option
+- **NIC connect/disconnect** — toggle network interface link state per NIC with inline HTMX update; disconnected NICs shown dimmed with status indicator
+- **VM settings editors** — editable CPU (type, sockets, cores, NUMA), memory (GB input with decimal support, ballooning toggle), firmware/boot (BIOS/UEFI with EFI disk + TPM options, visual boot order builder, start on boot), and description; running VM changes show restart-required warning
+- **Kebab action menu** — VM inventory table actions replaced with state-aware three-dot dropdown menu with icons and labels; Export VM now accessible directly from inventory for both running and stopped VMs
+- **Stuck VM detection** — inventory and detail page detect VMs not responding to stop/shutdown commands after ~60s and show "Not Responding" warning with guidance to investigate in Proxmox console
+- **Auto-reload on status change** — VM detail page automatically reloads when VM status changes externally (stopped from inventory, Proxmox, etc.) so action buttons update without manual refresh
+- **Close Console button** — red X button in console toolbar to close the tab
+- **RAM Used fix** — detail page status banner now shows RAM usage consistently during polling
+
 ### v1.1.2 — 2026-03-24.3
 - **LXC one-liner installer** — deploy ProxMigrate on Proxmox with a single command; auto-detects storage, configurable via flags (ID, hostname, IP, storage, disk, RAM, cores, port)
 
@@ -491,10 +509,22 @@ pct exec <container-id> -- bash -c "cd /opt/proxmigrate-src && git pull origin m
 sudo systemctl restart proxmigrate-gunicorn proxmigrate-celery
 ```
 
-### VM & Container Management Enhancements
-- [ ] VM delete — remove VMs from Proxmox directly from the ProxMigrate UI
-- [ ] VM clone — clone an existing VM with new VMID and name
-- [ ] VM snapshots — create, rollback, and delete snapshots from the VM detail page
+### VM Management (complete)
+- [x] VM delete — type-to-confirm, async task polling, auto-retry on storage errors
+- [x] VM clone — full/linked clone with storage selection and progress tracking
+- [x] VM snapshots — take (with RAM capture), rollback, and delete
+- [x] VM rename — inline edit from detail page
+- [x] Disk management — add, resize, detach, attach, delete disks; full options (SSD, TRIM, IO thread, cache)
+- [x] CD-ROM/ISO — browse, mount, eject, upload with progress bar and auto-mount
+- [x] NIC connect/disconnect — toggle link state per interface
+- [x] VM settings — editable CPU, memory, firmware/boot, description
+- [x] Kebab menu — state-aware dropdown with Export VM in inventory table
+- [x] Stuck VM detection — "Not Responding" warning after timeout
+
+### LXC Management Enhancements
+- [ ] LXC disk management — add, resize, detach disks from container detail page
+- [ ] LXC settings editors — CPU, memory, network configuration
+- [ ] LXC kebab menu — state-aware dropdown with export in container inventory table
 
 ### Phase 3 — Proxmox Monitoring & Alerting
 Turn ProxMigrate into a comprehensive Proxmox observability platform.
@@ -502,7 +532,6 @@ Turn ProxMigrate into a comprehensive Proxmox observability platform.
 - [ ] Cluster-wide dashboard — node CPU, RAM, storage, network I/O at a glance
 - [ ] Historical metrics collection and graphing (RRD or time-series store)
 - [ ] Alerting — threshold-based alerts (CPU, memory, disk) with email and webhook (Slack/Teams) delivery
-- [ ] VM resource modification — CPU/RAM/disk resize from the UI
 - [ ] Multi-cluster support
 
 ---
