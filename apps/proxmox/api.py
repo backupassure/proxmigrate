@@ -310,6 +310,13 @@ class ProxmoxAPI:
         """
         return self._put(f"/nodes/{node}/qemu/{vmid}/config", kwargs)
 
+    def resize_vm_disk(self, node, vmid, disk, size):
+        """Resize a VM disk. Size format: '+10G' (add 10GB) or '50G' (set to 50GB).
+
+        Note: Proxmox only allows increasing disk size, never shrinking.
+        """
+        return self._put(f"/nodes/{node}/qemu/{vmid}/resize", {"disk": disk, "size": size})
+
     # ------------------------------------------------------------------
     # LXC containers
     # ------------------------------------------------------------------

@@ -193,34 +193,16 @@
   {# Disks #}
   <div class="column is-12">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-hdd" style="color:#48c78e;"></i> Disks</div>
+      <div class="card-header"><i class="fas fa-hdd" style="color:var(--success-color, #48c78e);"></i> Disks</div>
       <div style="overflow-x:auto;">
-        {% if vm.disks %}
-        <table class="table is-fullwidth is-narrow" style="margin:0;font-size:0.875rem;">
-          <thead>
-            <tr style="background:#f5f7fa;">
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;padding:0.75rem 1.5rem;">Interface</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Storage</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Size</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Format</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Options</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for disk in vm.disks %}
-            <tr>
-              <td style="font-family:monospace;font-size:0.82rem;padding-left:1.5rem;font-weight:600;">{{ disk.interface }}</td>
-              <td>{{ disk.storage }}</td>
-              <td><strong>{{ disk.size }}</strong></td>
-              <td><span class="format-badge">{{ disk.format|upper }}</span></td>
-              <td style="font-size:0.78rem;color:#7a7a7a;">{{ disk.options|default:"—" }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-          <div style="padding:1.5rem;color:#7a7a7a;font-size:0.875rem;">No disk information available.</div>
-        {% endif %}
+        <div hx-get="{% url 'vm_disks' vmid %}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          <div style="padding:1rem;text-align:center;color:var(--text-muted, #7a7a7a);">
+            <span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:0.5rem;"></span>
+            Loading disks...
+          </div>
+        </div>
       </div>
     </div>
   </div>

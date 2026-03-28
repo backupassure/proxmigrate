@@ -451,6 +451,146 @@ def vm_clone_status(request, vmid):
 
 
 # =========================================================================
+# VM Disk Management
+# =========================================================================
+
+DISK_BUS_CHOICES = [
+    ("scsi", "VirtIO-SCSI"),
+    ("virtio", "VirtIO Block"),
+    ("sata", "SATA"),
+    ("ide", "IDE"),
+]
+
+# Max device index per bus type in Proxmox
+DISK_BUS_MAX = {"scsi": 30, "virtio": 15, "sata": 5, "ide": 3}
+
+
+def _find_next_disk_slot(raw_config, bus):
+    """Find the next available disk slot for a bus type (e.g. scsi1, sata0)."""
+    max_idx = DISK_BUS_MAX.get(bus, 15)
+    used = set()
+    for key in raw_config:
+        if key.startswith(bus) and key[len(bus):].isdigit():
+            used.add(int(key[len(bus):]))
+    for i in range(max_idx + 1):
+        if i not in used:
+            return f"{bus}{i}"
+    return None
+
+
+@login_required
+def vm_disks(request, vmid):
+    """HTMX endpoint: return the disks partial."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    disks = []
+    storage_pools = []
+    disk_error = request.GET.get("error", "")
+    disk_success = request.GET.get("success", "")
+
+    try:
+        api = config.get_api_client()
+        raw_config = api.get_vm_config(node, vmid)
+
+        disk_prefixes = ("scsi", "sata", "ide", "virtio")
+        for key in sorted(raw_config.keys()):
+            for prefix in disk_prefixes:
+                if key.startswith(prefix) and key[len(prefix):].isdigit():
+                    parsed = _parse_disk(key, raw_config[key])
+                    if parsed:
+                        disks.append(parsed)
+                    break
+
+        all_storage = api.get_storage(node)
+        storage_pools = [
+            s for s in all_storage
+            if "images" in (s.get("content", "") or "")
+        ]
+    except ProxmoxAPIError as exc:
+        disk_error = f"Could not load disk info: {exc.message}"
+
+    return render(request, "vmmanager/partials/vm_disks.html", {
+        "vmid": vmid,
+        "disks": disks,
+        "storage_pools": storage_pools,
+        "disk_bus_choices": DISK_BUS_CHOICES,
+        "disk_error": disk_error,
+        "disk_success": disk_success,
+    })
+
+
+@login_required
+@require_POST
+def vm_disk_add(request, vmid):
+    """Add a new disk to a VM."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    storage = request.POST.get("storage", "").strip()
+    size_gb = request.POST.get("size", "").strip()
+    bus = request.POST.get("bus", "scsi").strip()
+
+    if not storage or not size_gb:
+        return redirect(f"/vm/{vmid}/disks/?error=Storage+and+size+are+required.")
+
+    try:
+        size_val = int(size_gb)
+        if size_val < 1:
+            raise ValueError
+    except ValueError:
+        return redirect(f"/vm/{vmid}/disks/?error=Size+must+be+a+positive+number+in+GB.")
+
+    if bus not in dict(DISK_BUS_CHOICES):
+        return redirect(f"/vm/{vmid}/disks/?error=Invalid+bus+type.")
+
+    try:
+        api = config.get_api_client()
+        raw_config = api.get_vm_config(node, vmid)
+        slot = _find_next_disk_slot(raw_config, bus)
+        if not slot:
+            return redirect(f"/vm/{vmid}/disks/?error=No+available+{bus}+slots.")
+
+        # Format: storage:size_in_gb (e.g. "local-lvm:10")
+        disk_spec = f"{storage}:{size_val}"
+        api.update_vm_config(node, vmid, **{slot: disk_spec})
+        logger.info("vm_disk_add vmid=%d: added %s = %s", vmid, slot, disk_spec)
+    except ProxmoxAPIError as exc:
+        logger.error("vm_disk_add vmid=%d: %s", vmid, exc)
+        return redirect(f"/vm/{vmid}/disks/?error=Failed+to+add+disk:+{exc.message}")
+
+    return redirect(f"/vm/{vmid}/disks/?success={slot}+({size_val}G)+added+successfully.")
+
+
+@login_required
+@require_POST
+def vm_disk_resize(request, vmid):
+    """Resize an existing VM disk."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    disk = request.POST.get("disk", "").strip()
+    add_gb = request.POST.get("add_gb", "").strip()
+
+    if not disk or not add_gb:
+        return redirect(f"/vm/{vmid}/disks/?error=Disk+and+size+are+required.")
+
+    try:
+        add_val = int(add_gb)
+        if add_val < 1:
+            raise ValueError
+    except ValueError:
+        return redirect(f"/vm/{vmid}/disks/?error=Size+increase+must+be+a+positive+number+in+GB.")
+
+    try:
+        api = config.get_api_client()
+        api.resize_vm_disk(node, vmid, disk, f"+{add_val}G")
+        logger.info("vm_disk_resize vmid=%d: resized %s by +%dG", vmid, disk, add_val)
+    except ProxmoxAPIError as exc:
+        logger.error("vm_disk_resize vmid=%d %s: %s", vmid, disk, exc)
+        return redirect(f"/vm/{vmid}/disks/?error=Failed+to+resize+{disk}:+{exc.message}")
+
+    return redirect(f"/vm/{vmid}/disks/?success={disk}+increased+by+{add_val}G.")
+
+
+# =========================================================================
 # VM NIC Management
 # =========================================================================
 
