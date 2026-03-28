@@ -238,6 +238,7 @@ def vm_detail(request, vmid):
     node = config.default_node
     error = None
     vm = {"vmid": vmid, "name": str(vmid), "status": "unknown", "disks": [], "networks": []}
+    raw_config = {}
 
     try:
         api = config.get_api_client()
@@ -257,6 +258,27 @@ def vm_detail(request, vmid):
         error = f"Could not load VM {vmid}: {exc.message}"
         logger.error("vm_detail vmid=%d: %s", vmid, exc)
 
+    # Fetch storage pools for UEFI disk options and build boot device list
+    storage_pools = []
+    boot_devices = []
+    try:
+        if not error:
+            api = config.get_api_client()
+            all_storage = api.get_storage(node)
+            storage_pools = [
+                s for s in all_storage
+                if "images" in (s.get("content", "") or "")
+            ]
+            for key in sorted(raw_config.keys()):
+                if any(key.startswith(p) and key[len(p):].isdigit()
+                       for p in ("scsi", "sata", "ide", "virtio")):
+                    if raw_config[key] != "none":
+                        boot_devices.append(key)
+                elif key.startswith("net") and key[3:].isdigit():
+                    boot_devices.append(key)
+    except Exception:
+        pass
+
     return render(
         request,
         "vmmanager/detail.html",
@@ -267,6 +289,8 @@ def vm_detail(request, vmid):
             "help_slug": "vm-detail",
             "cpu_type_choices": CPU_TYPE_CHOICES,
             "bios_choices": BIOS_CHOICES,
+            "storage_pools": storage_pools,
+            "boot_devices": boot_devices,
         },
     )
 
@@ -531,11 +555,21 @@ def vm_update_settings(request, vmid):
         bios = request.POST.get("bios", "").strip()
         onboot = request.POST.get("onboot")
         boot = request.POST.get("boot", "").strip()
+        efi_storage = request.POST.get("efi_storage", "").strip()
+        add_tpm = request.POST.get("tpm") == "1"
+        tpm_storage = request.POST.get("tpm_storage", "").strip()
         if bios:
             kwargs["bios"] = bios
         kwargs["onboot"] = 1 if onboot == "1" else 0
         if boot:
             kwargs["boot"] = boot
+        # Add EFI disk if switching to OVMF and storage specified
+        if bios == "ovmf" and efi_storage:
+            kwargs["efidisk0"] = f"{efi_storage}:1,efitype=4m,pre-enrolled-keys=1"
+            kwargs["machine"] = "q35"
+        # Add TPM if requested
+        if add_tpm and tpm_storage:
+            kwargs["tpmstate0"] = f"{tpm_storage}:1,version=v2.0"
 
     elif section == "general":
         description = request.POST.get("description", "")
