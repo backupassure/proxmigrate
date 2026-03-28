@@ -52,7 +52,9 @@ def _parse_disk(interface, raw_value):
       local-lvm:vm-100-disk-0,size=32G,ssd=1,discard=on
       none
     """
-    if not raw_value or raw_value == "none":
+    if not raw_value:
+        return None
+    if raw_value == "none":
         return None
     parts = raw_value.split(",")
     location = parts[0]  # e.g. "local-lvm:vm-100-disk-0"
@@ -73,14 +75,19 @@ def _parse_disk(interface, raw_value):
     size = options.get("size", "—")
     extra = ", ".join(f"{k}={v}" for k, v in options.items() if k != "size")
 
+    is_cdrom = "media=cdrom" in raw_value
+    is_empty_cdrom = is_cdrom and (location == "none" or not volume)
+
     return {
         "interface": interface,
         "storage": storage,
         "volume": volume,
-        "size": size,
-        "format": fmt,
+        "size": size if not is_cdrom else "—",
+        "format": "ISO" if is_cdrom else fmt,
         "options": extra or "—",
         "is_unused": interface.startswith("unused"),
+        "is_cdrom": is_cdrom,
+        "is_empty_cdrom": is_empty_cdrom,
     }
 
 
@@ -802,6 +809,62 @@ def vm_disk_resize(request, vmid):
         return redirect(f"/vm/{vmid}/disks/?error=Failed+to+resize+{disk}:+{exc.message}")
 
     return redirect(f"/vm/{vmid}/disks/?success={disk}+increased+by+{add_val}G.")
+
+
+@login_required
+def vm_iso_list(request, vmid):
+    """HTMX endpoint: return available ISOs for CD-ROM selection."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    iso_pools = []
+
+    try:
+        api = config.get_api_client()
+        all_storage = api.get_storage(node)
+        for s in all_storage:
+            if "iso" in (s.get("content", "") or ""):
+                isos = api.get_storage_content(node, s["storage"], "iso")
+                for iso in isos:
+                    iso["storage_name"] = s["storage"]
+                    # volid is like "local:iso/ubuntu-22.04.iso"
+                    iso["filename"] = iso.get("volid", "").split("/", 1)[-1] if "/" in iso.get("volid", "") else iso.get("volid", "")
+                iso_pools.extend(isos)
+        iso_pools.sort(key=lambda i: i.get("volid", "").lower())
+    except ProxmoxAPIError as exc:
+        return render(request, "vmmanager/partials/vm_iso_list.html", {
+            "vmid": vmid, "isos": [], "iso_error": exc.message,
+        })
+
+    return render(request, "vmmanager/partials/vm_iso_list.html", {
+        "vmid": vmid,
+        "isos": iso_pools,
+    })
+
+
+@login_required
+@require_POST
+def vm_cdrom_set(request, vmid):
+    """Mount an ISO or eject the CD-ROM."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    action = request.POST.get("action", "")
+    interface = request.POST.get("interface", "ide2").strip()
+    volid = request.POST.get("volid", "").strip()
+
+    try:
+        api = config.get_api_client()
+        if action == "eject":
+            api.update_vm_config(node, vmid, **{interface: "none,media=cdrom"})
+            logger.info("vm_cdrom_set vmid=%d: ejected %s", vmid, interface)
+        elif action == "mount" and volid:
+            api.update_vm_config(node, vmid, **{interface: f"{volid},media=cdrom"})
+            logger.info("vm_cdrom_set vmid=%d: mounted %s on %s", vmid, volid, interface)
+        time.sleep(0.5)
+    except ProxmoxAPIError as exc:
+        logger.error("vm_cdrom_set vmid=%d: %s", vmid, exc)
+        return redirect(f"/vm/{vmid}/disks/?error=CD-ROM+operation+failed:+{exc.message}")
+
+    return redirect(f"/vm/{vmid}/disks/")
 
 
 @login_required

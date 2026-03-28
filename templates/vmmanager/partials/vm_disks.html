@@ -35,7 +35,33 @@
         <td><span class="format-badge">{{ disk.format|upper }}</span></td>
         <td style="font-size:0.78rem;color:var(--text-muted, #7a7a7a);">{{ disk.options|default:"—" }}</td>
         <td style="text-align:right;padding-right:1.5rem;white-space:nowrap;">
-          {% if disk.is_unused %}
+          {% if disk.is_cdrom %}
+            {# CD-ROM drive: mount ISO or eject #}
+            {% if disk.is_empty_cdrom %}
+              <button class="button is-small is-info is-light" style="font-weight:600;"
+                      onclick="openCdromModal('{{ disk.interface }}')"
+                      title="Mount ISO">
+                <span class="icon is-small"><i class="fas fa-compact-disc"></i></span>
+                <span>Mount ISO</span>
+              </button>
+            {% else %}
+              <button class="button is-small is-info is-light" style="font-weight:600;"
+                      onclick="openCdromModal('{{ disk.interface }}')"
+                      title="Change ISO">
+                <span class="icon is-small"><i class="fas fa-exchange-alt"></i></span>
+                <span>Change</span>
+              </button>
+              <button class="button is-small is-warning is-light" style="font-weight:600;"
+                      hx-post="{% url 'vm_cdrom_set' vmid %}"
+                      hx-target="#disk-table"
+                      hx-swap="outerHTML"
+                      hx-vals='{"action": "eject", "interface": "{{ disk.interface }}"}'
+                      hx-confirm="Eject CD-ROM from {{ disk.interface }}?">
+                <span class="icon is-small"><i class="fas fa-eject"></i></span>
+                <span>Eject</span>
+              </button>
+            {% endif %}
+          {% elif disk.is_unused %}
             {# Unused/detached disk: offer attach (with options) and delete #}
             <button class="button is-small is-success is-light" style="font-weight:600;"
                     onclick="openAttachModal('{{ disk.interface }}', '{{ disk.volume }}')"
@@ -272,6 +298,57 @@
     </div>
   </div>
 
+  {# -- CD-ROM mount modal -- #}
+  <div class="modal" id="cdrom-modal">
+    <div class="modal-background" onclick="closeCdromModal()"></div>
+    <div class="modal-card" style="max-width:600px;border-radius:12px;">
+      <header class="modal-card-head" style="background:var(--info-color, #3273dc);border-radius:12px 12px 0 0;">
+        <p class="modal-card-title" style="color:#fff;font-size:1rem;font-weight:600;">
+          <i class="fas fa-compact-disc"></i>&nbsp; Mount ISO
+        </p>
+        <button class="delete" onclick="closeCdromModal()"></button>
+      </header>
+      <form method="post" action="{% url 'vm_cdrom_set' vmid %}"
+            hx-post="{% url 'vm_cdrom_set' vmid %}"
+            hx-target="#disk-table"
+            hx-swap="outerHTML"
+            id="cdrom-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="mount">
+        <input type="hidden" name="interface" id="cdrom-interface" value="ide2">
+        <input type="hidden" name="volid" id="cdrom-volid" value="">
+        <section class="modal-card-body">
+          <p style="margin-bottom:0.75rem;font-size:0.9rem;">
+            Select an ISO to mount on <strong id="cdrom-interface-label">ide2</strong>:
+          </p>
+          <div id="cdrom-selected" style="display:none;margin-bottom:1rem;padding:0.75rem 1rem;background:var(--bg-card, #f0fdf4);border:1px solid var(--success-color, #48c78e);border-radius:6px;">
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <i class="fas fa-check-circle" style="color:var(--success-color, #48c78e);"></i>
+              <span id="cdrom-selected-name" style="font-family:monospace;font-size:0.82rem;font-weight:600;flex:1;"></span>
+              <button type="button" class="button is-small is-light" onclick="clearIsoSelection()">Change</button>
+            </div>
+          </div>
+          <div id="cdrom-browser"
+               hx-get="{% url 'vm_iso_list' vmid %}"
+               hx-trigger="load"
+               hx-swap="innerHTML">
+            <div style="padding:1rem;text-align:center;color:var(--text-muted, #7a7a7a);">
+              <span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:0.5rem;"></span>
+              Loading ISOs...
+            </div>
+          </div>
+        </section>
+        <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
+          <button type="button" class="button is-light" onclick="closeCdromModal()">Cancel</button>
+          <button type="submit" class="button is-primary" style="font-weight:600;" id="cdrom-mount-btn" disabled>
+            <span class="icon is-small"><i class="fas fa-compact-disc"></i></span>
+            <span>Mount</span>
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -322,4 +399,34 @@
 
   setupIoThreadToggle('add-disk-bus', 'iothread-label');
   setupIoThreadToggle('attach-disk-bus', 'attach-iothread-label');
+
+  // CD-ROM modal
+  function openCdromModal(iface) {
+    document.getElementById('cdrom-interface').value = iface;
+    document.getElementById('cdrom-interface-label').textContent = iface;
+    document.getElementById('cdrom-volid').value = '';
+    document.getElementById('cdrom-mount-btn').disabled = true;
+    document.getElementById('cdrom-selected').style.display = 'none';
+    document.getElementById('cdrom-browser').style.display = '';
+    document.getElementById('cdrom-modal').classList.add('is-active');
+  }
+
+  function closeCdromModal() {
+    document.getElementById('cdrom-modal').classList.remove('is-active');
+  }
+
+  function selectIso(volid, filename) {
+    document.getElementById('cdrom-volid').value = volid;
+    document.getElementById('cdrom-selected-name').textContent = filename;
+    document.getElementById('cdrom-selected').style.display = '';
+    document.getElementById('cdrom-browser').style.display = 'none';
+    document.getElementById('cdrom-mount-btn').disabled = false;
+  }
+
+  function clearIsoSelection() {
+    document.getElementById('cdrom-volid').value = '';
+    document.getElementById('cdrom-selected').style.display = 'none';
+    document.getElementById('cdrom-browser').style.display = '';
+    document.getElementById('cdrom-mount-btn').disabled = true;
+  }
 </script>

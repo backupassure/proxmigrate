@@ -1,0 +1,41 @@
+{# ISO browser partial — loaded into the CD-ROM mount modal via HTMX #}
+<div id="iso-browser">
+  {% if iso_error %}
+    <div class="notification is-warning is-light" style="padding:0.5rem 0.75rem;font-size:0.82rem;">
+      <i class="fas fa-exclamation-triangle"></i> {{ iso_error }}
+    </div>
+  {% elif isos %}
+    <div style="max-height:300px;overflow-y:auto;border:1px solid var(--border-color, #e8ecf0);border-radius:6px;">
+      <table class="table is-fullwidth is-hoverable is-narrow" style="margin:0;font-size:0.82rem;">
+        <thead>
+          <tr>
+            <th style="font-size:0.72rem;color:var(--text-muted, #7a7a7a);font-weight:600;padding:0.5rem 0.75rem;position:sticky;top:0;background:var(--bg-card, #fff);">ISO File</th>
+            <th style="font-size:0.72rem;color:var(--text-muted, #7a7a7a);font-weight:600;position:sticky;top:0;background:var(--bg-card, #fff);">Storage</th>
+            <th style="font-size:0.72rem;color:var(--text-muted, #7a7a7a);font-weight:600;position:sticky;top:0;background:var(--bg-card, #fff);">Size</th>
+            <th style="font-size:0.72rem;color:var(--text-muted, #7a7a7a);font-weight:600;text-align:right;padding-right:0.75rem;position:sticky;top:0;background:var(--bg-card, #fff);"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for iso in isos %}
+          <tr>
+            <td style="padding:0.5rem 0.75rem;font-family:monospace;font-size:0.78rem;word-break:break-all;">{{ iso.filename }}</td>
+            <td>{{ iso.storage_name }}</td>
+            <td style="white-space:nowrap;">{% if iso.size %}{{ iso.size|filesizeformat }}{% else %}—{% endif %}</td>
+            <td style="text-align:right;padding-right:0.75rem;">
+              <button type="button" class="button is-small is-success is-light" style="font-weight:600;"
+                      onclick="selectIso('{{ iso.volid|escapejs }}', '{{ iso.filename|escapejs }}')">
+                <i class="fas fa-check"></i> Select
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="padding:1.5rem;text-align:center;color:var(--text-muted, #7a7a7a);font-size:0.85rem;">
+      <i class="fas fa-compact-disc" style="margin-right:0.4rem;opacity:0.5;"></i>
+      No ISO files found. Upload ISOs to a storage pool with ISO content type in Proxmox.
+    </div>
+  {% endif %}
+</div>

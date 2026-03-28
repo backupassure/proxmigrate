@@ -310,6 +310,16 @@ class ProxmoxAPI:
         """
         return self._put(f"/nodes/{node}/qemu/{vmid}/config", kwargs)
 
+    def get_storage_content(self, node, storage, content_type="iso"):
+        """Return list of content items from a storage pool.
+
+        content_type: 'iso', 'images', 'vztmpl', 'backup', etc.
+        """
+        result = self._get(f"/nodes/{node}/storage/{storage}/content?content={content_type}")
+        if not isinstance(result, list):
+            return []
+        return result
+
     def resize_vm_disk(self, node, vmid, disk, size):
         """Resize a VM disk. Size format: '+10G' (add 10GB) or '50G' (set to 50GB).
 
