@@ -192,6 +192,12 @@ def _build_vm(raw_config, vm_status, node, vmid):
         # Display / agent
         "vga": raw_config.get("vga", ""),
         "agent": raw_config.get("agent", ""),
+        # Raw values for edit forms
+        "raw_cpu": raw_config.get("cpu", "host"),
+        "raw_bios": raw_config.get("bios", "seabios"),
+        "raw_ostype": raw_config.get("ostype", ""),
+        "raw_memory": raw_config.get("memory", 2048),
+        "raw_balloon": raw_config.get("balloon", 0),
     }
 
 
@@ -259,6 +265,8 @@ def vm_detail(request, vmid):
             "vm": vm,
             "error": error,
             "help_slug": "vm-detail",
+            "cpu_type_choices": CPU_TYPE_CHOICES,
+            "bios_choices": BIOS_CHOICES,
         },
     )
 
@@ -449,6 +457,113 @@ def vm_clone_status(request, vmid):
             })
 
     return JsonResponse({"status": "running"})
+
+
+# =========================================================================
+# VM Settings
+# =========================================================================
+
+CPU_TYPE_CHOICES = [
+    ("host", "host"),
+    ("max", "max"),
+    ("kvm64", "kvm64"),
+    ("x86-64-v2", "x86-64-v2"),
+    ("x86-64-v2-AES", "x86-64-v2-AES"),
+    ("x86-64-v3", "x86-64-v3"),
+    ("x86-64-v4", "x86-64-v4"),
+    ("qemu64", "qemu64"),
+    ("Nehalem", "Nehalem"),
+    ("Westmere", "Westmere"),
+    ("SandyBridge", "SandyBridge"),
+    ("IvyBridge", "IvyBridge"),
+    ("Haswell", "Haswell"),
+    ("Broadwell", "Broadwell"),
+    ("Skylake-Client", "Skylake-Client"),
+    ("Skylake-Server", "Skylake-Server"),
+    ("Cascadelake-Server", "Cascadelake-Server"),
+    ("Icelake-Server", "Icelake-Server"),
+    ("EPYC", "EPYC"),
+    ("EPYC-v2", "EPYC-v2"),
+    ("EPYC-v3", "EPYC-v3"),
+    ("EPYC-v4", "EPYC-v4"),
+    ("EPYC-Rome", "EPYC-Rome"),
+    ("EPYC-Milan", "EPYC-Milan"),
+]
+
+BIOS_CHOICES = [
+    ("seabios", "SeaBIOS (legacy)"),
+    ("ovmf", "UEFI (OVMF)"),
+]
+
+
+@login_required
+@require_POST
+def vm_update_settings(request, vmid):
+    """Update VM configuration settings. Handles CPU, memory, firmware, and general."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    section = request.POST.get("section", "")
+
+    kwargs = {}
+
+    if section == "cpu":
+        cpu = request.POST.get("cpu", "").strip()
+        sockets = request.POST.get("sockets", "").strip()
+        cores = request.POST.get("cores", "").strip()
+        numa = request.POST.get("numa")
+        if cpu:
+            kwargs["cpu"] = cpu
+        if sockets:
+            kwargs["sockets"] = int(sockets)
+        if cores:
+            kwargs["cores"] = int(cores)
+        kwargs["numa"] = 1 if numa == "1" else 0
+
+    elif section == "memory":
+        memory = request.POST.get("memory", "").strip()
+        balloon = request.POST.get("balloon", "").strip()
+        if memory:
+            kwargs["memory"] = int(memory)
+        if balloon is not None:
+            kwargs["balloon"] = int(balloon) if balloon else 0
+
+    elif section == "firmware":
+        bios = request.POST.get("bios", "").strip()
+        onboot = request.POST.get("onboot")
+        boot = request.POST.get("boot", "").strip()
+        if bios:
+            kwargs["bios"] = bios
+        kwargs["onboot"] = 1 if onboot == "1" else 0
+        if boot:
+            kwargs["boot"] = boot
+
+    elif section == "general":
+        description = request.POST.get("description", "")
+        kwargs["description"] = description
+
+    else:
+        messages.error(request, "Unknown settings section.")
+        return redirect("vm_detail", vmid=vmid)
+
+    if not kwargs:
+        messages.error(request, "No changes provided.")
+        return redirect("vm_detail", vmid=vmid)
+
+    try:
+        api = config.get_api_client()
+        api.update_vm_config(node, vmid, **kwargs)
+
+        # Check if VM is running — changes may need restart
+        status = api.get_vm_status(node, vmid)
+        if status.get("status") == "running" and section in ("cpu", "memory", "firmware"):
+            messages.warning(request, f"{section.title()} settings updated. A restart is required for changes to take effect.")
+        else:
+            messages.success(request, f"{section.title()} settings updated.")
+    except ProxmoxAPIError as exc:
+        logger.error("vm_update_settings vmid=%d section=%s: %s", vmid, section, exc)
+        messages.error(request, f"Failed to update settings: {exc.message}")
+
+    return redirect("vm_detail", vmid=vmid)
 
 
 # =========================================================================

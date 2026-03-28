@@ -88,14 +88,13 @@
   {# General #}
   <div class="column is-6">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-info-circle" style="color:#3273dc;"></i> General</div>
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <span><i class="fas fa-info-circle" style="color:#3273dc;"></i> General</span>
+        <button class="button is-small is-white" onclick="openSettingsModal('general')" title="Edit description">
+          <i class="fas fa-pencil-alt" style="font-size:0.7rem;color:var(--text-muted, #7a7a7a);"></i>
+        </button>
+      </div>
       <div class="card-body" style="padding:1rem 1.5rem;">
-        {% for label, value in general_info %}
-        <div class="cert-detail-row">
-          <div class="cert-detail-label">{{ label }}</div>
-          <div class="cert-detail-value" style="font-family:inherit;font-size:0.875rem;">{{ value|default:"—" }}</div>
-        </div>
-        {% empty %}
         <div class="cert-detail-row"><div class="cert-detail-label">VMID</div><div class="cert-detail-value">{{ vm.vmid }}</div></div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">Name</div>
@@ -122,7 +121,6 @@
         </div>
         <div class="cert-detail-row"><div class="cert-detail-label">OS Type</div><div class="cert-detail-value">{{ vm.ostype|default:"—" }}</div></div>
         <div class="cert-detail-row"><div class="cert-detail-label">Description</div><div class="cert-detail-value">{{ vm.description|default:"—" }}</div></div>
-        {% endfor %}
       </div>
     </div>
   </div>
@@ -130,7 +128,12 @@
   {# Firmware #}
   <div class="column is-6">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-microchip" style="color:#7c3aed;"></i> Firmware &amp; Boot</div>
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <span><i class="fas fa-microchip" style="color:#7c3aed;"></i> Firmware &amp; Boot</span>
+        <button class="button is-small is-white" onclick="openSettingsModal('firmware')" title="Edit firmware settings">
+          <i class="fas fa-pencil-alt" style="font-size:0.7rem;color:var(--text-muted, #7a7a7a);"></i>
+        </button>
+      </div>
       <div class="card-body" style="padding:1rem 1.5rem;">
         <div class="cert-detail-row">
           <div class="cert-detail-label">BIOS</div>
@@ -139,19 +142,19 @@
         <div class="cert-detail-row">
           <div class="cert-detail-label">EFI Disk</div>
           <div class="cert-detail-value">
-            {% if vm.efidisk0 %}<span style="color:#48c78e;">Yes</span>{% else %}<span style="color:#b5b5b5;">No</span>{% endif %}
+            {% if vm.efidisk0 %}<span style="color:var(--success-color, #48c78e);">Yes</span>{% else %}<span style="color:var(--text-muted, #b5b5b5);">No</span>{% endif %}
           </div>
         </div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">TPM</div>
           <div class="cert-detail-value">
-            {% if vm.tpmstate0 %}<span style="color:#48c78e;">TPM 2.0</span>{% else %}<span style="color:#b5b5b5;">None</span>{% endif %}
+            {% if vm.tpmstate0 %}<span style="color:var(--success-color, #48c78e);">TPM 2.0</span>{% else %}<span style="color:var(--text-muted, #b5b5b5);">None</span>{% endif %}
           </div>
         </div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">Start on Boot</div>
           <div class="cert-detail-value">
-            {% if vm.onboot %}<span style="color:#48c78e;">Yes</span>{% else %}No{% endif %}
+            {% if vm.onboot %}<span style="color:var(--success-color, #48c78e);">Yes</span>{% else %}No{% endif %}
           </div>
         </div>
         <div class="cert-detail-row">
@@ -165,7 +168,12 @@
   {# CPU #}
   <div class="column is-6">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-microchip" style="color:#48c78e;"></i> CPU</div>
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <span><i class="fas fa-microchip" style="color:var(--success-color, #48c78e);"></i> CPU</span>
+        <button class="button is-small is-white" onclick="openSettingsModal('cpu')" title="Edit CPU settings">
+          <i class="fas fa-pencil-alt" style="font-size:0.7rem;color:var(--text-muted, #7a7a7a);"></i>
+        </button>
+      </div>
       <div class="card-body" style="padding:1rem 1.5rem;">
         <div class="cert-detail-row">
           <div class="cert-detail-label">CPU Type</div>
@@ -194,7 +202,12 @@
   {# Memory #}
   <div class="column is-6">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-memory" style="color:#f59e0b;"></i> Memory</div>
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <span><i class="fas fa-memory" style="color:#f59e0b;"></i> Memory</span>
+        <button class="button is-small is-white" onclick="openSettingsModal('memory')" title="Edit memory settings">
+          <i class="fas fa-pencil-alt" style="font-size:0.7rem;color:var(--text-muted, #7a7a7a);"></i>
+        </button>
+      </div>
       <div class="card-body" style="padding:1rem 1.5rem;">
         <div class="cert-detail-row">
           <div class="cert-detail-label">Allocated RAM</div>
@@ -276,6 +289,190 @@
     </div>
   </div>
 
+</div>
+
+{# ===== Settings Modals ===== #}
+
+{# -- General (description) -- #}
+<div class="modal" id="settings-modal-general">
+  <div class="modal-background" onclick="closeSettingsModal('general')"></div>
+  <div class="modal-card" style="max-width:500px;border-radius:12px;">
+    <header class="modal-card-head" style="background:var(--link-color, #3273dc);border-radius:12px 12px 0 0;">
+      <p class="modal-card-title" style="color:#fff;font-size:1rem;font-weight:600;"><i class="fas fa-info-circle"></i>&nbsp; Edit Description</p>
+      <button class="delete" onclick="closeSettingsModal('general')"></button>
+    </header>
+    <form method="post" action="{% url 'vm_update_settings' vmid %}">
+      {% csrf_token %}
+      <input type="hidden" name="section" value="general">
+      <section class="modal-card-body">
+        <div class="field">
+          <label class="label" style="font-size:0.85rem;">Description</label>
+          <div class="control">
+            <textarea class="textarea" name="description" rows="4" placeholder="VM description...">{{ vm.description }}</textarea>
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
+        <button type="button" class="button is-light" onclick="closeSettingsModal('general')">Cancel</button>
+        <button type="submit" class="button is-primary" style="font-weight:600;">Save</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+{# -- CPU -- #}
+<div class="modal" id="settings-modal-cpu">
+  <div class="modal-background" onclick="closeSettingsModal('cpu')"></div>
+  <div class="modal-card" style="max-width:500px;border-radius:12px;">
+    <header class="modal-card-head" style="background:var(--success-color, #48c78e);border-radius:12px 12px 0 0;">
+      <p class="modal-card-title" style="color:#fff;font-size:1rem;font-weight:600;"><i class="fas fa-microchip"></i>&nbsp; CPU Settings</p>
+      <button class="delete" onclick="closeSettingsModal('cpu')"></button>
+    </header>
+    <form method="post" action="{% url 'vm_update_settings' vmid %}">
+      {% csrf_token %}
+      <input type="hidden" name="section" value="cpu">
+      <section class="modal-card-body">
+        {% if vm.status == 'running' %}
+        <div class="notification is-warning is-light" style="padding:0.5rem 0.75rem;font-size:0.82rem;margin-bottom:1rem;">
+          <i class="fas fa-exclamation-triangle"></i> VM is running. Changes take effect after restart.
+        </div>
+        {% endif %}
+        <div class="field">
+          <label class="label" style="font-size:0.85rem;">CPU Type</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select name="cpu">
+                {% for val, label in cpu_type_choices %}
+                  <option value="{{ val }}"{% if val == vm.raw_cpu %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="columns" style="margin-bottom:0;">
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.85rem;">Sockets</label>
+              <div class="control">
+                <input class="input" type="number" name="sockets" value="{{ vm.sockets }}" min="1" max="4">
+              </div>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field">
+              <label class="label" style="font-size:0.85rem;">Cores per Socket</label>
+              <div class="control">
+                <input class="input" type="number" name="cores" value="{{ vm.cores }}" min="1" max="128">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="checkbox" style="font-size:0.85rem;">
+            <input type="checkbox" name="numa" value="1"{% if vm.numa %} checked{% endif %}>
+            Enable NUMA
+          </label>
+          <p class="help">Match CPU topology to physical NUMA nodes for better performance on multi-socket systems.</p>
+        </div>
+      </section>
+      <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
+        <button type="button" class="button is-light" onclick="closeSettingsModal('cpu')">Cancel</button>
+        <button type="submit" class="button is-primary" style="font-weight:600;">Save</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+{# -- Memory -- #}
+<div class="modal" id="settings-modal-memory">
+  <div class="modal-background" onclick="closeSettingsModal('memory')"></div>
+  <div class="modal-card" style="max-width:500px;border-radius:12px;">
+    <header class="modal-card-head" style="background:#f59e0b;border-radius:12px 12px 0 0;">
+      <p class="modal-card-title" style="color:#fff;font-size:1rem;font-weight:600;"><i class="fas fa-memory"></i>&nbsp; Memory Settings</p>
+      <button class="delete" onclick="closeSettingsModal('memory')"></button>
+    </header>
+    <form method="post" action="{% url 'vm_update_settings' vmid %}">
+      {% csrf_token %}
+      <input type="hidden" name="section" value="memory">
+      <section class="modal-card-body">
+        {% if vm.status == 'running' %}
+        <div class="notification is-warning is-light" style="padding:0.5rem 0.75rem;font-size:0.82rem;margin-bottom:1rem;">
+          <i class="fas fa-exclamation-triangle"></i> VM is running. Changes take effect after restart.
+        </div>
+        {% endif %}
+        <div class="field">
+          <label class="label" style="font-size:0.85rem;">Allocated RAM (MB)</label>
+          <div class="control">
+            <input class="input" type="number" name="memory" value="{{ vm.raw_memory }}" min="64" step="128">
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" style="font-size:0.85rem;">Balloon Minimum (MB)</label>
+          <div class="control">
+            <input class="input" type="number" name="balloon" value="{{ vm.raw_balloon }}" min="0" step="128" id="balloon-input">
+          </div>
+          <p class="help">Set to 0 to disable ballooning. When enabled, Proxmox can reclaim unused memory from the guest.</p>
+        </div>
+      </section>
+      <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
+        <button type="button" class="button is-light" onclick="closeSettingsModal('memory')">Cancel</button>
+        <button type="submit" class="button is-primary" style="font-weight:600;">Save</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+{# -- Firmware & Boot -- #}
+<div class="modal" id="settings-modal-firmware">
+  <div class="modal-background" onclick="closeSettingsModal('firmware')"></div>
+  <div class="modal-card" style="max-width:500px;border-radius:12px;">
+    <header class="modal-card-head" style="background:#7c3aed;border-radius:12px 12px 0 0;">
+      <p class="modal-card-title" style="color:#fff;font-size:1rem;font-weight:600;"><i class="fas fa-microchip"></i>&nbsp; Firmware &amp; Boot Settings</p>
+      <button class="delete" onclick="closeSettingsModal('firmware')"></button>
+    </header>
+    <form method="post" action="{% url 'vm_update_settings' vmid %}">
+      {% csrf_token %}
+      <input type="hidden" name="section" value="firmware">
+      <section class="modal-card-body">
+        {% if vm.status == 'running' %}
+        <div class="notification is-warning is-light" style="padding:0.5rem 0.75rem;font-size:0.82rem;margin-bottom:1rem;">
+          <i class="fas fa-exclamation-triangle"></i> VM is running. Changes take effect after restart.
+        </div>
+        {% endif %}
+        <div class="field">
+          <label class="label" style="font-size:0.85rem;">BIOS</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select name="bios">
+                {% for val, label in bios_choices %}
+                  <option value="{{ val }}"{% if val == vm.raw_bios %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <p class="help">Changing BIOS type on an existing VM may prevent it from booting. Use with caution.</p>
+        </div>
+        <div class="field">
+          <label class="label" style="font-size:0.85rem;">Boot Order</label>
+          <div class="control">
+            <input class="input" type="text" name="boot" value="{{ vm.boot }}" placeholder="order=scsi0;net0">
+          </div>
+          <p class="help">Proxmox boot order format, e.g. <code>order=scsi0;net0;ide2</code></p>
+        </div>
+        <div class="field">
+          <label class="checkbox" style="font-size:0.85rem;">
+            <input type="checkbox" name="onboot" value="1"{% if vm.onboot %} checked{% endif %}>
+            Start at boot
+          </label>
+          <p class="help">Automatically start this VM when the Proxmox host boots.</p>
+        </div>
+      </section>
+      <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
+        <button type="button" class="button is-light" onclick="closeSettingsModal('firmware')">Cancel</button>
+        <button type="submit" class="button is-primary" style="font-weight:600;">Save</button>
+      </footer>
+    </form>
+  </div>
 </div>
 
 {# ===== Delete VM Confirmation Modal ===== #}
@@ -365,6 +562,19 @@
     var cancelBtn = document.querySelector('#delete-vm-modal .modal-card-foot .button.is-light');
     if (cancelBtn) cancelBtn.disabled = true;
   }
+
+  // Settings modals
+  function openSettingsModal(section) {
+    document.getElementById('settings-modal-' + section).classList.add('is-active');
+  }
+  function closeSettingsModal(section) {
+    document.getElementById('settings-modal-' + section).classList.remove('is-active');
+  }
+  document.addEventListener('keydown', function(evt) {
+    if (evt.key === 'Escape') {
+      ['general', 'cpu', 'memory', 'firmware'].forEach(function(s) { closeSettingsModal(s); });
+    }
+  });
 
   // Inline rename
   function startRename() {
