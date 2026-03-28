@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Clone {{ vm_name }} — ProxMigrate{% endblock %}
+{% block page_title %}Clone VM{% endblock %}
+{% block help_slug %}vm-clone{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'vm_detail' vmid %}" class="button is-light is-small">
+    <span class="icon is-small"><i class="fas fa-arrow-left"></i></span>
+    <span>Back to VM</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="columns">
+  <div class="column is-7">
+
+    {% if error %}
+      <div class="notification is-warning is-light" style="margin-bottom:1.25rem;">
+        <i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i> {{ error }}
+      </div>
+    {% endif %}
+
+    {# -- Source VM summary -- #}
+    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
+      <div class="card-body" style="padding:1.25rem 1.5rem;">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <div style="width:44px;height:44px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-server" style="color:var(--link-color, #3273dc);font-size:1.1rem;"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;color:var(--text-main, #1a1a2e);font-size:1rem;">{{ vm_name }}</div>
+            <div style="font-size:0.82rem;color:var(--text-muted, #7a7a7a);margin-top:0.2rem;">
+              VMID {{ vmid }}
+              &nbsp;&bull;&nbsp;
+              {% if vm_status == 'running' %}
+                <span style="color:var(--success-color, #48c78e);font-weight:600;"><i class="fas fa-circle" style="font-size:0.5rem;vertical-align:middle;margin-right:0.25rem;"></i>Running</span>
+              {% else %}
+                <span style="color:var(--text-muted, #7a7a7a);"><i class="fas fa-circle" style="font-size:0.5rem;vertical-align:middle;margin-right:0.25rem;"></i>Stopped</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# -- Clone form -- #}
+    <form method="post" action="{% url 'vm_clone' vmid %}" id="clone-form" onsubmit="startCloneSpinner()">
+      {% csrf_token %}
+
+      {# ---- General ---- #}
+      <div class="form-section">
+        <div class="form-section-header">
+          <div style="display:flex;align-items:center;gap:0.6rem;">
+            <div class="section-icon" style="background:#eff6ff;color:var(--link-color, #3273dc);"><i class="fas fa-tag"></i></div>
+            General
+          </div>
+          <i class="fas fa-chevron-up section-toggle-icon" style="color:var(--text-muted, #b5b5b5);font-size:0.8rem;"></i>
+        </div>
+        <div class="form-section-body is-open">
+          <div class="columns">
+            <div class="column">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">New VM Name <span style="color:var(--danger-color, #f14668);">*</span></label>
+                <div class="control">
+                  <input class="input" type="text" name="name" value="{{ vm_name }}-clone" placeholder="{{ vm_name }}-clone" autofocus>
+                </div>
+                <p class="field-hint">Name for the cloned VM.</p>
+              </div>
+            </div>
+            <div class="column is-3">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">VMID</label>
+                <div class="control">
+                  <input class="input" type="number" name="vmid" value="" placeholder="{{ suggested_vmid }}"
+                         hx-get="/inventory/api/vmid/check/"
+                         hx-trigger="keyup changed delay:500ms"
+                         hx-target="#vmid-feedback"
+                         hx-include="[name=vmid]">
+                </div>
+                <p class="field-hint">Leave blank to auto-assign.</p>
+                <div id="vmid-feedback" style="margin-top:0.25rem;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ---- Target ---- #}
+      <div class="form-section">
+        <div class="form-section-header">
+          <div style="display:flex;align-items:center;gap:0.6rem;">
+            <div class="section-icon" style="background:#f0fdf4;color:#257953;"><i class="fas fa-server"></i></div>
+            Target
+          </div>
+          <i class="fas fa-chevron-up section-toggle-icon" style="color:var(--text-muted, #b5b5b5);font-size:0.8rem;"></i>
+        </div>
+        <div class="form-section-body is-open">
+          <div class="columns">
+            <div class="column">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">Target Storage</label>
+                <div class="control">
+                  <div class="select is-fullwidth">
+                    <select name="target_storage">
+                      <option value="">Same as source</option>
+                      {% for s in storage_pools %}
+                        <option value="{{ s.storage }}">{{ s.storage }} ({{ s.type }}{% if s.avail %}, {{ s.avail|filesizeformat }} free{% endif %})</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <p class="field-hint">Leave as "Same as source" to use the source VM's storage pool.</p>
+              </div>
+            </div>
+            <div class="column">
+              <div class="field">
+                <label class="label" style="font-size:0.875rem;font-weight:600;">Clone Mode</label>
+                <div class="control">
+                  <div class="select is-fullwidth">
+                    <select name="clone_mode">
+                      <option value="full" selected>Full Clone</option>
+                      <option value="linked">Linked Clone</option>
+                    </select>
+                  </div>
+                </div>
+                <p class="field-hint">Full clone creates an independent copy. Linked clone shares the base disk (faster, less space).</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:1rem;margin-top:1.5rem;margin-bottom:2rem;">
+        <a href="{% url 'vm_detail' vmid %}" class="button is-light is-medium" style="font-weight:600;">Cancel</a>
+        <button type="submit" id="clone-submit-btn" class="button is-primary is-medium" style="font-weight:600;">
+          <span class="icon"><i class="fas fa-clone"></i></span>
+          <span>Clone VM</span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  {# Right column: info card #}
+  <div class="column is-5">
+    <div class="proxmigrate-card">
+      <div class="card-header">
+        <i class="fas fa-info-circle" style="color:var(--link-color, #3273dc);"></i> About VM Clone
+      </div>
+      <div class="card-body" style="font-size:0.85rem;color:var(--text-semi, #555);line-height:1.7;">
+        <p style="margin-bottom:0.75rem;">
+          Cloning creates a copy of this VM with a new VMID and name. A <strong>full clone</strong> is completely independent — you can modify or delete either VM freely.
+        </p>
+        <p style="margin-bottom:0.75rem;">
+          A <strong>linked clone</strong> shares the source VM's base disk and uses less space, but depends on the source VM's disk. Use linked clones for temporary or test VMs.
+        </p>
+        <hr style="border:none;border-top:1px solid var(--border-color, #e8ecf0);margin:0.75rem 0;">
+        <p style="font-size:0.78rem;color:var(--text-muted, #888);">
+          <i class="fas fa-network-wired" style="margin-right:0.3rem;"></i>
+          The clone inherits the source VM's network config including MAC address. Proxmox will generate a new MAC automatically, but you may need to update any static IP configuration inside the guest OS.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function startCloneSpinner() {
+    var btn = document.getElementById('clone-submit-btn');
+    btn.disabled = true;
+    btn.classList.add('is-loading');
+  }
+</script>
+{% endblock %}

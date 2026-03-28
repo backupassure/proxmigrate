@@ -209,6 +209,9 @@ def vm_row_status(request, vmid):
     # If we know what state we're waiting for, keep the pending row until we get there
     target_status = ACTION_TARGET_STATUS.get(action)
     if target_status and vm.get("status") != target_status:
+        polls = int(request.GET.get("polls", 0)) + 1
+        # ~20 polls at 3s each = 60s — if still not reached, show stuck message
+        stuck = polls >= 20
         return render(
             request,
             "inventory/partials/vm_row_pending.html",
@@ -217,6 +220,8 @@ def vm_row_status(request, vmid):
                 "vm_name": vm.get("name", str(vmid)),
                 "action_label": ACTION_LABELS.get(action, "Working"),
                 "action": action,
+                "polls": polls,
+                "stuck": stuck,
             },
         )
 
@@ -265,6 +270,15 @@ def vm_detail_status(request, vmid):
         vm["node"] = node
         vm["cpu_pct"] = round((vm.get("cpu") or 0) * 100, 1)
         vm["uptime_human"] = _uptime_human(vm.get("uptime", 0))
+        mem_bytes = int(vm.get("mem") or 0)
+        if mem_bytes:
+            for unit in ("B", "KB", "MB", "GB", "TB"):
+                if mem_bytes < 1024:
+                    vm["mem_human"] = f"{mem_bytes:.1f} {unit}"
+                    break
+                mem_bytes /= 1024
+        else:
+            vm["mem_human"] = ""
     except ProxmoxAPIError as exc:
         logger.warning("vm_detail_status vmid %s: %s", vmid, exc)
         return HttpResponse(
@@ -274,6 +288,8 @@ def vm_detail_status(request, vmid):
 
     target_status = ACTION_TARGET_STATUS.get(action)
     transitioning = target_status and vm.get("status") != target_status
+    polls = int(request.GET.get("polls", 0)) + 1 if transitioning else 0
+    stuck = polls >= 15  # ~30s at 2s intervals
 
     return render(request, "inventory/partials/vm_detail_banner.html", {
         "vm": vm,
@@ -281,6 +297,8 @@ def vm_detail_status(request, vmid):
         "action_label": ACTION_LABELS.get(action, "Working"),
         "transitioning": transitioning,
         "was_transitioning": bool(action) and not transitioning,
+        "polls": polls,
+        "stuck": stuck,
     })
 
 

@@ -3,6 +3,14 @@
 {% block page_title %}VM Inventory{% endblock %}
 {% block help_slug %}inventory{% endblock %}
 
+{% block extra_head %}
+<style>
+  .vm-kebab .dropdown-menu { z-index: 30; }
+  .vm-kebab .dropdown-item { display:flex; align-items:center; gap:0.5rem; padding:0.4rem 1rem; }
+  .vm-kebab .dropdown-item:hover { background:var(--bg-card, #f5f5f5); }
+</style>
+{% endblock %}
+
 {% block page_actions %}
   <button class="button is-light is-small"
           hx-get="{% url 'inventory' %}"
@@ -166,57 +174,74 @@
             </td>
             <td style="vertical-align:middle;">
               <div class="vm-actions" style="justify-content:flex-end;">
-                {% if vm.status == 'running' %}
-                  <button class="button is-warning is-light is-small"
-                          hx-post="/inventory/{{ vm.vmid }}/action/shutdown/"
-                          hx-target="#vm-row-{{ vm.vmid }}"
-                          hx-swap="outerHTML"
-                          hx-confirm="Gracefully shut down {{ vm.name }}?"
-                          title="Shutdown">
-                    <i class="fas fa-power-off"></i>
-                  </button>
-                  <button class="button is-danger is-light is-small"
-                          hx-post="/inventory/{{ vm.vmid }}/action/stop/"
-                          hx-target="#vm-row-{{ vm.vmid }}"
-                          hx-swap="outerHTML"
-                          hx-confirm="Force stop {{ vm.name }}? Unsaved data may be lost."
-                          title="Stop">
-                    <i class="fas fa-stop"></i>
-                  </button>
-                  <button class="button is-info is-light is-small"
-                          hx-post="/inventory/{{ vm.vmid }}/action/reboot/"
-                          hx-target="#vm-row-{{ vm.vmid }}"
-                          hx-swap="outerHTML"
-                          hx-confirm="Reboot {{ vm.name }}?"
-                          title="Reboot">
-                    <i class="fas fa-redo"></i>
-                  </button>
-                {% elif vm.status == 'stopped' %}
-                  <button class="button is-success is-light is-small"
-                          hx-post="/inventory/{{ vm.vmid }}/action/start/"
-                          hx-target="#vm-row-{{ vm.vmid }}"
-                          hx-swap="outerHTML"
-                          title="Start">
-                    <span class="icon is-small"><i class="fas fa-play"></i></span>
-                    <span>Start</span>
-                  </button>
-                {% elif vm.status == 'paused' %}
-                  <button class="button is-warning is-light is-small"
-                          hx-post="/inventory/{{ vm.vmid }}/action/resume/"
-                          hx-target="#vm-row-{{ vm.vmid }}"
-                          hx-swap="outerHTML"
-                          title="Resume">
-                    <i class="fas fa-play"></i>
-                  </button>
-                {% endif %}
-                {% if vm.status == 'running' %}
-                  <a href="{% url 'vm_console' vm.vmid %}" target="_blank" class="button is-dark is-small" title="Console">
-                    <i class="fas fa-terminal"></i>
-                  </a>
-                {% endif %}
-                <a href="{% url 'vm_detail' vm.vmid %}" class="button is-light is-small" title="Details">
-                  <i class="fas fa-info-circle"></i>
-                </a>
+                <div class="dropdown is-right vm-kebab" onclick="toggleKebab(event, this)">
+                  <div class="dropdown-trigger">
+                    <button class="button is-small is-light" aria-haspopup="true" style="padding:0 0.6rem;">
+                      <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                  </div>
+                  <div class="dropdown-menu" role="menu" style="min-width:180px;">
+                    <div class="dropdown-content" style="padding:0.35rem 0;">
+                      {% if vm.status == 'running' %}
+                        <a class="dropdown-item" style="font-size:0.82rem;"
+                           hx-post="/inventory/{{ vm.vmid }}/action/shutdown/"
+                           hx-target="#vm-row-{{ vm.vmid }}"
+                           hx-swap="outerHTML"
+                           hx-confirm="Gracefully shut down {{ vm.name }}?">
+                          <i class="fas fa-power-off" style="width:1.2rem;color:#f59e0b;"></i> Shutdown
+                        </a>
+                        <a class="dropdown-item" style="font-size:0.82rem;"
+                           hx-post="/inventory/{{ vm.vmid }}/action/stop/"
+                           hx-target="#vm-row-{{ vm.vmid }}"
+                           hx-swap="outerHTML"
+                           hx-confirm="Force stop {{ vm.name }}? Unsaved data may be lost.">
+                          <i class="fas fa-stop" style="width:1.2rem;color:var(--danger-color, #f14668);"></i> Force Stop
+                        </a>
+                        <a class="dropdown-item" style="font-size:0.82rem;"
+                           hx-post="/inventory/{{ vm.vmid }}/action/reboot/"
+                           hx-target="#vm-row-{{ vm.vmid }}"
+                           hx-swap="outerHTML"
+                           hx-confirm="Reboot {{ vm.name }}?">
+                          <i class="fas fa-redo" style="width:1.2rem;color:var(--info-color, #3273dc);"></i> Reboot
+                        </a>
+                        <a class="dropdown-item" href="{% url 'vm_console' vm.vmid %}" target="_blank" style="font-size:0.82rem;">
+                          <i class="fas fa-terminal" style="width:1.2rem;color:#1a1a2e;"></i> Console
+                        </a>
+                      {% elif vm.status == 'stopped' %}
+                        <a class="dropdown-item" style="font-size:0.82rem;"
+                           hx-post="/inventory/{{ vm.vmid }}/action/start/"
+                           hx-target="#vm-row-{{ vm.vmid }}"
+                           hx-swap="outerHTML">
+                          <i class="fas fa-play" style="width:1.2rem;color:var(--success-color, #48c78e);"></i> Start
+                        </a>
+                      {% elif vm.status == 'paused' %}
+                        <a class="dropdown-item" style="font-size:0.82rem;"
+                           hx-post="/inventory/{{ vm.vmid }}/action/resume/"
+                           hx-target="#vm-row-{{ vm.vmid }}"
+                           hx-swap="outerHTML">
+                          <i class="fas fa-play" style="width:1.2rem;color:#f59e0b;"></i> Resume
+                        </a>
+                      {% endif %}
+                      <hr class="dropdown-divider" style="margin:0.25rem 0;">
+                      <a class="dropdown-item" href="{% url 'vm_clone' vm.vmid %}" style="font-size:0.82rem;">
+                        <i class="fas fa-clone" style="width:1.2rem;color:var(--link-color, #3273dc);"></i> Clone
+                      </a>
+                      <a class="dropdown-item" href="{% url 'export_options' vm.vmid %}" style="font-size:0.82rem;">
+                        <i class="fas fa-file-export" style="width:1.2rem;color:var(--info-color, #3273dc);"></i> Export VM
+                      </a>
+                      <a class="dropdown-item" href="{% url 'vm_detail' vm.vmid %}" style="font-size:0.82rem;">
+                        <i class="fas fa-info-circle" style="width:1.2rem;color:var(--text-muted, #7a7a7a);"></i> Details
+                      </a>
+                      {% if vm.status == 'stopped' %}
+                        <hr class="dropdown-divider" style="margin:0.25rem 0;">
+                        <a class="dropdown-item" style="font-size:0.82rem;color:var(--danger-color, #f14668);"
+                           onclick="event.preventDefault();toggleKebab(event, this.closest('.vm-kebab'));openDeleteModal('{{ vm.vmid }}', '{{ vm.name|escapejs }}')">
+                          <i class="fas fa-trash-alt" style="width:1.2rem;"></i> Delete
+                        </a>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
               </div>
             </td>
           </tr>
@@ -245,6 +270,46 @@
       {% endif %}
     </div>
   {% endif %}
+</div>
+
+{# ===== Delete VM Confirmation Modal ===== #}
+<div class="modal" id="delete-vm-modal">
+  <div class="modal-background" onclick="closeDeleteModal()"></div>
+  <div class="modal-card" style="max-width:480px;border-radius:12px;">
+    <header class="modal-card-head" style="background:var(--danger-color, #f14668);border-radius:12px 12px 0 0;">
+      <p class="modal-card-title" style="color:#fff;font-size:1rem;font-weight:600;">
+        <i class="fas fa-exclamation-triangle"></i>&nbsp; Delete VM
+      </p>
+      <button class="delete" onclick="closeDeleteModal()"></button>
+    </header>
+    <section class="modal-card-body">
+      <div class="content">
+        <p>You are about to <strong>permanently delete</strong> the virtual machine:</p>
+        <div style="background:var(--bg-card, #f5f5f5);border-radius:8px;padding:1rem;margin:1rem 0;">
+          <strong id="delete-modal-name"></strong> (VMID <span id="delete-modal-vmid-display"></span>)
+        </div>
+        <p style="color:var(--danger-color, #f14668);font-weight:600;">
+          <i class="fas fa-exclamation-circle"></i>
+          This will destroy all disks and data. This action cannot be undone.
+        </p>
+        <div style="margin-top:1rem;">
+          <label class="label" style="font-size:0.85rem;">Type the VMID to confirm:</label>
+          <input class="input" type="text" id="delete-confirm-input" placeholder="Enter VMID" autocomplete="off"
+                 oninput="checkDeleteConfirm()">
+        </div>
+      </div>
+    </section>
+    <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
+      <button class="button is-light" onclick="closeDeleteModal()">Cancel</button>
+      <form id="delete-vm-form" method="post" action="" style="margin:0;" onsubmit="startDeleteSpinner()">
+        <input type="hidden" name="csrfmiddlewaretoken" value="">
+        <button type="submit" id="delete-confirm-btn" class="button is-danger" disabled>
+          <span class="icon is-small"><i class="fas fa-trash-alt"></i></span>
+          <span>Delete VM</span>
+        </button>
+      </form>
+    </footer>
+  </div>
 </div>
 
 {% endblock %}
@@ -319,5 +384,76 @@
       applyVmFilter();
     }
   });
+
+  // ===== Kebab menu =====
+  function toggleKebab(event, el) {
+    event.stopPropagation();
+    // Close all other open kebabs
+    document.querySelectorAll('.vm-kebab.is-active').forEach(function(k) {
+      if (k !== el) k.classList.remove('is-active');
+    });
+    el.classList.toggle('is-active');
+  }
+
+  // Close kebab on click outside
+  document.addEventListener('click', function(evt) {
+    if (!evt.target.closest('.vm-kebab')) {
+      document.querySelectorAll('.vm-kebab.is-active').forEach(function(k) {
+        k.classList.remove('is-active');
+      });
+    }
+  });
+
+  // ===== Delete VM modal =====
+  let deleteTargetVmid = '';
+
+  function openDeleteModal(vmid, name) {
+    deleteTargetVmid = String(vmid);
+    document.getElementById('delete-modal-name').textContent = name;
+    document.getElementById('delete-modal-vmid-display').textContent = vmid;
+    document.getElementById('delete-confirm-input').value = '';
+    document.getElementById('delete-confirm-btn').disabled = true;
+    // Set form action and CSRF token
+    const form = document.getElementById('delete-vm-form');
+    form.action = '/vm/' + vmid + '/delete/';
+    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
+    if (csrfToken) {
+      form.querySelector('[name=csrfmiddlewaretoken]').value = csrfToken[1];
+    }
+    document.getElementById('delete-vm-modal').classList.add('is-active');
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('delete-vm-modal').classList.remove('is-active');
+    deleteTargetVmid = '';
+  }
+
+  function checkDeleteConfirm() {
+    const input = document.getElementById('delete-confirm-input').value.trim();
+    document.getElementById('delete-confirm-btn').disabled = (input !== deleteTargetVmid);
+  }
+
+  // Close modal on Escape key
+  document.addEventListener('keydown', function(evt) {
+    if (evt.key === 'Escape') closeDeleteModal();
+  });
+
+  // Show spinner on delete form submit
+  function startDeleteSpinner() {
+    var btn = document.getElementById('delete-confirm-btn');
+    btn.disabled = true;
+    btn.classList.add('is-loading');
+    var body = document.querySelector('#delete-vm-modal .modal-card-body');
+    if (body) {
+      body.innerHTML =
+        '<div style="text-align:center;padding:2rem;">' +
+          '<span class="spinner" style="width:2rem;height:2rem;border-width:3px;display:inline-block;margin-bottom:1rem;"></span>' +
+          '<p style="font-weight:600;font-size:1rem;">Deleting VM…</p>' +
+          '<p style="color:var(--text-muted, #7a7a7a);font-size:0.85rem;">Waiting for Proxmox to remove disks and configuration.</p>' +
+        '</div>';
+    }
+    var cancelBtn = document.querySelector('#delete-vm-modal .modal-card-foot .button.is-light');
+    if (cancelBtn) cancelBtn.disabled = true;
+  }
 </script>
 {% endblock %}

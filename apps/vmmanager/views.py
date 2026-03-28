@@ -1,8 +1,16 @@
 import logging
+import os
 import re
+import time
+from datetime import datetime
+from datetime import timezone
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.shortcuts import redirect
 from django.shortcuts import render
+from django.views.decorators.http import require_POST
 
 from apps.proxmox.api import ProxmoxAPIError
 from apps.wizard.models import ProxmoxConfig
@@ -32,6 +40,12 @@ def _bytes_human(b):
     return f"{b:.1f} PB"
 
 
+def _mb_to_gb_display(mb):
+    """Convert MB to GB for display. Returns int if whole number, float if fractional."""
+    gb = mb / 1024
+    return int(gb) if gb == int(gb) else gb
+
+
 def _parse_disk(interface, raw_value):
     """Parse a Proxmox disk string into a dict.
 
@@ -39,7 +53,9 @@ def _parse_disk(interface, raw_value):
       local-lvm:vm-100-disk-0,size=32G,ssd=1,discard=on
       none
     """
-    if not raw_value or raw_value == "none":
+    if not raw_value:
+        return None
+    if raw_value == "none":
         return None
     parts = raw_value.split(",")
     location = parts[0]  # e.g. "local-lvm:vm-100-disk-0"
@@ -60,13 +76,25 @@ def _parse_disk(interface, raw_value):
     size = options.get("size", "—")
     extra = ", ".join(f"{k}={v}" for k, v in options.items() if k != "size")
 
+    is_cdrom = "media=cdrom" in raw_value
+    is_empty_cdrom = is_cdrom and (location == "none" or not volume)
+
+    # Extract ISO filename from volume path (e.g. "iso/ubuntu-22.04.iso" → "ubuntu-22.04.iso")
+    iso_name = ""
+    if is_cdrom and volume:
+        iso_name = volume.split("/")[-1] if "/" in volume else volume
+
     return {
         "interface": interface,
         "storage": storage,
         "volume": volume,
-        "size": size,
-        "format": fmt,
+        "size": size if not is_cdrom else "—",
+        "format": "ISO" if is_cdrom else fmt,
         "options": extra or "—",
+        "is_unused": interface.startswith("unused"),
+        "is_cdrom": is_cdrom,
+        "is_empty_cdrom": is_empty_cdrom,
+        "iso_name": iso_name,
     }
 
 
@@ -97,6 +125,7 @@ def _parse_nic(interface, raw_value):
         "bridge": opts.get("bridge", "—"),
         "vlan": opts.get("tag", ""),
         "firewall": opts.get("firewall", "0") == "1",
+        "link_down": opts.get("link_down", "0") == "1",
     }
 
 
@@ -183,6 +212,15 @@ def _build_vm(raw_config, vm_status, node, vmid):
         # Display / agent
         "vga": raw_config.get("vga", ""),
         "agent": raw_config.get("agent", ""),
+        # Raw values for edit forms
+        "raw_cpu": raw_config.get("cpu", "host"),
+        "raw_bios": raw_config.get("bios", "seabios"),
+        "raw_ostype": raw_config.get("ostype", ""),
+        "raw_memory": raw_config.get("memory", 2048),
+        "raw_balloon": raw_config.get("balloon", 0),
+        # GB values for memory editor (display as clean numbers: 4.0 → 4, 2.5 → 2.5)
+        "memory_gb": _mb_to_gb_display(int(raw_config.get("memory", 2048))),
+        "balloon_gb": _mb_to_gb_display(int(raw_config.get("balloon", 0))),
     }
 
 
@@ -223,6 +261,7 @@ def vm_detail(request, vmid):
     node = config.default_node
     error = None
     vm = {"vmid": vmid, "name": str(vmid), "status": "unknown", "disks": [], "networks": []}
+    raw_config = {}
 
     try:
         api = config.get_api_client()
@@ -242,6 +281,27 @@ def vm_detail(request, vmid):
         error = f"Could not load VM {vmid}: {exc.message}"
         logger.error("vm_detail vmid=%d: %s", vmid, exc)
 
+    # Fetch storage pools for UEFI disk options and build boot device list
+    storage_pools = []
+    boot_devices = []
+    try:
+        if not error:
+            api = config.get_api_client()
+            all_storage = api.get_storage(node)
+            storage_pools = [
+                s for s in all_storage
+                if "images" in (s.get("content", "") or "")
+            ]
+            for key in sorted(raw_config.keys()):
+                if any(key.startswith(p) and key[len(p):].isdigit()
+                       for p in ("scsi", "sata", "ide", "virtio")):
+                    if raw_config[key] != "none":
+                        boot_devices.append(key)
+                elif key.startswith("net") and key[3:].isdigit():
+                    boot_devices.append(key)
+    except Exception:
+        pass
+
     return render(
         request,
         "vmmanager/detail.html",
@@ -250,5 +310,1053 @@ def vm_detail(request, vmid):
             "vm": vm,
             "error": error,
             "help_slug": "vm-detail",
+            "cpu_type_choices": CPU_TYPE_CHOICES,
+            "bios_choices": BIOS_CHOICES,
+            "storage_pools": storage_pools,
+            "boot_devices": boot_devices,
         },
     )
+
+
+@login_required
+@require_POST
+def vm_delete(request, vmid):
+    """Delete a VM. The VM must be stopped first.
+
+    Proxmox delete is async — we poll the task for up to 30s to catch errors
+    like missing storage pools. If the first attempt fails due to disk cleanup,
+    retry without destroy-unreferenced-disks.
+    """
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+
+    try:
+        api = config.get_api_client()
+        status = api.get_vm_status(node, vmid)
+        vm_name = status.get("name", str(vmid))
+
+        if status.get("status") != "stopped":
+            messages.error(request, f"VM {vm_name} ({vmid}) must be stopped before it can be deleted.")
+            return redirect("vm_detail", vmid=vmid)
+
+        # First attempt with full disk cleanup
+        upid = api.delete_vm(node, vmid)
+        result = _wait_for_task(api, node, upid)
+
+        if result and result.get("exitstatus") != "OK":
+            exit_msg = result.get("exitstatus", "unknown error")
+            logger.warning("vm_delete vmid=%d first attempt failed: %s — retrying without disk cleanup", vmid, exit_msg)
+            # Retry without destroy-unreferenced-disks (handles missing storage pools)
+            upid = api.delete_vm(node, vmid, destroy_unreferenced=False)
+            result = _wait_for_task(api, node, upid)
+
+            if result and result.get("exitstatus") != "OK":
+                messages.error(request, f"Failed to delete VM {vm_name} ({vmid}): {result.get('exitstatus', 'unknown error')}")
+                return redirect("vm_detail", vmid=vmid)
+
+        messages.success(request, f"VM {vm_name} ({vmid}) has been deleted.")
+        return redirect("inventory")
+    except ProxmoxAPIError as exc:
+        logger.error("vm_delete vmid=%d: %s", vmid, exc)
+        messages.error(request, f"Failed to delete VM {vmid}: {exc.message}")
+        return redirect("vm_detail", vmid=vmid)
+
+
+@login_required
+def vm_clone(request, vmid):
+    """Show clone options for a VM, or process the clone form."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    vm_name = str(vmid)
+    vm_status = "unknown"
+    error = None
+
+    try:
+        api = config.get_api_client()
+        status = api.get_vm_status(node, vmid)
+        vm_name = status.get("name", str(vmid))
+        vm_status = status.get("status", "unknown")
+    except ProxmoxAPIError as exc:
+        error = f"Could not fetch VM info: {exc.message}"
+
+    if request.method == "POST" and not error:
+        name = request.POST.get("name", "").strip()
+        if not name:
+            name = f"{vm_name}-clone"
+
+        vmid_raw = request.POST.get("vmid", "").strip()
+        target_storage = request.POST.get("target_storage", "").strip()
+        clone_mode = request.POST.get("clone_mode", "full")
+
+        try:
+            api = config.get_api_client()
+            new_vmid = int(vmid_raw) if vmid_raw else api.get_next_vmid()
+
+            clone_kwargs = {
+                "name": name,
+                "full": 1 if clone_mode == "full" else 0,
+            }
+            if target_storage:
+                clone_kwargs["storage"] = target_storage
+
+            upid = api.clone_vm(node, vmid, new_vmid, **clone_kwargs)
+
+            # Store clone info in session for the progress page
+            request.session["clone_task"] = {
+                "upid": upid if isinstance(upid, str) else "",
+                "source_vmid": vmid,
+                "source_name": vm_name,
+                "new_vmid": new_vmid,
+                "new_name": name,
+                "node": node,
+            }
+
+            return redirect("vm_clone_progress", vmid=vmid)
+
+        except ProxmoxAPIError as exc:
+            error = f"Clone failed: {exc.message}"
+            logger.error("vm_clone vmid=%d: %s", vmid, exc)
+
+    # GET: render clone options form
+    nodes = []
+    storage_pools = []
+    suggested_vmid = ""
+
+    try:
+        api = config.get_api_client()
+        nodes = [n.get("node") for n in api.get_nodes() if n.get("node")]
+        all_storage = api.get_storage(node)
+        storage_pools = [
+            s for s in all_storage
+            if "images" in (s.get("content", "") or "")
+        ]
+        suggested_vmid = api.get_next_vmid()
+    except ProxmoxAPIError as exc:
+        if not error:
+            error = f"Could not load Proxmox data: {exc.message}"
+
+    return render(request, "vmmanager/clone_options.html", {
+        "vmid": vmid,
+        "vm_name": vm_name,
+        "vm_status": vm_status,
+        "nodes": nodes,
+        "storage_pools": storage_pools,
+        "suggested_vmid": suggested_vmid,
+        "default_node": node,
+        "error": error,
+        "help_slug": "vm-clone",
+    })
+
+
+@login_required
+def vm_clone_progress(request, vmid):
+    """Display clone progress by polling the Proxmox task."""
+    clone_task = request.session.get("clone_task", {})
+
+    if not clone_task or clone_task.get("source_vmid") != vmid:
+        messages.error(request, "No active clone task found.")
+        return redirect("vm_detail", vmid=vmid)
+
+    return render(request, "vmmanager/clone_progress.html", {
+        "vmid": vmid,
+        "clone_task": clone_task,
+        "help_slug": "vm-clone",
+    })
+
+
+@login_required
+def vm_clone_status(request, vmid):
+    """HTMX polling endpoint for clone task progress."""
+    clone_task = request.session.get("clone_task", {})
+    upid = clone_task.get("upid", "")
+    node = clone_task.get("node", "")
+    new_vmid = clone_task.get("new_vmid")
+    new_name = clone_task.get("new_name", "")
+
+    if not upid or not node:
+        return JsonResponse({"status": "error", "message": "No active clone task."})
+
+    try:
+        config = ProxmoxConfig.get_config()
+        api = config.get_api_client()
+        task = api.get_task_status(node, upid)
+    except ProxmoxAPIError as exc:
+        return JsonResponse({"status": "error", "message": exc.message})
+
+    task_status = task.get("status", "unknown")
+    exit_status = task.get("exitstatus", "")
+
+    if task_status == "stopped":
+        # Task finished — clean up session
+        if "clone_task" in request.session:
+            del request.session["clone_task"]
+
+        if exit_status == "OK":
+            return JsonResponse({
+                "status": "complete",
+                "new_vmid": new_vmid,
+                "new_name": new_name,
+            })
+        else:
+            return JsonResponse({
+                "status": "error",
+                "message": exit_status or "Clone task failed.",
+            })
+
+    return JsonResponse({"status": "running"})
+
+
+# =========================================================================
+# VM Settings
+# =========================================================================
+
+CPU_TYPE_CHOICES = [
+    ("host", "host"),
+    ("max", "max"),
+    ("kvm64", "kvm64"),
+    ("x86-64-v2", "x86-64-v2"),
+    ("x86-64-v2-AES", "x86-64-v2-AES"),
+    ("x86-64-v3", "x86-64-v3"),
+    ("x86-64-v4", "x86-64-v4"),
+    ("qemu64", "qemu64"),
+    ("Nehalem", "Nehalem"),
+    ("Westmere", "Westmere"),
+    ("SandyBridge", "SandyBridge"),
+    ("IvyBridge", "IvyBridge"),
+    ("Haswell", "Haswell"),
+    ("Broadwell", "Broadwell"),
+    ("Skylake-Client", "Skylake-Client"),
+    ("Skylake-Server", "Skylake-Server"),
+    ("Cascadelake-Server", "Cascadelake-Server"),
+    ("Icelake-Server", "Icelake-Server"),
+    ("EPYC", "EPYC"),
+    ("EPYC-v2", "EPYC-v2"),
+    ("EPYC-v3", "EPYC-v3"),
+    ("EPYC-v4", "EPYC-v4"),
+    ("EPYC-Rome", "EPYC-Rome"),
+    ("EPYC-Milan", "EPYC-Milan"),
+]
+
+BIOS_CHOICES = [
+    ("seabios", "SeaBIOS (legacy)"),
+    ("ovmf", "UEFI (OVMF)"),
+]
+
+
+@login_required
+@require_POST
+def vm_update_settings(request, vmid):
+    """Update VM configuration settings. Handles CPU, memory, firmware, and general."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    section = request.POST.get("section", "")
+
+    kwargs = {}
+
+    if section == "cpu":
+        cpu = request.POST.get("cpu", "").strip()
+        sockets = request.POST.get("sockets", "").strip()
+        cores = request.POST.get("cores", "").strip()
+        numa = request.POST.get("numa")
+        if cpu:
+            kwargs["cpu"] = cpu
+        if sockets:
+            kwargs["sockets"] = int(sockets)
+        if cores:
+            kwargs["cores"] = int(cores)
+        kwargs["numa"] = 1 if numa == "1" else 0
+
+    elif section == "memory":
+        memory_gb = request.POST.get("memory_gb", "").strip()
+        balloon_gb = request.POST.get("balloon_gb", "").strip()
+        if memory_gb:
+            kwargs["memory"] = int(float(memory_gb) * 1024)
+        if balloon_gb is not None:
+            kwargs["balloon"] = int(float(balloon_gb) * 1024) if balloon_gb else 0
+
+    elif section == "firmware":
+        bios = request.POST.get("bios", "").strip()
+        onboot = request.POST.get("onboot")
+        boot = request.POST.get("boot", "").strip()
+        efi_storage = request.POST.get("efi_storage", "").strip()
+        add_tpm = request.POST.get("tpm") == "1"
+        tpm_storage = request.POST.get("tpm_storage", "").strip()
+        if bios:
+            kwargs["bios"] = bios
+        kwargs["onboot"] = 1 if onboot == "1" else 0
+        if boot:
+            kwargs["boot"] = boot
+        # Add EFI disk if switching to OVMF and storage specified
+        if bios == "ovmf" and efi_storage:
+            kwargs["efidisk0"] = f"{efi_storage}:1,efitype=4m,pre-enrolled-keys=1"
+            kwargs["machine"] = "q35"
+        # Add TPM if requested
+        if add_tpm and tpm_storage:
+            kwargs["tpmstate0"] = f"{tpm_storage}:1,version=v2.0"
+
+    elif section == "general":
+        description = request.POST.get("description", "")
+        kwargs["description"] = description
+
+    else:
+        messages.error(request, "Unknown settings section.")
+        return redirect("vm_detail", vmid=vmid)
+
+    if not kwargs:
+        messages.error(request, "No changes provided.")
+        return redirect("vm_detail", vmid=vmid)
+
+    try:
+        api = config.get_api_client()
+        api.update_vm_config(node, vmid, **kwargs)
+
+        # Check if VM is running — changes may need restart
+        status = api.get_vm_status(node, vmid)
+        if status.get("status") == "running" and section in ("cpu", "memory"):
+            messages.warning(request, f"{section.title()} settings updated. A restart is required for changes to take effect.")
+        else:
+            messages.success(request, f"{section.title()} settings updated.")
+    except ProxmoxAPIError as exc:
+        logger.error("vm_update_settings vmid=%d section=%s: %s", vmid, section, exc)
+        messages.error(request, f"Failed to update settings: {exc.message}")
+
+    return redirect("vm_detail", vmid=vmid)
+
+
+# =========================================================================
+# VM Rename
+# =========================================================================
+
+
+@login_required
+@require_POST
+def vm_rename(request, vmid):
+    """Rename a VM."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    new_name = request.POST.get("name", "").strip()
+
+    if not new_name:
+        messages.error(request, "VM name cannot be empty.")
+        return redirect("vm_detail", vmid=vmid)
+
+    try:
+        api = config.get_api_client()
+        api.update_vm_config(node, vmid, name=new_name)
+        messages.success(request, f"VM renamed to {new_name}.")
+    except ProxmoxAPIError as exc:
+        logger.error("vm_rename vmid=%d: %s", vmid, exc)
+        messages.error(request, f"Failed to rename VM: {exc.message}")
+
+    return redirect("vm_detail", vmid=vmid)
+
+
+# =========================================================================
+# VM Disk Management
+# =========================================================================
+
+DISK_BUS_CHOICES = [
+    ("scsi", "VirtIO-SCSI"),
+    ("virtio", "VirtIO Block"),
+    ("sata", "SATA"),
+    ("ide", "IDE"),
+]
+
+DISK_CACHE_CHOICES = [
+    ("none", "No cache (recommended)"),
+    ("writeback", "Write back"),
+    ("writethrough", "Write through"),
+    ("directsync", "Direct sync"),
+    ("unsafe", "Unsafe"),
+]
+
+# Max device index per bus type in Proxmox
+DISK_BUS_MAX = {"scsi": 30, "virtio": 15, "sata": 5, "ide": 3}
+
+
+def _find_next_disk_slot(raw_config, bus):
+    """Find the next available disk slot for a bus type (e.g. scsi1, sata0)."""
+    max_idx = DISK_BUS_MAX.get(bus, 15)
+    used = set()
+    for key in raw_config:
+        if key.startswith(bus) and key[len(bus):].isdigit():
+            used.add(int(key[len(bus):]))
+    for i in range(max_idx + 1):
+        if i not in used:
+            return f"{bus}{i}"
+    return None
+
+
+@login_required
+def vm_disks(request, vmid):
+    """HTMX endpoint: return the disks partial."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    disks = []
+    storage_pools = []
+    iso_storages = []
+    disk_error = request.GET.get("error", "")
+    disk_success = request.GET.get("success", "")
+
+    try:
+        api = config.get_api_client()
+        raw_config = api.get_vm_config(node, vmid)
+
+        disk_prefixes = ("scsi", "sata", "ide", "virtio", "unused")
+        for key in sorted(raw_config.keys()):
+            for prefix in disk_prefixes:
+                if key.startswith(prefix) and key[len(prefix):].isdigit():
+                    parsed = _parse_disk(key, raw_config[key])
+                    if parsed:
+                        disks.append(parsed)
+                    break
+
+        all_storage = api.get_storage(node)
+        storage_pools = [
+            s for s in all_storage
+            if "images" in (s.get("content", "") or "")
+        ]
+        iso_storages = [
+            s for s in all_storage
+            if "iso" in (s.get("content", "") or "")
+        ]
+    except ProxmoxAPIError as exc:
+        disk_error = f"Could not load disk info: {exc.message}"
+
+    return render(request, "vmmanager/partials/vm_disks.html", {
+        "vmid": vmid,
+        "disks": disks,
+        "storage_pools": storage_pools,
+        "iso_storages": iso_storages,
+        "disk_bus_choices": DISK_BUS_CHOICES,
+        "disk_cache_choices": DISK_CACHE_CHOICES,
+        "disk_error": disk_error,
+        "disk_success": disk_success,
+    })
+
+
+@login_required
+@require_POST
+def vm_disk_add(request, vmid):
+    """Add a new disk to a VM."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    storage = request.POST.get("storage", "").strip()
+    size_gb = request.POST.get("size", "").strip()
+    bus = request.POST.get("bus", "scsi").strip()
+    cache = request.POST.get("cache", "none").strip()
+    ssd = request.POST.get("ssd") == "1"
+    discard = request.POST.get("discard") == "1"
+    iothread = request.POST.get("iothread") == "1"
+    backup = request.POST.get("backup", "1") == "1"
+
+    if not storage or not size_gb:
+        return redirect(f"/vm/{vmid}/disks/?error=Storage+and+size+are+required.")
+
+    try:
+        size_val = int(size_gb)
+        if size_val < 1:
+            raise ValueError
+    except ValueError:
+        return redirect(f"/vm/{vmid}/disks/?error=Size+must+be+a+positive+number+in+GB.")
+
+    if bus not in dict(DISK_BUS_CHOICES):
+        return redirect(f"/vm/{vmid}/disks/?error=Invalid+bus+type.")
+
+    try:
+        api = config.get_api_client()
+        raw_config = api.get_vm_config(node, vmid)
+        slot = _find_next_disk_slot(raw_config, bus)
+        if not slot:
+            return redirect(f"/vm/{vmid}/disks/?error=No+available+{bus}+slots.")
+
+        # Build disk spec: storage:size,option=value,...
+        disk_spec = f"{storage}:{size_val}"
+        if cache:
+            disk_spec += f",cache={cache}"
+        if iothread and bus in ("scsi", "virtio"):
+            disk_spec += ",iothread=1"
+        if discard:
+            disk_spec += ",discard=on"
+        if ssd:
+            disk_spec += ",ssd=1"
+        if not backup:
+            disk_spec += ",backup=0"
+
+        api.update_vm_config(node, vmid, **{slot: disk_spec})
+        logger.info("vm_disk_add vmid=%d: added %s = %s", vmid, slot, disk_spec)
+    except ProxmoxAPIError as exc:
+        logger.error("vm_disk_add vmid=%d: %s", vmid, exc)
+        return redirect(f"/vm/{vmid}/disks/?error=Failed+to+add+disk:+{exc.message}")
+
+    return redirect(f"/vm/{vmid}/disks/?success={slot}+({size_val}G)+added+successfully.")
+
+
+@login_required
+@require_POST
+def vm_disk_resize(request, vmid):
+    """Resize an existing VM disk."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    disk = request.POST.get("disk", "").strip()
+    add_gb = request.POST.get("add_gb", "").strip()
+
+    if not disk or not add_gb:
+        return redirect(f"/vm/{vmid}/disks/?error=Disk+and+size+are+required.")
+
+    try:
+        add_val = int(add_gb)
+        if add_val < 1:
+            raise ValueError
+    except ValueError:
+        return redirect(f"/vm/{vmid}/disks/?error=Size+increase+must+be+a+positive+number+in+GB.")
+
+    try:
+        api = config.get_api_client()
+        api.resize_vm_disk(node, vmid, disk, f"+{add_val}G")
+        logger.info("vm_disk_resize vmid=%d: resized %s by +%dG", vmid, disk, add_val)
+        # Brief pause to let Proxmox commit the size change before we re-read config
+        time.sleep(1)
+    except ProxmoxAPIError as exc:
+        logger.error("vm_disk_resize vmid=%d %s: %s", vmid, disk, exc)
+        return redirect(f"/vm/{vmid}/disks/?error=Failed+to+resize+{disk}:+{exc.message}")
+
+    return redirect(f"/vm/{vmid}/disks/?success={disk}+increased+by+{add_val}G.")
+
+
+@login_required
+def vm_iso_list(request, vmid):
+    """HTMX endpoint: return ISOs for a specific storage pool."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    storage = request.GET.get("storage", "")
+
+    if not storage:
+        return render(request, "vmmanager/partials/vm_iso_list.html", {
+            "vmid": vmid, "isos": [], "iso_error": "No storage pool selected.",
+        })
+
+    try:
+        api = config.get_api_client()
+        isos = api.get_storage_content(node, storage, "iso")
+        for iso in isos:
+            iso["storage_name"] = storage
+            volid = iso.get("volid", "")
+            iso["filename"] = volid.split("/", 1)[-1] if "/" in volid else volid.split(":")[-1] if ":" in volid else volid
+        isos.sort(key=lambda i: i.get("filename", "").lower())
+    except ProxmoxAPIError as exc:
+        return render(request, "vmmanager/partials/vm_iso_list.html", {
+            "vmid": vmid, "isos": [], "iso_error": exc.message,
+        })
+
+    return render(request, "vmmanager/partials/vm_iso_list.html", {
+        "vmid": vmid,
+        "isos": isos,
+    })
+
+
+def _find_next_cdrom_slot(raw_config):
+    """Find the next available CD-ROM slot (ide first, then sata)."""
+    # Prefer ide2 (standard Proxmox CD-ROM slot), then other ide, then sata
+    preferred = ["ide2", "ide0", "ide1", "ide3", "sata0", "sata1", "sata2"]
+    for slot in preferred:
+        val = raw_config.get(slot, "")
+        if not val:
+            return slot
+        # Already a CD-ROM (empty or loaded) — reuse it
+        if "media=cdrom" in val:
+            return slot
+    return None
+
+
+@login_required
+@require_POST
+def vm_cdrom_set(request, vmid):
+    """Mount an ISO or eject the CD-ROM."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    action = request.POST.get("action", "")
+    interface = request.POST.get("interface", "").strip()
+    volid = request.POST.get("volid", "").strip()
+
+    try:
+        api = config.get_api_client()
+
+        if action == "eject":
+            if not interface:
+                return redirect(f"/vm/{vmid}/disks/?error=No+CD-ROM+interface+specified.")
+            api.update_vm_config(node, vmid, **{interface: "none,media=cdrom"})
+            logger.info("vm_cdrom_set vmid=%d: ejected %s", vmid, interface)
+
+        elif action == "mount":
+            if not volid:
+                return redirect(f"/vm/{vmid}/disks/?error=No+ISO+selected.")
+            if not interface:
+                # Auto-detect next available CD-ROM slot
+                raw_config = api.get_vm_config(node, vmid)
+                interface = _find_next_cdrom_slot(raw_config)
+                if not interface:
+                    return redirect(f"/vm/{vmid}/disks/?error=No+available+CD-ROM+slots.")
+            api.update_vm_config(node, vmid, **{interface: f"{volid},media=cdrom"})
+            logger.info("vm_cdrom_set vmid=%d: mounted %s on %s", vmid, volid, interface)
+
+        time.sleep(0.5)
+    except ProxmoxAPIError as exc:
+        logger.error("vm_cdrom_set vmid=%d: %s", vmid, exc)
+        return redirect(f"/vm/{vmid}/disks/?error=CD-ROM+operation+failed:+{exc.message}")
+
+    return redirect(f"/vm/{vmid}/disks/")
+
+
+@login_required
+@require_POST
+def vm_iso_upload(request, vmid):
+    """Upload an ISO file to a Proxmox storage pool."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    storage = request.POST.get("storage", "").strip()
+    iso_file = request.FILES.get("iso_file")
+
+    if not storage or not iso_file:
+        return redirect(f"/vm/{vmid}/disks/?error=Storage+pool+and+ISO+file+are+required.")
+
+    if not iso_file.name.lower().endswith(".iso"):
+        return redirect(f"/vm/{vmid}/disks/?error=Only+.iso+files+are+accepted.")
+
+    try:
+        # Save uploaded file to temp location
+        import tempfile
+        import shlex
+
+        temp_dir = config.upload_temp_dir or "/tmp"
+        temp_path = os.path.join(temp_dir, iso_file.name)
+
+        with open(temp_path, "wb") as f:
+            for chunk in iso_file.chunks():
+                f.write(chunk)
+
+        # Determine the ISO storage path on Proxmox and transfer via SFTP
+        with config.get_ssh_client() as ssh:
+            out, _, rc = ssh.run(["pvesm", "path", f"{storage}:iso/{iso_file.name}"])
+            iso_dest = out.strip() if out.strip() else f"/var/lib/vz/template/iso/{iso_file.name}"
+            iso_dest_dir = os.path.dirname(iso_dest)
+            ssh.run(["mkdir", "-p", iso_dest_dir])
+
+        with config.get_sftp_client() as sftp:
+            sftp.put(temp_path, iso_dest)
+
+        # Clean up local temp file
+        os.remove(temp_path)
+
+        remote_iso_ref = f"{storage}:iso/{iso_file.name}"
+        logger.info("vm_iso_upload vmid=%d: uploaded %s to %s", vmid, iso_file.name, remote_iso_ref)
+
+        # Auto-mount if requested
+        mount_after = request.POST.get("mount_after") == "1"
+        if mount_after:
+            api = config.get_api_client()
+            raw_config = api.get_vm_config(node, vmid)
+            slot = _find_next_cdrom_slot(raw_config)
+            if slot:
+                api.update_vm_config(node, vmid, **{slot: f"{remote_iso_ref},media=cdrom"})
+                logger.info("vm_iso_upload vmid=%d: auto-mounted %s on %s", vmid, remote_iso_ref, slot)
+                messages.success(request, f"ISO {iso_file.name} uploaded and mounted on {slot}.")
+            else:
+                messages.success(request, f"ISO {iso_file.name} uploaded to {storage}. No available CD-ROM slot to auto-mount.")
+        else:
+            messages.success(request, f"ISO {iso_file.name} uploaded to {storage}.")
+    except Exception as exc:
+        logger.error("vm_iso_upload vmid=%d: %s", vmid, exc)
+        # Clean up temp file on error
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        return redirect(f"/vm/{vmid}/disks/?error=ISO+upload+failed:+{exc}")
+
+    return redirect(f"/vm/{vmid}/disks/")
+
+
+@login_required
+@require_POST
+def vm_disk_attach(request, vmid):
+    """Re-attach an unused disk to the VM with new bus/options."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    unused_key = request.POST.get("disk", "").strip()
+    bus = request.POST.get("bus", "scsi").strip()
+    cache = request.POST.get("cache", "none").strip()
+    ssd = request.POST.get("ssd") == "1"
+    discard = request.POST.get("discard") == "1"
+    iothread = request.POST.get("iothread") == "1"
+    backup = request.POST.get("backup", "1") == "1"
+
+    if not unused_key or not unused_key.startswith("unused"):
+        return redirect(f"/vm/{vmid}/disks/?error=Invalid+unused+disk+reference.")
+
+    if bus not in dict(DISK_BUS_CHOICES):
+        return redirect(f"/vm/{vmid}/disks/?error=Invalid+bus+type.")
+
+    try:
+        api = config.get_api_client()
+        raw_config = api.get_vm_config(node, vmid)
+
+        # Get the volume reference from the unused entry (e.g. "local-lvm:vm-101-disk-1")
+        volume_ref = raw_config.get(unused_key, "")
+        if not volume_ref:
+            return redirect(f"/vm/{vmid}/disks/?error=Could+not+find+{unused_key}+in+config.")
+
+        slot = _find_next_disk_slot(raw_config, bus)
+        if not slot:
+            return redirect(f"/vm/{vmid}/disks/?error=No+available+{bus}+slots.")
+
+        # Build disk spec with options
+        disk_spec = volume_ref
+        if cache:
+            disk_spec += f",cache={cache}"
+        if iothread and bus in ("scsi", "virtio"):
+            disk_spec += ",iothread=1"
+        if discard:
+            disk_spec += ",discard=on"
+        if ssd:
+            disk_spec += ",ssd=1"
+        if not backup:
+            disk_spec += ",backup=0"
+
+        # Set the new slot — Proxmox automatically removes the unused entry
+        api.update_vm_config(node, vmid, **{slot: disk_spec})
+        logger.info("vm_disk_attach vmid=%d: attached %s as %s = %s", vmid, unused_key, slot, disk_spec)
+        time.sleep(1)
+    except ProxmoxAPIError as exc:
+        logger.error("vm_disk_attach vmid=%d %s: %s", vmid, unused_key, exc)
+        return redirect(f"/vm/{vmid}/disks/?error=Failed+to+attach+disk:+{exc.message}")
+
+    return redirect(f"/vm/{vmid}/disks/?success=Disk+attached+as+{slot}.")
+
+
+@login_required
+@require_POST
+def vm_disk_detach(request, vmid):
+    """Detach a disk from a VM (moves to unused state, keeps volume on storage)."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    disk = request.POST.get("disk", "").strip()
+
+    if not disk:
+        return redirect(f"/vm/{vmid}/disks/?error=No+disk+specified.")
+
+    try:
+        api = config.get_api_client()
+        # Detach by setting the key to "none" via delete param
+        api.update_vm_config(node, vmid, delete=disk)
+        logger.info("vm_disk_detach vmid=%d: detached %s", vmid, disk)
+        time.sleep(1)
+    except ProxmoxAPIError as exc:
+        logger.error("vm_disk_detach vmid=%d %s: %s", vmid, disk, exc)
+        return redirect(f"/vm/{vmid}/disks/?error=Failed+to+detach+{disk}:+{exc.message}")
+
+    return redirect(f"/vm/{vmid}/disks/?success={disk}+detached+successfully.")
+
+
+@login_required
+@require_POST
+def vm_disk_delete(request, vmid):
+    """Delete an unused disk volume from storage permanently."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    disk = request.POST.get("disk", "").strip()
+
+    if not disk:
+        return redirect(f"/vm/{vmid}/disks/?error=No+disk+specified.")
+
+    if not disk.startswith("unused"):
+        return redirect(f"/vm/{vmid}/disks/?error=Only+detached+(unused)+disks+can+be+deleted.+Detach+first.")
+
+    try:
+        api = config.get_api_client()
+        # Delete unused disk by removing it from config with force
+        api.update_vm_config(node, vmid, delete=disk)
+        logger.info("vm_disk_delete vmid=%d: deleted %s", vmid, disk)
+        time.sleep(1)
+    except ProxmoxAPIError as exc:
+        logger.error("vm_disk_delete vmid=%d %s: %s", vmid, disk, exc)
+        return redirect(f"/vm/{vmid}/disks/?error=Failed+to+delete+{disk}:+{exc.message}")
+
+    return redirect(f"/vm/{vmid}/disks/?success=Disk+deleted+permanently.")
+
+
+# =========================================================================
+# VM NIC Management
+# =========================================================================
+
+
+def _toggle_nic_link(raw_nic_value, disconnect):
+    """Toggle link_down in a raw Proxmox NIC config string.
+
+    Returns the modified NIC string.
+    """
+    parts = raw_nic_value.split(",")
+    # Remove any existing link_down
+    parts = [p for p in parts if not p.startswith("link_down=")]
+    if disconnect:
+        parts.append("link_down=1")
+    return ",".join(parts)
+
+
+@login_required
+def vm_networks(request, vmid):
+    """HTMX endpoint: return the network interfaces partial."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    networks = []
+    ip_address = ""
+    vm_status = "unknown"
+
+    try:
+        api = config.get_api_client()
+        raw_config = api.get_vm_config(node, vmid)
+        status = api.get_vm_status(node, vmid)
+        vm_status = status.get("status", "unknown")
+
+        for key in sorted(raw_config.keys()):
+            if key.startswith("net"):
+                parsed = _parse_nic(key, raw_config[key])
+                if parsed:
+                    networks.append(parsed)
+
+        if vm_status == "running":
+            try:
+                from apps.inventory.views import _extract_ipv4
+                ifaces = api.get_vm_agent_interfaces(node, vmid)
+                ip_address = _extract_ipv4(ifaces)
+            except Exception:
+                pass
+    except ProxmoxAPIError as exc:
+        return render(request, "vmmanager/partials/vm_networks.html", {
+            "vmid": vmid,
+            "networks": [],
+            "ip_address": "",
+            "vm_status": "unknown",
+            "nic_error": f"Could not load network info: {exc.message}",
+        })
+
+    return render(request, "vmmanager/partials/vm_networks.html", {
+        "vmid": vmid,
+        "networks": networks,
+        "ip_address": ip_address,
+        "vm_status": vm_status,
+    })
+
+
+@login_required
+@require_POST
+def vm_nic_toggle(request, vmid, interface):
+    """Toggle a NIC's connected/disconnected state."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    action = request.POST.get("action", "")
+
+    if action not in ("connect", "disconnect"):
+        return vm_networks(request, vmid)
+
+    try:
+        api = config.get_api_client()
+        raw_config = api.get_vm_config(node, vmid)
+
+        raw_nic = raw_config.get(interface)
+        if not raw_nic:
+            return vm_networks(request, vmid)
+
+        new_nic = _toggle_nic_link(raw_nic, disconnect=(action == "disconnect"))
+        api.update_vm_config(node, vmid, **{interface: new_nic})
+    except ProxmoxAPIError as exc:
+        logger.error("vm_nic_toggle vmid=%d %s: %s", vmid, interface, exc)
+
+    return vm_networks(request, vmid)
+
+
+# =========================================================================
+# VM Snapshots
+# =========================================================================
+
+_SNAP_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,39}$")
+
+
+def _enrich_vm_snapshots(snapshots):
+    """Convert snaptime unix timestamps to datetime objects for template rendering."""
+    for snap in snapshots:
+        ts = snap.get("snaptime")
+        if ts:
+            try:
+                snap["snaptime"] = datetime.fromtimestamp(int(ts), tz=timezone.utc)
+            except (ValueError, TypeError, OSError):
+                snap["snaptime"] = None
+    return snapshots
+
+
+def _get_vm_snapshots_context(vmid):
+    """Fetch VM snapshots and return template context dict."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    api = config.get_api_client()
+    snapshots = _enrich_vm_snapshots(api.get_vm_snapshots(node, vmid))
+    return {"vmid": vmid, "snapshots": snapshots, "snap_error": None}
+
+
+@login_required
+def vm_snapshots(request, vmid):
+    """HTMX endpoint: return the snapshots partial.
+
+    When called with ?wait=<action>&snap=<name>&attempt=<n>, keeps the
+    transitioning spinner until the expected change is detected or max
+    attempts (10 = ~30s) are exhausted.
+    """
+    try:
+        ctx = _get_vm_snapshots_context(vmid)
+    except ProxmoxAPIError as exc:
+        ctx = {"vmid": vmid, "snapshots": [], "snap_error": exc.message}
+        return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+    wait_action = request.GET.get("wait", "")
+    wait_snap = request.GET.get("snap", "")
+    attempt = int(request.GET.get("attempt", 0))
+    max_attempts = 10
+
+    if wait_action and wait_snap and attempt < max_attempts:
+        snap_names = {s["name"] for s in ctx["snapshots"]}
+        still_waiting = False
+
+        if wait_action == "delete" and wait_snap in snap_names:
+            still_waiting = True
+        elif wait_action == "create" and wait_snap not in snap_names:
+            still_waiting = True
+        elif wait_action == "rollback" and attempt < 1:
+            still_waiting = True
+
+        if still_waiting:
+            action_labels = {
+                "delete": f"Deleting snapshot '{wait_snap}'...",
+                "create": f"Creating snapshot '{wait_snap}'...",
+                "rollback": f"Rolling back to '{wait_snap}'...",
+            }
+            ctx["snap_transitioning"] = True
+            ctx["snap_wait_action"] = wait_action
+            ctx["snap_wait_name"] = wait_snap
+            ctx["snap_attempt"] = attempt + 1
+            ctx["snap_action_label"] = action_labels.get(wait_action, "Working...")
+
+    return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+
+@login_required
+@require_POST
+def vm_snapshot_create(request, vmid):
+    """Create a new VM snapshot and return the updated snapshots partial."""
+    snapname = request.POST.get("snapname", "").strip()
+    description = request.POST.get("description", "").strip()
+    include_ram = request.POST.get("vmstate") == "1"
+
+    if not snapname:
+        try:
+            ctx = _get_vm_snapshots_context(vmid)
+        except ProxmoxAPIError:
+            ctx = {"vmid": vmid, "snapshots": [], "snap_error": None}
+        ctx["snap_error"] = "Snapshot name is required."
+        return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+    if not _SNAP_NAME_RE.match(snapname):
+        try:
+            ctx = _get_vm_snapshots_context(vmid)
+        except ProxmoxAPIError:
+            ctx = {"vmid": vmid, "snapshots": [], "snap_error": None}
+        ctx["snap_error"] = "Name must be alphanumeric (hyphens/underscores allowed, max 40 chars)."
+        return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+
+    try:
+        api = config.get_api_client()
+        api.create_vm_snapshot(node, vmid, snapname, description, vmstate=include_ram)
+    except ProxmoxAPIError as exc:
+        try:
+            ctx = _get_vm_snapshots_context(vmid)
+        except ProxmoxAPIError:
+            ctx = {"vmid": vmid, "snapshots": [], "snap_error": None}
+        ctx["snap_error"] = f"Failed to create snapshot: {exc.message}"
+        return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+    try:
+        ctx = _get_vm_snapshots_context(vmid)
+    except ProxmoxAPIError as exc:
+        ctx = {"vmid": vmid, "snapshots": [], "snap_error": exc.message}
+    ctx["snap_transitioning"] = True
+    ctx["snap_wait_action"] = "create"
+    ctx["snap_wait_name"] = snapname
+    ctx["snap_attempt"] = 0
+    ctx["snap_action_label"] = f"Creating snapshot '{snapname}'..."
+    return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+
+@login_required
+@require_POST
+def vm_snapshot_action(request, vmid, snapname, action):
+    """Rollback or delete a VM snapshot and return the updated snapshots partial."""
+    if action not in ("rollback", "delete"):
+        try:
+            ctx = _get_vm_snapshots_context(vmid)
+        except ProxmoxAPIError:
+            ctx = {"vmid": vmid, "snapshots": [], "snap_error": None}
+        ctx["snap_error"] = f"Unknown snapshot action: {action!r}"
+        return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+
+    action_labels = {
+        "delete": f"Deleting snapshot '{snapname}'...",
+        "rollback": f"Rolling back to '{snapname}'...",
+    }
+
+    try:
+        api = config.get_api_client()
+        if action == "rollback":
+            api.rollback_vm_snapshot(node, vmid, snapname)
+        elif action == "delete":
+            api.delete_vm_snapshot(node, vmid, snapname)
+    except ProxmoxAPIError as exc:
+        try:
+            ctx = _get_vm_snapshots_context(vmid)
+        except ProxmoxAPIError:
+            ctx = {"vmid": vmid, "snapshots": [], "snap_error": None}
+        ctx["snap_error"] = f"Snapshot {action} failed: {exc.message}"
+        return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+    try:
+        ctx = _get_vm_snapshots_context(vmid)
+    except ProxmoxAPIError as exc:
+        ctx = {"vmid": vmid, "snapshots": [], "snap_error": exc.message}
+    ctx["snap_transitioning"] = True
+    ctx["snap_wait_action"] = action
+    ctx["snap_wait_name"] = snapname
+    ctx["snap_attempt"] = 0
+    ctx["snap_action_label"] = action_labels.get(action, "Working...")
+    return render(request, "vmmanager/partials/vm_snapshots.html", ctx)
+
+
+def _wait_for_task(api, node, upid, timeout=30, interval=2):
+    """Poll a Proxmox task until it finishes or timeout is reached.
+
+    Returns the final task status dict, or None if the UPID is not a string
+    (some endpoints return dicts instead of UPID strings).
+    """
+    if not isinstance(upid, str):
+        return None
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            task = api.get_task_status(node, upid)
+            if task.get("status") == "stopped":
+                return task
+        except ProxmoxAPIError:
+            pass
+        time.sleep(interval)
+    return None
