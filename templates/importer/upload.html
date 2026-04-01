@@ -10,14 +10,14 @@
   <div class="column is-8">
     <div class="proxmigrate-card">
       <div class="card-header">
-        <i class="fas fa-upload" style="color:#3273dc;"></i> Upload Disk Image
+        <i class="fas fa-upload" style="color: var(--link-color);"></i> Upload Disk Image
       </div>
       <div class="card-body">
 
         {% if error %}
-          <div class="notification is-danger is-light" style="margin-bottom:1.5rem;font-size:0.875rem;">
+          <div class="notification is-danger is-light" style="margin-bottom: 1.5rem;font-size: 0.875rem;">
             <button class="delete" onclick="this.parentElement.remove()"></button>
-            <strong><i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i></strong>
+            <strong><i class="fas fa-exclamation-triangle" style="margin-right: 0.4rem;"></i></strong>
             {{ error }}
           </div>
         {% endif %}
@@ -30,11 +30,11 @@
             <div class="upload-icon">
               <i class="fas fa-cloud-upload-alt"></i>
             </div>
-            <p style="font-size:1.05rem;font-weight:600;color:#4a4a4a;margin-bottom:0.5rem;">
+            <p style="font-size: 1.05rem;font-weight: 600;color: var(--text-semi);margin-bottom: 0.5rem;">
               Drag &amp; drop your disk image here
             </p>
-            <p style="color:#7a7a7a;font-size:0.875rem;margin-bottom:1.25rem;">
-              or <a style="color:#3273dc;text-decoration:underline;">click to browse</a>
+            <p style="color: var(--text-muted);font-size: 0.875rem;margin-bottom: 1.25rem;">
+              or <a style="color: var(--link-color);text-decoration: underline;">click to browse</a>
             </p>
             <div>
               <span class="format-badge">QCOW2</span>
@@ -53,38 +53,38 @@
             id="file-input"
             name="disk_image"
             accept=".qcow2,.vmdk,.vhd,.vhdx,.raw,.img,.ova"
-            style="display:none;"
+            style="display: none;"
             onchange="handleFileSelect(this)"
           >
 
           {# File info + progress (shown after file selected) #}
-          <div id="file-info" style="display:none;margin-top:1.5rem;">
-            <div style="display:flex;align-items:center;gap:1rem;padding:1rem;background:#f5f7fa;border-radius:8px;border:1px solid #e8ecf0;margin-bottom:1rem;">
-              <div style="font-size:1.5rem;color:#3273dc;"><i class="fas fa-file-archive"></i></div>
-              <div style="flex:1;min-width:0;">
-                <div id="file-name" style="font-weight:600;color:#1a1a2e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-                <div id="file-size" style="font-size:0.8rem;color:#7a7a7a;margin-top:0.1rem;"></div>
+          <div id="file-info" style="display: none;margin-top: 1.5rem;">
+            <div style="display: flex;align-items: center;gap: 1rem;padding: 1rem;background: var(--bg-main);border-radius: 8px;border: 1px solid var(--border-main);margin-bottom: 1rem;">
+              <div style="font-size: 1.5rem;color: var(--link-color);"><i class="fas fa-file-archive"></i></div>
+              <div style="flex: 1;min-width: 0;">
+                <div id="file-name" style="font-weight: 600;color: var(--text-header);white-space: nowrap;overflow: hidden;text-overflow: ellipsis;"></div>
+                <div id="file-size" style="font-size: 0.8rem;color: var(--text-muted);margin-top: 0.1rem;"></div>
               </div>
               <button type="button" class="delete" onclick="clearFile()"></button>
             </div>
 
             {# Upload progress #}
-            <div id="upload-progress" style="display:none;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
-                <span style="font-size:0.82rem;color:#4a4a4a;font-weight:500;">Uploading...</span>
-                <span id="progress-pct" style="font-size:0.82rem;color:#3273dc;font-weight:600;">0%</span>
+            <div id="upload-progress" style="display: none;">
+              <div style="display: flex;justify-content: space-between;align-items: center;margin-bottom: 0.35rem;">
+                <span style="font-size: 0.82rem;color: var(--text-semi);font-weight: 500;">Uploading...</span>
+                <span id="progress-pct" style="font-size: 0.82rem;color: var(--link-color);font-weight: 600;">0%</span>
               </div>
-              <progress id="upload-bar" class="progress is-primary" value="0" max="100" style="height:8px;"></progress>
+              <progress id="upload-bar" class="progress is-primary" value="0" max="100" style="height: 8px;"></progress>
             </div>
           </div>
 
           {# Submit button #}
-          <div style="margin-top:1.5rem;">
+          <div style="margin-top: 1.5rem;">
             <button
               type="submit"
               class="button is-primary is-medium is-fullwidth"
               id="upload-btn"
-              style="font-weight:600;display:none;"
+              style="font-weight: 600;display: none;"
             >
               <span class="icon"><i class="fas fa-upload"></i></span>
               <span>Upload &amp; Continue</span>
@@ -100,48 +100,48 @@
   <div class="column is-4">
 
     {# Supported formats #}
-    <div class="proxmigrate-card" style="margin-bottom:1rem;">
+    <div class="proxmigrate-card" style="margin-bottom: 1rem;">
       <div class="card-header">
-        <i class="fas fa-info-circle" style="color:#7a7a7a;"></i> Supported Formats
+        <i class="fas fa-info-circle" style="color: var(--text-muted);"></i> Supported Formats
       </div>
-      <div class="card-body" style="padding:1rem 1.5rem;">
-        <div style="display:flex;flex-direction:column;gap:0.6rem;">
+      <div class="card-body" style="padding: 1rem 1.5rem;">
+        <div style="display: flex;flex-direction: column;gap: 0.6rem;">
           {% for fmt in formats %}
-          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
-            <span class="format-badge" style="flex-shrink:0;margin-top:0.1rem;">{{ fmt.ext }}</span>
-            <span style="font-size:0.82rem;color:#4a4a4a;">{{ fmt.description }}</span>
+          <div style="display: flex;align-items: flex-start;gap: 0.75rem;">
+            <span class="format-badge" style="flex-shrink: 0;margin-top: 0.1rem;">{{ fmt.ext }}</span>
+            <span style="font-size: 0.82rem;color: var(--text-semi);">{{ fmt.description }}</span>
           </div>
           {% empty %}
-          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
-            <span class="format-badge" style="flex-shrink:0;margin-top:0.1rem;">QCOW2</span>
-            <span style="font-size:0.82rem;color:#4a4a4a;">Native Proxmox format, no conversion needed</span>
+          <div style="display: flex;align-items: flex-start;gap: 0.75rem;">
+            <span class="format-badge" style="flex-shrink: 0;margin-top: 0.1rem;">QCOW2</span>
+            <span style="font-size: 0.82rem;color: var(--text-semi);">Native Proxmox format, no conversion needed</span>
           </div>
-          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
-            <span class="format-badge" style="flex-shrink:0;margin-top:0.1rem;">VMDK</span>
-            <span style="font-size:0.82rem;color:#4a4a4a;">VMware Virtual Machine Disk, auto-converted</span>
+          <div style="display: flex;align-items: flex-start;gap: 0.75rem;">
+            <span class="format-badge" style="flex-shrink: 0;margin-top: 0.1rem;">VMDK</span>
+            <span style="font-size: 0.82rem;color: var(--text-semi);">VMware Virtual Machine Disk, auto-converted</span>
           </div>
-          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
-            <span class="format-badge" style="flex-shrink:0;margin-top:0.1rem;">VHD</span>
-            <span style="font-size:0.82rem;color:#4a4a4a;">Hyper-V Virtual Hard Disk (VPC format)</span>
+          <div style="display: flex;align-items: flex-start;gap: 0.75rem;">
+            <span class="format-badge" style="flex-shrink: 0;margin-top: 0.1rem;">VHD</span>
+            <span style="font-size: 0.82rem;color: var(--text-semi);">Hyper-V Virtual Hard Disk (VPC format)</span>
           </div>
-          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
-            <span class="format-badge" style="flex-shrink:0;margin-top:0.1rem;">VHDX</span>
-            <span style="font-size:0.82rem;color:#4a4a4a;">Hyper-V VHDX — modern format, larger VM support</span>
+          <div style="display: flex;align-items: flex-start;gap: 0.75rem;">
+            <span class="format-badge" style="flex-shrink: 0;margin-top: 0.1rem;">VHDX</span>
+            <span style="font-size: 0.82rem;color: var(--text-semi);">Hyper-V VHDX — modern format, larger VM support</span>
           </div>
-          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
-            <span class="format-badge" style="flex-shrink:0;margin-top:0.1rem;">RAW</span>
-            <span style="font-size:0.82rem;color:#4a4a4a;">Raw disk image, converted to qcow2</span>
+          <div style="display: flex;align-items: flex-start;gap: 0.75rem;">
+            <span class="format-badge" style="flex-shrink: 0;margin-top: 0.1rem;">RAW</span>
+            <span style="font-size: 0.82rem;color: var(--text-semi);">Raw disk image, converted to qcow2</span>
           </div>
-          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
-            <span class="format-badge" style="flex-shrink:0;margin-top:0.1rem;">OVA</span>
-            <span style="font-size:0.82rem;color:#4a4a4a;">OVA archive — disk extracted and converted automatically</span>
+          <div style="display: flex;align-items: flex-start;gap: 0.75rem;">
+            <span class="format-badge" style="flex-shrink: 0;margin-top: 0.1rem;">OVA</span>
+            <span style="font-size: 0.82rem;color: var(--text-semi);">OVA archive — disk extracted and converted automatically</span>
           </div>
           {% endfor %}
         </div>
 
-        <div class="info-box" style="margin-top:1rem;">
-          <div class="info-box-icon" style="font-size:0.85rem;"><i class="fas fa-magic"></i></div>
-          <div style="font-size:0.8rem;">
+        <div class="info-box" style="margin-top: 1rem;">
+          <div class="info-box-icon" style="font-size: 0.85rem;"><i class="fas fa-magic"></i></div>
+          <div style="font-size: 0.8rem;">
             All formats are automatically converted to <strong>qcow2</strong> using <code>qemu-img</code> before transfer to Proxmox.
           </div>
         </div>
@@ -151,25 +151,25 @@
     {# What happens next #}
     <div class="proxmigrate-card">
       <div class="card-header">
-        <i class="fas fa-list-ol" style="color:#7a7a7a;"></i> What Happens Next?
+        <i class="fas fa-list-ol" style="color: var(--text-muted);"></i> What Happens Next?
       </div>
-      <div class="card-body" style="padding:1rem 1.5rem;">
-        <ol class="step-guide" style="padding:0;">
-          <li style="padding:0.6rem 0;border-bottom:1px solid #f5f7fa;">
-            <div class="step-guide-num" style="background:#3273dc;width:24px;height:24px;font-size:0.72rem;">1</div>
-            <div class="step-guide-text" style="font-size:0.83rem;">
+      <div class="card-body" style="padding: 1rem 1.5rem;">
+        <ol class="step-guide" style="padding: 0;">
+          <li style="padding: 0.6rem 0;border-bottom: 1px solid var(--bg-main);">
+            <div class="step-guide-num" style="background: var(--link-color);width: 24px;height: 24px;font-size: 0.72rem;">1</div>
+            <div class="step-guide-text" style="font-size: 0.83rem;">
               <strong>Upload</strong> — Your disk image is uploaded to the ProxMigrate server.
             </div>
           </li>
-          <li style="padding:0.6rem 0;border-bottom:1px solid #f5f7fa;">
-            <div class="step-guide-num" style="background:#3273dc;width:24px;height:24px;font-size:0.72rem;">2</div>
-            <div class="step-guide-text" style="font-size:0.83rem;">
+          <li style="padding: 0.6rem 0;border-bottom: 1px solid var(--bg-main);">
+            <div class="step-guide-num" style="background: var(--link-color);width: 24px;height: 24px;font-size: 0.72rem;">2</div>
+            <div class="step-guide-text" style="font-size: 0.83rem;">
               <strong>Configure</strong> — Set VM name, CPU, RAM, firmware, and network options.
             </div>
           </li>
-          <li style="padding:0.6rem 0;">
-            <div class="step-guide-num" style="background:#3273dc;width:24px;height:24px;font-size:0.72rem;">3</div>
-            <div class="step-guide-text" style="font-size:0.83rem;">
+          <li style="padding: 0.6rem 0;">
+            <div class="step-guide-num" style="background: var(--link-color);width: 24px;height: 24px;font-size: 0.72rem;">3</div>
+            <div class="step-guide-text" style="font-size: 0.83rem;">
               <strong>Deploy</strong> — ProxMigrate converts, transfers, and creates your VM on Proxmox automatically.
             </div>
           </li>
@@ -245,7 +245,7 @@
     el.style.cssText = 'margin-top:1rem;font-size:0.875rem;';
     el.innerHTML =
       '<button class="delete" onclick="this.parentElement.remove()"></button>' +
-      '<strong><i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i></strong> ' +
+      '<strong><i class="fas fa-exclamation-triangle" style="margin-right: 0.4rem;"></i></strong> ' +
       message;
     dropzone.parentNode.insertBefore(el, dropzone.nextSibling);
   }

@@ -73,8 +73,8 @@
   {# General #}
   <div class="column is-6">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-info-circle" style="color:#3273dc;"></i> General</div>
-      <div class="card-body" style="padding:1rem 1.5rem;">
+      <div class="card-header"><i class="fas fa-info-circle" style="color: var(--link-color);"></i> General</div>
+      <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
           <div class="cert-detail-label">CTID</div>
           <div class="cert-detail-value">{{ ct.vmid }}</div>
@@ -102,28 +102,28 @@
   {# Options #}
   <div class="column is-6">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-cogs" style="color:#7c3aed;"></i> Options</div>
-      <div class="card-body" style="padding:1rem 1.5rem;">
+      <div class="card-header"><i class="fas fa-cogs" style="color: var(--purple-color);"></i> Options</div>
+      <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
           <div class="cert-detail-label">Unprivileged</div>
           <div class="cert-detail-value">
-            {% if ct.unprivileged %}<span style="color:#48c78e;">Yes</span>{% else %}No{% endif %}
+            {% if ct.unprivileged %}<span style="color: var(--success-color);">Yes</span>{% else %}No{% endif %}
           </div>
         </div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">Start on Boot</div>
           <div class="cert-detail-value">
-            {% if ct.onboot %}<span style="color:#48c78e;">Yes</span>{% else %}No{% endif %}
+            {% if ct.onboot %}<span style="color: var(--success-color);">Yes</span>{% else %}No{% endif %}
           </div>
         </div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">Startup Order</div>
-          <div class="cert-detail-value" style="font-family:monospace;font-size:0.82rem;">{{ ct.startup|default:"—" }}</div>
+          <div class="cert-detail-value" style="font-family: monospace;font-size: 0.82rem;">{{ ct.startup|default:"—" }}</div>
         </div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">Protection</div>
           <div class="cert-detail-value">
-            {% if ct.protection %}<span style="color:#48c78e;">Yes</span>{% else %}No{% endif %}
+            {% if ct.protection %}<span style="color: var(--success-color);">Yes</span>{% else %}No{% endif %}
           </div>
         </div>
         <div class="cert-detail-row">
@@ -139,13 +139,13 @@
         {% if ct.hookscript %}
         <div class="cert-detail-row">
           <div class="cert-detail-label">Hookscript</div>
-          <div class="cert-detail-value" style="font-family:monospace;font-size:0.82rem;">{{ ct.hookscript }}</div>
+          <div class="cert-detail-value" style="font-family: monospace;font-size: 0.82rem;">{{ ct.hookscript }}</div>
         </div>
         {% endif %}
         {% if ct.lock %}
         <div class="cert-detail-row">
           <div class="cert-detail-label">Lock</div>
-          <div class="cert-detail-value"><span style="color:#f14668;">{{ ct.lock }}</span></div>
+          <div class="cert-detail-value"><span style="color: var(--danger-color);">{{ ct.lock }}</span></div>
         </div>
         {% endif %}
         {% if ct.tags %}
@@ -161,8 +161,8 @@
   {# CPU #}
   <div class="column is-6">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-microchip" style="color:#48c78e;"></i> CPU</div>
-      <div class="card-body" style="padding:1rem 1.5rem;">
+      <div class="card-header"><i class="fas fa-microchip" style="color: var(--success-color);"></i> CPU</div>
+      <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
           <div class="cert-detail-label">Cores</div>
           <div class="cert-detail-value"><strong>{{ ct.cores|default:"—" }}</strong></div>
@@ -182,8 +182,8 @@
   {# Memory #}
   <div class="column is-6">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-memory" style="color:#f59e0b;"></i> Memory</div>
-      <div class="card-body" style="padding:1rem 1.5rem;">
+      <div class="card-header"><i class="fas fa-memory" style="color: var(--warning-color);"></i> Memory</div>
+      <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
           <div class="cert-detail-label">Allocated RAM</div>
           <div class="cert-detail-value"><strong>{{ ct.memory|default:"—" }} MB</strong></div>
@@ -199,15 +199,15 @@
   {# DNS #}
   <div class="column is-6">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-globe" style="color:#3273dc;"></i> DNS</div>
-      <div class="card-body" style="padding:1rem 1.5rem;">
+      <div class="card-header"><i class="fas fa-globe" style="color: var(--link-color);"></i> DNS</div>
+      <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
           <div class="cert-detail-label">Hostname</div>
           <div class="cert-detail-value">{{ ct.hostname|default:"—" }}</div>
         </div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">DNS Servers</div>
-          <div class="cert-detail-value" style="font-family:monospace;font-size:0.82rem;">{{ ct.nameserver|default:"Host settings" }}</div>
+          <div class="cert-detail-value" style="font-family: monospace;font-size: 0.82rem;">{{ ct.nameserver|default:"Host settings" }}</div>
         </div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">Search Domain</div>
@@ -224,21 +224,21 @@
   {# Storage (replaces Disks) #}
   <div class="column is-12">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-hdd" style="color:#48c78e;"></i> Storage</div>
-      <div style="overflow-x:auto;">
+      <div class="card-header"><i class="fas fa-hdd" style="color: var(--success-color);"></i> Storage</div>
+      <div style="overflow-x: auto;">
         {% if ct.storage_items %}
-        <table class="table is-fullwidth is-narrow" style="margin:0;font-size:0.875rem;">
+        <table class="table is-fullwidth is-narrow" style="margin: 0;font-size: 0.875rem;">
           <thead>
-            <tr style="background:#f5f7fa;">
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;padding:0.75rem 1.5rem;">Mount</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Storage</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Size</th>
+            <tr style="background: var(--bg-main);">
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;padding: 0.75rem 1.5rem;">Mount</th>
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;">Storage</th>
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;">Size</th>
             </tr>
           </thead>
           <tbody>
             {% for item in ct.storage_items %}
             <tr>
-              <td style="font-family:monospace;font-size:0.82rem;padding-left:1.5rem;font-weight:600;">{{ item.mount }}</td>
+              <td style="font-family: monospace;font-size: 0.82rem;padding-left: 1.5rem;font-weight: 600;">{{ item.mount }}</td>
               <td>{{ item.storage }}</td>
               <td><strong>{{ item.size }}</strong></td>
             </tr>
@@ -246,7 +246,7 @@
           </tbody>
         </table>
         {% else %}
-          <div style="padding:1.5rem;color:#7a7a7a;font-size:0.875rem;">No storage information available.</div>
+          <div style="padding: 1.5rem;color: var(--text-muted);font-size: 0.875rem;">No storage information available.</div>
         {% endif %}
       </div>
     </div>
@@ -255,41 +255,41 @@
   {# Network Interfaces #}
   <div class="column is-12">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-ethernet" style="color:#0369a1;"></i> Network Interfaces</div>
-      <div style="overflow-x:auto;">
+      <div class="card-header"><i class="fas fa-ethernet" style="color: var(--link-color);"></i> Network Interfaces</div>
+      <div style="overflow-x: auto;">
         {% if ct.networks %}
-        <table class="table is-fullwidth is-narrow" style="margin:0;font-size:0.875rem;">
+        <table class="table is-fullwidth is-narrow" style="margin: 0;font-size: 0.875rem;">
           <thead>
-            <tr style="background:#f5f7fa;">
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;padding:0.75rem 1.5rem;">Interface</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Name</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Type</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Bridge</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">MAC Address</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">IP Config</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">VLAN</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Firewall</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Rate Limit</th>
+            <tr style="background: var(--bg-main);">
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;padding: 0.75rem 1.5rem;">Interface</th>
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;">Name</th>
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;">Type</th>
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;">Bridge</th>
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;">MAC Address</th>
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;">IP Config</th>
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;">VLAN</th>
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;">Firewall</th>
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;">Rate Limit</th>
             </tr>
           </thead>
           <tbody>
             {% for nic in ct.networks %}
             <tr>
-              <td style="font-family:monospace;font-size:0.82rem;padding-left:1.5rem;font-weight:600;">{{ nic.interface }}</td>
+              <td style="font-family: monospace;font-size: 0.82rem;padding-left: 1.5rem;font-weight: 600;">{{ nic.interface }}</td>
               <td>{{ nic.name }}</td>
               <td>{{ nic.type|default:"—" }}</td>
               <td>{{ nic.bridge }}</td>
-              <td style="font-family:monospace;font-size:0.8rem;">{{ nic.mac }}</td>
-              <td style="font-size:0.82rem;">{{ nic.ip }}{% if nic.gateway %} <span style="color:#7a7a7a;">(gw {{ nic.gateway }})</span>{% endif %}</td>
+              <td style="font-family: monospace;font-size: 0.8rem;">{{ nic.mac }}</td>
+              <td style="font-size: 0.82rem;">{{ nic.ip }}{% if nic.gateway %} <span style="color: var(--text-muted);">(gw {{ nic.gateway }})</span>{% endif %}</td>
               <td>{{ nic.tag|default:"—" }}</td>
-              <td>{% if nic.firewall %}<span style="color:#48c78e;">Yes</span>{% else %}No{% endif %}</td>
+              <td>{% if nic.firewall %}<span style="color: var(--success-color);">Yes</span>{% else %}No{% endif %}</td>
               <td>{{ nic.rate|default:"—" }}{% if nic.rate %} MB/s{% endif %}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
         {% else %}
-          <div style="padding:1.5rem;color:#7a7a7a;font-size:0.875rem;">No network interface information available.</div>
+          <div style="padding: 1.5rem;color: var(--text-muted);font-size: 0.875rem;">No network interface information available.</div>
         {% endif %}
       </div>
     </div>
@@ -299,7 +299,7 @@
   <div class="column is-12">
     <div class="proxmigrate-card">
       <div class="card-header">
-        <i class="fas fa-camera" style="color:#3273dc;"></i> Snapshots
+        <i class="fas fa-camera" style="color: var(--link-color);"></i> Snapshots
       </div>
       <div class="card-body">
         {% include "lxc/partials/ct_snapshots.html" %}

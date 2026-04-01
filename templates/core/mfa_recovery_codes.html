@@ -6,8 +6,8 @@
 <div class="columns is-centered">
   <div class="column is-6">
 
-    <div class="notification is-warning" style="margin-bottom:1.5rem;">
-      <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
+    <div class="notification is-warning" style="margin-bottom: 1.5rem;">
+      <i class="fas fa-exclamation-triangle" style="margin-right: 0.4rem;"></i>
       <strong>Save these recovery codes now!</strong><br>
       Each code can only be used once. Store them somewhere safe — you will not be able to see them again.
       If you lose your authenticator device and don't have these codes, you will need an administrator to reset your MFA.
@@ -15,29 +15,29 @@
 
     <div class="proxmigrate-card">
       <div class="card-header">
-        <i class="fas fa-key" style="color:#f59e0b;"></i> Your Recovery Codes
+        <i class="fas fa-key" style="color: var(--warning-color);"></i> Your Recovery Codes
       </div>
-      <div class="card-body" style="text-align:center;">
-        <div id="recovery-codes" style="background:#1a1a2e;border-radius:8px;padding:1.5rem;margin-bottom:1.5rem;">
+      <div class="card-body" style="text-align: center;">
+        <div id="recovery-codes" style="background: var(--bg-sidebar);border-radius: 8px;padding: 1.5rem;margin-bottom: 1.5rem;">
           {% for code in codes %}
-            <div style="font-family:monospace;font-size:1.1rem;color:#4ecca3;letter-spacing:0.2rem;padding:0.35rem 0;">
+            <div style="font-family: monospace;font-size: 1.1rem;color: var(--key-text);letter-spacing: 0.2rem;padding: 0.35rem 0;">
               {{ code }}
             </div>
           {% endfor %}
         </div>
 
-        <div style="display:flex;gap:0.75rem;justify-content:center;margin-bottom:1.5rem;">
-          <button class="button is-light" onclick="copyRecoveryCodes()" style="font-weight:600;">
+        <div style="display: flex;gap: 0.75rem;justify-content: center;margin-bottom: 1.5rem;">
+          <button class="button is-light" onclick="copyRecoveryCodes()" style="font-weight: 600;">
             <span class="icon"><i class="fas fa-copy"></i></span>
             <span>Copy</span>
           </button>
-          <button class="button is-light" onclick="window.print()" style="font-weight:600;">
+          <button class="button is-light" onclick="window.print()" style="font-weight: 600;">
             <span class="icon"><i class="fas fa-print"></i></span>
             <span>Print</span>
           </button>
         </div>
 
-        <a href="/" class="button is-primary" style="font-weight:600;">
+        <a href="/" class="button is-primary" style="font-weight: 600;">
           <span class="icon"><i class="fas fa-check"></i></span>
           <span>I've Saved My Codes — Continue</span>
         </a>

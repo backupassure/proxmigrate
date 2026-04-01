@@ -4,12 +4,12 @@
   {# Discovery failed #}
   <div id="discovery-results">
     <div class="wizard-card-body">
-      <div class="notification is-danger is-light" style="margin-bottom:1.5rem;">
-        <strong><i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>Discovery failed</strong>
-        <p style="margin-top:0.4rem;">{{ error }}</p>
+      <div class="notification is-danger is-light" style="margin-bottom: 1.5rem;">
+        <strong><i class="fas fa-exclamation-triangle" style="margin-right: 0.4rem;"></i>Discovery failed</strong>
+        <p style="margin-top: 0.4rem;">{{ error }}</p>
       </div>
-      <div style="text-align:center;padding:1rem 0;">
-        <button class="button is-warning is-medium" style="font-weight:600;"
+      <div style="text-align: center;padding: 1rem 0;">
+        <button class="button is-warning is-medium" style="font-weight: 600;"
                 hx-get="{% url 'wizard_step4_run' %}"
                 hx-target="#discovery-results"
                 hx-swap="outerHTML">
@@ -28,18 +28,18 @@
       {# Cluster Nodes #}
       <div class="discovery-section">
         <div class="discovery-section-label">
-          <i class="fas fa-project-diagram" style="margin-right:0.4rem;"></i>
+          <i class="fas fa-project-diagram" style="margin-right: 0.4rem;"></i>
           Cluster Nodes ({{ nodes|length }})
         </div>
         <div>
           {% for node in nodes %}
             <span class="discovery-chip">
-              <i class="fas fa-circle" style="font-size:0.4rem;vertical-align:middle;color:{% if node.status == 'online' %}#48c78e{% else %}#f14668{% endif %};margin-right:0.3rem;"></i>
+              <i class="fas fa-circle" style="font-size: 0.4rem;vertical-align: middle;color: {% if node.status == 'online' %}var(--success-color){% else %}var(--danger-color){% endif %};margin-right: 0.3rem;"></i>
               {{ node.node }}
-              <span style="opacity:0.6;font-size:0.75rem;margin-left:0.3rem;">{{ node.status }}</span>
+              <span style="opacity: 0.6;font-size: 0.75rem;margin-left: 0.3rem;">{{ node.status }}</span>
             </span>
           {% empty %}
-            <span style="color:#7a7a7a;font-size:0.875rem;">No nodes found</span>
+            <span style="color: var(--text-muted);font-size: 0.875rem;">No nodes found</span>
           {% endfor %}
         </div>
       </div>
@@ -47,37 +47,37 @@
       {# Storage Pools #}
       <div class="discovery-section">
         <div class="discovery-section-label">
-          <i class="fas fa-database" style="margin-right:0.4rem;"></i>
+          <i class="fas fa-database" style="margin-right: 0.4rem;"></i>
           Storage Pools ({{ storage_pools|length }})
         </div>
-        <table class="table is-fullwidth is-narrow" style="font-size:0.875rem;border:1px solid #e8ecf0;border-radius:8px;overflow:hidden;">
+        <table class="table is-fullwidth is-narrow" style="font-size: 0.875rem;border: 1px solid var(--border-main);border-radius: 8px;overflow: hidden;">
           <thead>
-            <tr style="background:#f5f7fa;">
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Name</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Type</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Available</th>
-              <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Shared</th>
+            <tr style="background: var(--bg-main);">
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;border-bottom: 1px solid var(--border-main);">Name</th>
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;border-bottom: 1px solid var(--border-main);">Type</th>
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;border-bottom: 1px solid var(--border-main);">Available</th>
+              <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;border-bottom: 1px solid var(--border-main);">Shared</th>
             </tr>
           </thead>
           <tbody>
             {% for s in storage_pools %}
             <tr>
-              <td style="font-weight:600;">{{ s.storage }}</td>
-              <td><span class="tag is-light" style="font-size:0.75rem;">{{ s.type }}</span></td>
-              <td style="color:{% if s.avail_gb > 50 %}#257953{% else %}#b45309{% endif %};">
+              <td style="font-weight: 600;">{{ s.storage }}</td>
+              <td><span class="tag is-light" style="font-size: 0.75rem;">{{ s.type }}</span></td>
+              <td style="color: {% if s.avail_gb > 50 %}var(--text-success-dark){% else %}var(--text-warning-dark){% endif %};">
                 {{ s.avail_gb|floatformat:1 }} GB
               </td>
               <td>
                 {% if s.shared %}
-                  <span style="color:#48c78e;"><i class="fas fa-check"></i></span>
+                  <span style="color: var(--success-color);"><i class="fas fa-check"></i></span>
                 {% else %}
-                  <span style="color:#b5b5b5;"><i class="fas fa-minus"></i></span>
+                  <span style="color: var(--text-muted);"><i class="fas fa-minus"></i></span>
                 {% endif %}
               </td>
             </tr>
             {% empty %}
             <tr>
-              <td colspan="4" style="text-align:center;color:#7a7a7a;">No storage pools found</td>
+              <td colspan="4" style="text-align: center;color: var(--text-muted);">No storage pools found</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -87,14 +87,14 @@
       {# Network Bridges #}
       <div class="discovery-section">
         <div class="discovery-section-label">
-          <i class="fas fa-ethernet" style="margin-right:0.4rem;"></i>
+          <i class="fas fa-ethernet" style="margin-right: 0.4rem;"></i>
           Network Bridges
         </div>
         <div>
           {% for bridge in network_bridges %}
             <span class="discovery-chip">{{ bridge }}</span>
           {% empty %}
-            <span style="color:#7a7a7a;font-size:0.875rem;">No bridges detected</span>
+            <span style="color: var(--text-muted);font-size: 0.875rem;">No bridges detected</span>
           {% endfor %}
         </div>
       </div>
@@ -102,17 +102,17 @@
       {# Host CPU Info #}
       <div class="discovery-section">
         <div class="discovery-section-label">
-          <i class="fas fa-microchip" style="margin-right:0.4rem;"></i>
+          <i class="fas fa-microchip" style="margin-right: 0.4rem;"></i>
           Host CPU
         </div>
-        <div style="font-size:0.875rem;color:#4a4a4a;">
-          <span style="font-weight:600;color:#1a1a2e;">{{ cpu_info|default:"Unknown" }}</span>
+        <div style="font-size: 0.875rem;color: var(--text-semi);">
+          <span style="font-weight: 600;color: var(--text-header);">{{ cpu_info|default:"Unknown" }}</span>
         </div>
       </div>
 
       {# Existing VMIDs #}
       {% if existing_vmids %}
-        <div class="info-box" style="margin-top:0.5rem;">
+        <div class="info-box" style="margin-top: 0.5rem;">
           <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
           <div>
             Found <strong>{{ existing_vmids|length }} existing VMs</strong> on this cluster
@@ -125,11 +125,11 @@
     </div>
 
     <div class="wizard-card-footer">
-      <a href="{% url 'wizard_step3' %}" class="button is-light" style="font-weight:500;">
+      <a href="{% url 'wizard_step3' %}" class="button is-light" style="font-weight: 500;">
         <span class="icon"><i class="fas fa-arrow-left"></i></span>
         <span>Back</span>
       </a>
-      <a href="{% url 'wizard_step5' %}" class="button is-primary is-medium" style="font-weight:600;min-width:200px;">
+      <a href="{% url 'wizard_step5' %}" class="button is-primary is-medium" style="font-weight: 600;min-width: 200px;">
         <span class="icon"><i class="fas fa-thumbs-up"></i></span>
         <span>Looks Good! Continue</span>
         <span class="icon"><i class="fas fa-arrow-right"></i></span>

@@ -15,7 +15,7 @@
 {% if messages %}
   {% for message in messages %}
     <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% elif message.tags == 'warning' %}is-warning{% else %}is-info{% endif %} is-light"
-         style="font-size:0.875rem;margin-bottom:1rem;border-radius:8px;">
+         style="font-size: 0.875rem;margin-bottom: 1rem;border-radius: 8px;">
       <button class="delete" onclick="this.parentElement.remove()"></button>
       {{ message }}
     </div>
@@ -24,12 +24,12 @@
 
 <div class="proxmigrate-card">
   <div class="card-header">
-    <i class="fas fa-users" style="color:#3273dc;"></i> All Users
-    <span style="margin-left:0.5rem;font-size:0.8rem;color:#7a7a7a;font-weight:400;">({{ users|length }} total)</span>
+    <i class="fas fa-users" style="color: var(--link-color);"></i> All Users
+    <span style="margin-left: 0.5rem;font-size: 0.8rem;color: var(--text-muted);font-weight: 400;">({{ users|length }} total)</span>
   </div>
-  <div style="overflow-x:auto;">
+  <div style="overflow-x: auto;">
     {% if users %}
-    <table class="table vm-table is-fullwidth" style="margin:0;">
+    <table class="table vm-table is-fullwidth" style="margin: 0;">
       <thead>
         <tr>
           <th>Username</th>
@@ -39,7 +39,7 @@
           <th>Active</th>
           <th>MFA</th>
           <th>Last Login</th>
-          <th style="text-align:right;">Actions</th>
+          <th style="text-align: right;">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -61,10 +61,10 @@
 {# ===== Add User Modal ===== #}
 <div class="modal" id="add-user-modal">
   <div class="modal-background" onclick="this.parentElement.classList.remove('is-active')"></div>
-  <div class="modal-card" style="max-width:480px;border-radius:12px;">
-    <header class="modal-card-head" style="background:#1a1a2e;border-radius:12px 12px 0 0;">
-      <p class="modal-card-title" style="color:#fff;font-size:1rem;font-weight:600;">
-        <i class="fas fa-user-plus" style="margin-right:0.5rem;"></i>Add Local User
+  <div class="modal-card" style="max-width: 480px;border-radius: 12px;">
+    <header class="modal-card-head" style="background: var(--bg-sidebar);border-radius: 12px 12px 0 0;">
+      <p class="modal-card-title" style="color: var(--bg-card);font-size: 1rem;font-weight: 600;">
+        <i class="fas fa-user-plus" style="margin-right: 0.5rem;"></i>Add Local User
       </p>
       <button class="delete" onclick="document.getElementById('add-user-modal').classList.remove('is-active')"></button>
     </header>
@@ -72,44 +72,44 @@
       <form method="post" action="{% url 'user_create' %}" id="add-user-form">
         {% csrf_token %}
         <div class="field">
-          <label class="label" style="font-size:0.875rem;font-weight:600;">Username</label>
+          <label class="label" style="font-size: 0.875rem;font-weight: 600;">Username</label>
           <div class="control has-icons-left">
             <input class="input" type="text" name="username" placeholder="Username" required autocomplete="off">
-            <span class="icon is-left"><i class="fas fa-user" style="color:#b5b5b5;"></i></span>
+            <span class="icon is-left"><i class="fas fa-user" style="color: var(--text-muted);"></i></span>
           </div>
         </div>
         <div class="field">
-          <label class="label" style="font-size:0.875rem;font-weight:600;">Email</label>
+          <label class="label" style="font-size: 0.875rem;font-weight: 600;">Email</label>
           <div class="control has-icons-left">
             <input class="input" type="email" name="email" placeholder="user@example.com">
-            <span class="icon is-left"><i class="fas fa-envelope" style="color:#b5b5b5;"></i></span>
+            <span class="icon is-left"><i class="fas fa-envelope" style="color: var(--text-muted);"></i></span>
           </div>
         </div>
         <div class="field">
-          <label class="label" style="font-size:0.875rem;font-weight:600;">Password</label>
+          <label class="label" style="font-size: 0.875rem;font-weight: 600;">Password</label>
           <div class="control has-icons-left">
             <input class="input" type="password" name="password1" placeholder="Password" required autocomplete="new-password">
-            <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+            <span class="icon is-left"><i class="fas fa-lock" style="color: var(--text-muted);"></i></span>
           </div>
         </div>
         <div class="field">
-          <label class="label" style="font-size:0.875rem;font-weight:600;">Confirm Password</label>
+          <label class="label" style="font-size: 0.875rem;font-weight: 600;">Confirm Password</label>
           <div class="control has-icons-left">
             <input class="input" type="password" name="password2" placeholder="Confirm password" required autocomplete="new-password">
-            <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+            <span class="icon is-left"><i class="fas fa-lock" style="color: var(--text-muted);"></i></span>
           </div>
         </div>
         <div class="field">
-          <label class="checkbox" style="font-size:0.875rem;">
+          <label class="checkbox" style="font-size: 0.875rem;">
             <input type="checkbox" name="is_superuser">
             &nbsp;Grant administrator access
           </label>
         </div>
       </form>
     </section>
-    <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
+    <footer class="modal-card-foot" style="justify-content: flex-end;gap: 0.75rem;">
       <button class="button is-light" onclick="document.getElementById('add-user-modal').classList.remove('is-active')">Cancel</button>
-      <button type="submit" form="add-user-form" class="button is-primary" style="font-weight:600;">
+      <button type="submit" form="add-user-form" class="button is-primary" style="font-weight: 600;">
         <span class="icon"><i class="fas fa-user-plus"></i></span>
         <span>Create User</span>
       </button>
@@ -120,34 +120,34 @@
 {# ===== Reset Password Modal (admin resetting another user) ===== #}
 <div class="modal" id="reset-password-modal">
   <div class="modal-background" onclick="closeResetModal()"></div>
-  <div class="modal-card" style="max-width:420px;border-radius:12px;">
-    <header class="modal-card-head" style="background:#1a1a2e;border-radius:12px 12px 0 0;">
-      <p class="modal-card-title" style="color:#fff;font-size:1rem;font-weight:600;">
-        <i class="fas fa-key" style="margin-right:0.5rem;color:#f59e0b;"></i>
+  <div class="modal-card" style="max-width: 420px;border-radius: 12px;">
+    <header class="modal-card-head" style="background: var(--bg-sidebar);border-radius: 12px 12px 0 0;">
+      <p class="modal-card-title" style="color: var(--bg-card);font-size: 1rem;font-weight: 600;">
+        <i class="fas fa-key" style="margin-right: 0.5rem;color: var(--warning-color);"></i>
         Reset Password — <span id="reset-username"></span>
       </p>
       <button class="delete" onclick="closeResetModal()"></button>
     </header>
     <section class="modal-card-body">
-      <div id="reset-password-result" style="margin-bottom:0.75rem;"></div>
+      <div id="reset-password-result" style="margin-bottom: 0.75rem;"></div>
       <div class="field">
-        <label class="label" style="font-size:0.875rem;font-weight:600;">New Password</label>
+        <label class="label" style="font-size: 0.875rem;font-weight: 600;">New Password</label>
         <div class="control has-icons-left">
           <input class="input" type="password" id="reset-new-password" placeholder="New password" autocomplete="new-password">
-          <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+          <span class="icon is-left"><i class="fas fa-lock" style="color: var(--text-muted);"></i></span>
         </div>
       </div>
       <div class="field">
-        <label class="label" style="font-size:0.875rem;font-weight:600;">Confirm Password</label>
+        <label class="label" style="font-size: 0.875rem;font-weight: 600;">Confirm Password</label>
         <div class="control has-icons-left">
           <input class="input" type="password" id="reset-confirm-password" placeholder="Confirm new password" autocomplete="new-password">
-          <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+          <span class="icon is-left"><i class="fas fa-lock" style="color: var(--text-muted);"></i></span>
         </div>
       </div>
     </section>
-    <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
+    <footer class="modal-card-foot" style="justify-content: flex-end;gap: 0.75rem;">
       <button class="button is-light" onclick="closeResetModal()">Cancel</button>
-      <button class="button is-warning" style="font-weight:600;" onclick="submitResetPassword()">
+      <button class="button is-warning" style="font-weight: 600;" onclick="submitResetPassword()">
         <span class="icon"><i class="fas fa-key"></i></span>
         <span>Set Password</span>
       </button>
@@ -158,10 +158,10 @@
 {# ===== Change My Password Modal (signed-in user) ===== #}
 <div class="modal" id="change-password-modal">
   <div class="modal-background" onclick="this.parentElement.classList.remove('is-active')"></div>
-  <div class="modal-card" style="max-width:420px;border-radius:12px;">
-    <header class="modal-card-head" style="background:#1a1a2e;border-radius:12px 12px 0 0;">
-      <p class="modal-card-title" style="color:#fff;font-size:1rem;font-weight:600;">
-        <i class="fas fa-key" style="margin-right:0.5rem;color:#3273dc;"></i>Change My Password
+  <div class="modal-card" style="max-width: 420px;border-radius: 12px;">
+    <header class="modal-card-head" style="background: var(--bg-sidebar);border-radius: 12px 12px 0 0;">
+      <p class="modal-card-title" style="color: var(--bg-card);font-size: 1rem;font-weight: 600;">
+        <i class="fas fa-key" style="margin-right: 0.5rem;color: var(--link-color);"></i>Change My Password
       </p>
       <button class="delete" onclick="document.getElementById('change-password-modal').classList.remove('is-active')"></button>
     </header>
@@ -169,31 +169,31 @@
       <form method="post" action="{% url 'change_own_password' %}" id="change-password-form">
         {% csrf_token %}
         <div class="field">
-          <label class="label" style="font-size:0.875rem;font-weight:600;">Current Password</label>
+          <label class="label" style="font-size: 0.875rem;font-weight: 600;">Current Password</label>
           <div class="control has-icons-left">
             <input class="input" type="password" name="current_password" placeholder="Current password" required autocomplete="current-password">
-            <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+            <span class="icon is-left"><i class="fas fa-lock" style="color: var(--text-muted);"></i></span>
           </div>
         </div>
         <div class="field">
-          <label class="label" style="font-size:0.875rem;font-weight:600;">New Password</label>
+          <label class="label" style="font-size: 0.875rem;font-weight: 600;">New Password</label>
           <div class="control has-icons-left">
             <input class="input" type="password" name="new_password" placeholder="New password" required autocomplete="new-password">
-            <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+            <span class="icon is-left"><i class="fas fa-lock" style="color: var(--text-muted);"></i></span>
           </div>
         </div>
         <div class="field">
-          <label class="label" style="font-size:0.875rem;font-weight:600;">Confirm New Password</label>
+          <label class="label" style="font-size: 0.875rem;font-weight: 600;">Confirm New Password</label>
           <div class="control has-icons-left">
             <input class="input" type="password" name="confirm_password" placeholder="Confirm new password" required autocomplete="new-password">
-            <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+            <span class="icon is-left"><i class="fas fa-lock" style="color: var(--text-muted);"></i></span>
           </div>
         </div>
       </form>
     </section>
-    <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
+    <footer class="modal-card-foot" style="justify-content: flex-end;gap: 0.75rem;">
       <button class="button is-light" onclick="document.getElementById('change-password-modal').classList.remove('is-active')">Cancel</button>
-      <button type="submit" form="change-password-form" class="button is-primary" style="font-weight:600;">
+      <button type="submit" form="change-password-form" class="button is-primary" style="font-weight: 600;">
         <span class="icon"><i class="fas fa-key"></i></span>
         <span>Update Password</span>
       </button>

@@ -10,79 +10,79 @@
 
       <div class="coming-soon-badge">Phase 2 — Coming Soon</div>
 
-      <div style="font-size:4rem;color:#dbdbdb;margin-bottom:1.5rem;">
+      <div style="font-size: 4rem;color: var(--border-light);margin-bottom: 1.5rem;">
         <i class="fas fa-file-export"></i>
       </div>
 
-      <h2 style="font-size:1.75rem;font-weight:800;color:#1a1a2e;margin-bottom:0.75rem;">VM Export</h2>
-      <p style="font-size:1rem;color:#7a7a7a;max-width:520px;margin:0 auto 2rem;line-height:1.7;">
+      <h2 style="font-size: 1.75rem;font-weight: 800;color: var(--text-header);margin-bottom: 0.75rem;">VM Export</h2>
+      <p style="font-size: 1rem;color: var(--text-muted);max-width: 520px;margin: 0 auto 2rem;line-height: 1.7;">
         Export any Proxmox VM as a portable, self-contained package that can be shared,
         archived, or imported into another Proxmox server or cloud provider.
       </p>
 
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;max-width:680px;margin:0 auto 2.5rem;text-align:left;">
+      <div style="display: grid;grid-template-columns: repeat(3,1fr);gap: 1.25rem;max-width: 680px;margin: 0 auto 2.5rem;text-align: left;">
 
-        <div style="background:#f5f7fa;border:1px solid #e8ecf0;border-radius:10px;padding:1.25rem;">
-          <div style="font-size:1.5rem;color:#3273dc;margin-bottom:0.75rem;"><i class="fas fa-box"></i></div>
-          <div style="font-weight:700;color:#1a1a2e;margin-bottom:0.4rem;font-size:0.9rem;">Portable Packages</div>
-          <div style="font-size:0.8rem;color:#7a7a7a;line-height:1.5;">
+        <div style="background: var(--bg-main);border: 1px solid var(--border-main);border-radius: 10px;padding: 1.25rem;">
+          <div style="font-size: 1.5rem;color: var(--link-color);margin-bottom: 0.75rem;"><i class="fas fa-box"></i></div>
+          <div style="font-weight: 700;color: var(--text-header);margin-bottom: 0.4rem;font-size: 0.9rem;">Portable Packages</div>
+          <div style="font-size: 0.8rem;color: var(--text-muted);line-height: 1.5;">
             Export VMs as versioned, compressed archives ready for long-term storage or sharing.
           </div>
         </div>
 
-        <div style="background:#f5f7fa;border:1px solid #e8ecf0;border-radius:10px;padding:1.25rem;">
-          <div style="font-size:1.5rem;color:#48c78e;margin-bottom:0.75rem;"><i class="fas fa-cloud-upload-alt"></i></div>
-          <div style="font-weight:700;color:#1a1a2e;margin-bottom:0.4rem;font-size:0.9rem;">Cloud Export</div>
-          <div style="font-size:0.8rem;color:#7a7a7a;line-height:1.5;">
+        <div style="background: var(--bg-main);border: 1px solid var(--border-main);border-radius: 10px;padding: 1.25rem;">
+          <div style="font-size: 1.5rem;color: var(--success-color);margin-bottom: 0.75rem;"><i class="fas fa-cloud-upload-alt"></i></div>
+          <div style="font-weight: 700;color: var(--text-header);margin-bottom: 0.4rem;font-size: 0.9rem;">Cloud Export</div>
+          <div style="font-size: 0.8rem;color: var(--text-muted);line-height: 1.5;">
             Export directly to S3-compatible object storage (AWS S3, MinIO, Backblaze B2).
           </div>
         </div>
 
-        <div style="background:#f5f7fa;border:1px solid #e8ecf0;border-radius:10px;padding:1.25rem;">
-          <div style="font-size:1.5rem;color:#f59e0b;margin-bottom:0.75rem;"><i class="fas fa-history"></i></div>
-          <div style="font-weight:700;color:#1a1a2e;margin-bottom:0.4rem;font-size:0.9rem;">Snapshot Export</div>
-          <div style="font-size:0.8rem;color:#7a7a7a;line-height:1.5;">
+        <div style="background: var(--bg-main);border: 1px solid var(--border-main);border-radius: 10px;padding: 1.25rem;">
+          <div style="font-size: 1.5rem;color: var(--warning-color);margin-bottom: 0.75rem;"><i class="fas fa-history"></i></div>
+          <div style="font-weight: 700;color: var(--text-header);margin-bottom: 0.4rem;font-size: 0.9rem;">Snapshot Export</div>
+          <div style="font-size: 0.8rem;color: var(--text-muted);line-height: 1.5;">
             Export specific VM snapshots, not just the current state, for point-in-time backups.
           </div>
         </div>
 
-        <div style="background:#f5f7fa;border:1px solid #e8ecf0;border-radius:10px;padding:1.25rem;">
-          <div style="font-size:1.5rem;color:#7c3aed;margin-bottom:0.75rem;"><i class="fas fa-file-code"></i></div>
-          <div style="font-weight:700;color:#1a1a2e;margin-bottom:0.4rem;font-size:0.9rem;">Format Options</div>
-          <div style="font-size:0.8rem;color:#7a7a7a;line-height:1.5;">
+        <div style="background: var(--bg-main);border: 1px solid var(--border-main);border-radius: 10px;padding: 1.25rem;">
+          <div style="font-size: 1.5rem;color: var(--purple-color);margin-bottom: 0.75rem;"><i class="fas fa-file-code"></i></div>
+          <div style="font-weight: 700;color: var(--text-header);margin-bottom: 0.4rem;font-size: 0.9rem;">Format Options</div>
+          <div style="font-size: 0.8rem;color: var(--text-muted);line-height: 1.5;">
             Export as qcow2, VMDK (for VMware), or raw format for maximum compatibility.
           </div>
         </div>
 
-        <div style="background:#f5f7fa;border:1px solid #e8ecf0;border-radius:10px;padding:1.25rem;">
-          <div style="font-size:1.5rem;color:#f14668;margin-bottom:0.75rem;"><i class="fas fa-shield-alt"></i></div>
-          <div style="font-weight:700;color:#1a1a2e;margin-bottom:0.4rem;font-size:0.9rem;">Encrypted Exports</div>
-          <div style="font-size:0.8rem;color:#7a7a7a;line-height:1.5;">
+        <div style="background: var(--bg-main);border: 1px solid var(--border-main);border-radius: 10px;padding: 1.25rem;">
+          <div style="font-size: 1.5rem;color: var(--danger-color);margin-bottom: 0.75rem;"><i class="fas fa-shield-alt"></i></div>
+          <div style="font-weight: 700;color: var(--text-header);margin-bottom: 0.4rem;font-size: 0.9rem;">Encrypted Exports</div>
+          <div style="font-size: 0.8rem;color: var(--text-muted);line-height: 1.5;">
             Optional AES-256 encryption for exported packages — protect sensitive VM data at rest.
           </div>
         </div>
 
-        <div style="background:#f5f7fa;border:1px solid #e8ecf0;border-radius:10px;padding:1.25rem;">
-          <div style="font-size:1.5rem;color:#0369a1;margin-bottom:0.75rem;"><i class="fas fa-sync-alt"></i></div>
-          <div style="font-weight:700;color:#1a1a2e;margin-bottom:0.4rem;font-size:0.9rem;">Round-Trip Import</div>
-          <div style="font-size:0.8rem;color:#7a7a7a;line-height:1.5;">
+        <div style="background: var(--bg-main);border: 1px solid var(--border-main);border-radius: 10px;padding: 1.25rem;">
+          <div style="font-size: 1.5rem;color: var(--link-color);margin-bottom: 0.75rem;"><i class="fas fa-sync-alt"></i></div>
+          <div style="font-weight: 700;color: var(--text-header);margin-bottom: 0.4rem;font-size: 0.9rem;">Round-Trip Import</div>
+          <div style="font-size: 0.8rem;color: var(--text-muted);line-height: 1.5;">
             Exported packages can be imported back into any ProxMigrate instance — full portability.
           </div>
         </div>
 
       </div>
 
-      <div style="background:linear-gradient(135deg,#f0f4ff,#e8f0fe);border:1px solid #c8d8ff;border-radius:10px;padding:1.25rem 1.5rem;max-width:480px;margin:0 auto;">
-        <div style="font-size:0.9rem;color:#1e40af;font-weight:600;margin-bottom:0.4rem;">
-          <i class="fas fa-star" style="margin-right:0.4rem;color:#f59e0b;"></i>
+      <div style="background: linear-gradient(135deg,var(--bg-info-light),var(--bg-info-light));border: 1px solid var(--border-main);border-radius: 10px;padding: 1.25rem 1.5rem;max-width: 480px;margin: 0 auto;">
+        <div style="font-size: 0.9rem;color: var(--text-info-dark);font-weight: 600;margin-bottom: 0.4rem;">
+          <i class="fas fa-star" style="margin-right: 0.4rem;color: var(--warning-color);"></i>
           Want this feature sooner?
         </div>
-        <div style="font-size:0.82rem;color:#3730a3;line-height:1.6;">
+        <div style="font-size: 0.82rem;color: var(--text-info-dark);line-height: 1.6;">
           Star the project on GitHub and open a feature request to help prioritize Phase 2 development.
           ProxMigrate is free and open source — community feedback shapes the roadmap.
         </div>
-        <div style="margin-top:0.85rem;">
-          <a href="https://github.com/backupassure/proxmigrate" target="_blank" rel="noopener" class="button is-small" style="background:#1a1a2e;color:#fff;font-weight:600;border:none;">
+        <div style="margin-top: 0.85rem;">
+          <a href="https://github.com/backupassure/proxmigrate" target="_blank" rel="noopener" class="button is-small" style="background: var(--bg-sidebar);color: var(--bg-card);font-weight: 600;border: none;">
             <span class="icon is-small"><i class="fab fa-github"></i></span>
             <span>View on GitHub</span>
           </a>

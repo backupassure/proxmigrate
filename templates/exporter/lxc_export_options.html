@@ -15,28 +15,28 @@
   <div class="column is-7">
 
     {% if api_error %}
-      <div class="notification is-warning is-light" style="margin-bottom:1.25rem;">
-        <i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i>
+      <div class="notification is-warning is-light" style="margin-bottom: 1.25rem;">
+        <i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem;"></i>
         Could not fetch container info — using defaults. ({{ api_error }})
       </div>
     {% endif %}
 
     {# ── Container summary card ── #}
-    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
-      <div class="card-body" style="padding:1.25rem 1.5rem;">
-        <div style="display:flex;align-items:center;gap:1rem;">
-          <div style="width:44px;height:44px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <i class="fas fa-cube" style="color:#3273dc;font-size:1.1rem;"></i>
+    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+      <div class="card-body" style="padding: 1.25rem 1.5rem;">
+        <div style="display: flex;align-items: center;gap: 1rem;">
+          <div style="width: 44px;height: 44px;border-radius: 8px;background: var(--bg-info-light);display: flex;align-items: center;justify-content: center;flex-shrink: 0;">
+            <i class="fas fa-cube" style="color: var(--link-color);font-size: 1.1rem;"></i>
           </div>
           <div>
-            <div style="font-weight:700;color:#1a1a2e;font-size:1rem;">{{ ct_name }}</div>
-            <div style="font-size:0.82rem;color:#7a7a7a;margin-top:0.2rem;">
+            <div style="font-weight: 700;color: var(--text-header);font-size: 1rem;">{{ ct_name }}</div>
+            <div style="font-size: 0.82rem;color: var(--text-muted);margin-top: 0.2rem;">
               CTID {{ vmid }}
               &nbsp;&bull;&nbsp;
               {% if is_running %}
-                <span style="color:#48c78e;font-weight:600;"><i class="fas fa-circle" style="font-size:0.5rem;vertical-align:middle;margin-right:0.25rem;"></i>Running</span>
+                <span style="color: var(--success-color);font-weight: 600;"><i class="fas fa-circle" style="font-size: 0.5rem;vertical-align: middle;margin-right: 0.25rem;"></i>Running</span>
               {% else %}
-                <span style="color:#7a7a7a;"><i class="fas fa-circle" style="font-size:0.5rem;vertical-align:middle;margin-right:0.25rem;"></i>Stopped</span>
+                <span style="color: var(--text-muted);"><i class="fas fa-circle" style="font-size: 0.5rem;vertical-align: middle;margin-right: 0.25rem;"></i>Stopped</span>
               {% endif %}
             </div>
           </div>
@@ -50,19 +50,19 @@
 
       <div class="proxmigrate-card">
         <div class="card-header">
-          <i class="fas fa-file-export" style="color:#3273dc;"></i> Export Container
+          <i class="fas fa-file-export" style="color: var(--link-color);"></i> Export Container
         </div>
         <div class="card-body">
 
-          <div class="notification is-info is-light" style="margin-bottom:1.25rem;border-radius:8px;">
-            <i class="fas fa-info-circle" style="margin-right:0.5rem;"></i>
+          <div class="notification is-info is-light" style="margin-bottom: 1.25rem;border-radius: 8px;">
+            <i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>
             Container export uses Proxmox <strong>vzdump</strong> in snapshot mode — the container
             stays running during the export with no downtime.
           </div>
 
-          <div style="display:flex;justify-content:flex-end;gap:1rem;margin-top:0.5rem;">
-            <a href="javascript:history.back()" class="button is-light is-medium" style="font-weight:600;">Cancel</a>
-            <button type="submit" class="button is-info is-medium" style="font-weight:600;">
+          <div style="display: flex;justify-content: flex-end;gap: 1rem;margin-top: 0.5rem;">
+            <a href="javascript:history.back()" class="button is-light is-medium" style="font-weight: 600;">Cancel</a>
+            <button type="submit" class="button is-info is-medium" style="font-weight: 600;">
               <span class="icon"><i class="fas fa-file-export"></i></span>
               <span>Start Export</span>
             </button>
@@ -78,20 +78,20 @@
   <div class="column is-5">
     <div class="proxmigrate-card">
       <div class="card-header">
-        <i class="fas fa-info-circle" style="color:#3273dc;"></i> About Container Export
+        <i class="fas fa-info-circle" style="color: var(--link-color);"></i> About Container Export
       </div>
-      <div class="card-body" style="font-size:0.84rem;color:#555;line-height:1.7;">
-        <p style="margin-bottom:0.75rem;">
+      <div class="card-body" style="font-size: 0.84rem;color: var(--text-semi);line-height: 1.7;">
+        <p style="margin-bottom: 0.75rem;">
           Exports the container's full configuration and rootfs as a portable
           <code>.px</code> package that can be imported on any ProxMigrate server.
         </p>
-        <p style="margin-bottom:0.75rem;">
+        <p style="margin-bottom: 0.75rem;">
           The export uses <strong>vzdump snapshot mode</strong> — the container
           continues running with zero downtime during the process.
         </p>
-        <hr style="border:none;border-top:1px solid #e8ecf0;margin:0.75rem 0;">
-        <p style="font-size:0.78rem;color:#888;">
-          <i class="fas fa-clock" style="margin-right:0.3rem;"></i>
+        <hr style="border: none;border-top: 1px solid var(--border-main);margin: 0.75rem 0;">
+        <p style="font-size: 0.78rem;color: var(--text-muted);">
+          <i class="fas fa-clock" style="margin-right: 0.3rem;"></i>
           Completed exports are automatically deleted after 24 hours.
         </p>
       </div>

@@ -5,9 +5,9 @@
 {% block wizard_content %}
 <div class="wizard-card">
   <div class="wizard-card-header">
-    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
-      <div style="width:40px;height:40px;border-radius:10px;background:#fff8f0;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i class="fas fa-id-badge" style="color:#f59e0b;font-size:1.1rem;"></i>
+    <div style="display: flex;align-items: center;gap: 0.75rem;margin-bottom: 0.5rem;">
+      <div style="width: 40px;height: 40px;border-radius: 10px;background: var(--bg-warning-badge);display: flex;align-items: center;justify-content: center;flex-shrink: 0;">
+        <i class="fas fa-id-badge" style="color: var(--warning-color);font-size: 1.1rem;"></i>
       </div>
       <h2>Create API Token</h2>
     </div>
@@ -17,8 +17,8 @@
   <div class="wizard-card-body">
 
     {# Step-by-step guide #}
-    <div style="margin-bottom:1.75rem;">
-      <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;font-weight:600;margin-bottom:0.75rem;">
+    <div style="margin-bottom: 1.75rem;">
+      <div style="font-size: 0.78rem;text-transform: uppercase;letter-spacing: 1px;color: var(--text-muted);font-weight: 600;margin-bottom: 0.75rem;">
         Steps in Proxmox Web UI
       </div>
       <ol class="step-guide">
@@ -59,7 +59,7 @@
     </div>
 
     {# Warning about token secret #}
-    <div class="info-box is-warning" style="margin-bottom:1.75rem;">
+    <div class="info-box is-warning" style="margin-bottom: 1.75rem;">
       <div class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
       <div>
         <strong>Copy the secret now.</strong> Proxmox only shows the API token secret once, immediately after creation. If you miss it, you'll need to delete the token and create a new one.
@@ -68,10 +68,10 @@
 
     {# Error display #}
     {% if error %}
-      <div class="notification is-danger is-light" style="font-size:0.875rem;margin-bottom:1.25rem;">
+      <div class="notification is-danger is-light" style="font-size: 0.875rem;margin-bottom: 1.25rem;">
         <button class="delete" onclick="this.parentElement.remove()"></button>
-        <strong><i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>Token verification failed</strong>
-        <p style="margin-top:0.35rem;">{{ error }}</p>
+        <strong><i class="fas fa-exclamation-triangle" style="margin-right: 0.4rem;"></i>Token verification failed</strong>
+        <p style="margin-top: 0.35rem;">{{ error }}</p>
       </div>
     {% endif %}
 
@@ -82,9 +82,9 @@
       <div class="columns">
         <div class="column is-7">
           <div class="field">
-            <label class="label" style="font-weight:600;color:#1a1a2e;">
+            <label class="label" style="font-weight: 600;color: var(--text-header);">
               Full Token ID
-              <span style="color:#f14668;">*</span>
+              <span style="color: var(--danger-color);">*</span>
             </label>
             <div class="control has-icons-left">
               <input
@@ -96,7 +96,7 @@
                 placeholder="root@pam!proxmigrate"
                 required
               >
-              <span class="icon is-left"><i class="fas fa-tag" style="color:#b5b5b5;"></i></span>
+              <span class="icon is-left"><i class="fas fa-tag" style="color: var(--text-muted);"></i></span>
             </div>
             {% for error in form.api_token_id.errors %}
               <p class="help is-danger">{{ error }}</p>
@@ -107,9 +107,9 @@
 
         <div class="column is-5">
           <div class="field">
-            <label class="label" style="font-weight:600;color:#1a1a2e;">
+            <label class="label" style="font-weight: 600;color: var(--text-header);">
               Token Secret
-              <span style="color:#f14668;">*</span>
+              <span style="color: var(--danger-color);">*</span>
             </label>
             <div class="control has-icons-left">
               <input
@@ -121,7 +121,7 @@
                 autocomplete="off"
                 required
               >
-              <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+              <span class="icon is-left"><i class="fas fa-lock" style="color: var(--text-muted);"></i></span>
             </div>
             {% for error in form.api_token_secret.errors %}
               <p class="help is-danger">{{ error }}</p>
@@ -134,16 +134,16 @@
   </div>
 
   <div class="wizard-card-footer">
-    <a href="{% url 'wizard_step2' %}" class="button is-light" style="font-weight:500;">
+    <a href="{% url 'wizard_step2' %}" class="button is-light" style="font-weight: 500;">
       <span class="icon"><i class="fas fa-arrow-left"></i></span>
       <span>Back</span>
     </a>
-    <div style="display:flex;align-items:center;gap:0.75rem;">
-      <span id="step3-spinner" style="display:none;">
+    <div style="display: flex;align-items: center;gap: 0.75rem;">
+      <span id="step3-spinner" style="display: none;">
         <span class="spinner"></span>
-        <span style="font-size:0.85rem;color:#7a7a7a;margin-left:0.4rem;">Verifying token...</span>
+        <span style="font-size: 0.85rem;color: var(--text-muted);margin-left: 0.4rem;">Verifying token...</span>
       </span>
-      <button type="submit" form="step3-form" class="button is-primary is-medium" style="font-weight:600;min-width:200px;" id="step3-btn">
+      <button type="submit" form="step3-form" class="button is-primary is-medium" style="font-weight: 600;min-width: 200px;" id="step3-btn">
         <span class="icon"><i class="fas fa-check-circle"></i></span>
         <span>Verify Token</span>
         <span class="icon"><i class="fas fa-arrow-right"></i></span>

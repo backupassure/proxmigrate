@@ -10,7 +10,7 @@
           hx-select="#ct-table-wrapper"
           hx-swap="outerHTML"
           hx-indicator="#refresh-spinner">
-    <span id="refresh-spinner" class="htmx-indicator spinner" style="margin-right:0.3rem;"></span>
+    <span id="refresh-spinner" class="htmx-indicator spinner" style="margin-right: 0.3rem;"></span>
     <span class="icon is-small"><i class="fas fa-sync-alt"></i></span>
     <span>Refresh</span>
   </button>
@@ -19,7 +19,7 @@
 {% block content %}
 
 {# ===== Stats Row ===== #}
-<div class="columns is-multiline" style="margin-bottom:1.5rem;">
+<div class="columns is-multiline" style="margin-bottom: 1.5rem;">
   <div class="column is-4">
     <div class="stat-card">
       <div class="stat-card-icon is-blue"><i class="fas fa-cube"></i></div>
@@ -58,31 +58,31 @@
      hx-indicator="#refresh-spinner"
      hx-disinherit="hx-select">
   <div class="card-header">
-    <i class="fas fa-cube" style="color:#3273dc;"></i> Container Inventory
+    <i class="fas fa-cube" style="color: var(--link-color);"></i> Container Inventory
     {% if node_name %}
-      <span style="font-weight:400;color:#7a7a7a;font-size:0.82rem;margin-left:0.5rem;">
+      <span style="font-weight: 400;color: var(--text-muted);font-size: 0.82rem;margin-left: 0.5rem;">
         on <strong>{{ node_name }}</strong>
       </span>
     {% endif %}
-    <div style="margin-left:auto;">
-      <div class="control has-icons-left" style="font-size:0.85rem;">
+    <div style="margin-left: auto;">
+      <div class="control has-icons-left" style="font-size: 0.85rem;">
         <input id="ct-filter-input" class="input is-small" type="text"
                placeholder="Filter by name or ID…"
                value="{{ search_query }}"
                autocomplete="off"
-               style="min-width:220px;">
+               style="min-width: 220px;">
         <span class="icon is-left is-small"><i class="fas fa-search"></i></span>
       </div>
     </div>
   </div>
 
   {% if error %}
-    <div style="padding:1.5rem;color:#cc0f35;font-size:0.9rem;">
-      <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i> {{ error }}
+    <div style="padding: 1.5rem;color: var(--danger-color);font-size: 0.9rem;">
+      <i class="fas fa-exclamation-triangle" style="margin-right: 0.4rem;"></i> {{ error }}
     </div>
   {% elif containers %}
-    <div style="overflow-x:auto;">
-      <table class="table vm-table is-fullwidth" style="margin:0;">
+    <div style="overflow-x: auto;">
+      <table class="table vm-table is-fullwidth" style="margin: 0;">
         <thead>
           <tr>
             <th>CTID</th>
@@ -93,23 +93,23 @@
             <th>RAM</th>
             <th>Uptime</th>
             <th>Node</th>
-            <th style="text-align:right;">Actions</th>
+            <th style="text-align: right;">Actions</th>
           </tr>
         </thead>
         <tbody id="ct-tbody">
-          <tr id="ct-empty-row" style="display:none;">
-            <td colspan="9" style="text-align:center;padding:2rem;color:#7a7a7a;font-size:0.875rem;">
-              <i class="fas fa-search" style="margin-right:0.4rem;"></i>
+          <tr id="ct-empty-row" style="display: none;">
+            <td colspan="9" style="text-align: center;padding: 2rem;color: var(--text-muted);font-size: 0.875rem;">
+              <i class="fas fa-search" style="margin-right: 0.4rem;"></i>
               No containers matched your filter. <a href="#" onclick="document.getElementById('ct-filter-input').value='';applyCtFilter();return false;">Clear</a>
             </td>
           </tr>
           {% for ct in containers %}
           <tr id="ct-row-{{ ct.vmid }}">
             <td class="vmid-col">{{ ct.vmid }}</td>
-            <td style="vertical-align:middle;">
-              <a href="{% url 'lxc_detail' ct.vmid %}" style="font-weight:600;color:#1a1a2e;">{{ ct.name }}</a>
+            <td style="vertical-align: middle;">
+              <a href="{% url 'lxc_detail' ct.vmid %}" style="font-weight: 600;color: var(--text-header);">{{ ct.name }}</a>
             </td>
-            <td style="vertical-align:middle;">
+            <td style="vertical-align: middle;">
               {% if ct.status == 'running' %}
                 <span class="status-badge vm-status-running">Running</span>
               {% elif ct.status == 'stopped' %}
@@ -118,15 +118,15 @@
                 <span class="status-badge vm-status-unknown">{{ ct.status }}</span>
               {% endif %}
             </td>
-            <td style="vertical-align:middle;">
+            <td style="vertical-align: middle;">
               {% if ct.ip_address %}
-                <span style="font-size:0.82rem;color:#4a4a4a;">{{ ct.ip_address }}</span>
+                <span style="font-size: 0.82rem;color: var(--text-semi);">{{ ct.ip_address }}</span>
               {% else %}
-                <span style="font-size:0.82rem;color:#b5b5b5;">—</span>
+                <span style="font-size: 0.82rem;color: var(--text-muted);">—</span>
               {% endif %}
             </td>
-            <td style="vertical-align:middle;">
-              <span style="font-size:0.875rem;color:#4a4a4a;">
+            <td style="vertical-align: middle;">
+              <span style="font-size: 0.875rem;color: var(--text-semi);">
                 {% if ct.status == 'running' %}
                   {{ ct.cpu_pct|floatformat:1 }}%
                 {% else %}
@@ -134,13 +134,13 @@
                 {% endif %}
               </span>
             </td>
-            <td style="vertical-align:middle;">
-              <span style="font-size:0.875rem;color:#4a4a4a;">
+            <td style="vertical-align: middle;">
+              <span style="font-size: 0.875rem;color: var(--text-semi);">
                 {% if ct.maxmem %}{{ ct.maxmem|filesizeformat }}{% else %}—{% endif %}
               </span>
             </td>
-            <td style="vertical-align:middle;">
-              <span style="font-size:0.82rem;color:#7a7a7a;">
+            <td style="vertical-align: middle;">
+              <span style="font-size: 0.82rem;color: var(--text-muted);">
                 {% if ct.status == 'running' and ct.uptime %}
                   {{ ct.uptime_human }}
                 {% else %}
@@ -148,11 +148,11 @@
                 {% endif %}
               </span>
             </td>
-            <td style="vertical-align:middle;">
-              <span style="font-size:0.82rem;color:#7a7a7a;">{{ ct.node }}</span>
+            <td style="vertical-align: middle;">
+              <span style="font-size: 0.82rem;color: var(--text-muted);">{{ ct.node }}</span>
             </td>
-            <td style="vertical-align:middle;">
-              <div class="vm-actions" style="justify-content:flex-end;">
+            <td style="vertical-align: middle;">
+              <div class="vm-actions" style="justify-content: flex-end;">
                 {% if ct.status == 'running' %}
                   <button class="button is-warning is-light is-small"
                           hx-post="/lxc/{{ ct.vmid }}/action/shutdown/"

@@ -24,41 +24,41 @@
   <div class="column is-8 is-offset-2">
 
     {# ===== Header card ===== #}
-    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
-      <div class="card-body" style="padding:1.5rem;">
-        <div style="display:flex;align-items:center;gap:1rem;">
+    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+      <div class="card-body" style="padding: 1.5rem;">
+        <div style="display: flex;align-items: center;gap: 1rem;">
           {% if job.stage == 'DONE' %}
-            <div style="width:52px;height:52px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-              <i class="fas fa-check-circle" style="font-size:1.5rem;color:#48c78e;"></i>
+            <div style="width: 52px;height: 52px;border-radius: 50%;background: var(--bg-success-light);display: flex;align-items: center;justify-content: center;flex-shrink: 0;">
+              <i class="fas fa-check-circle" style="font-size: 1.5rem;color: var(--success-color);"></i>
             </div>
           {% elif job.stage == 'FAILED' %}
-            <div style="width:52px;height:52px;border-radius:50%;background:#fff5f7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-              <i class="fas fa-times-circle" style="font-size:1.5rem;color:#f14668;"></i>
+            <div style="width: 52px;height: 52px;border-radius: 50%;background: var(--bg-danger-light);display: flex;align-items: center;justify-content: center;flex-shrink: 0;">
+              <i class="fas fa-times-circle" style="font-size: 1.5rem;color: var(--danger-color);"></i>
             </div>
           {% else %}
-            <div style="width:52px;height:52px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-              <i class="fas fa-hourglass-half" style="font-size:1.5rem;color:#3273dc;animation:hg-breathe 2s ease-in-out infinite;"></i>
+            <div style="width: 52px;height: 52px;border-radius: 50%;background: var(--bg-info-light);display: flex;align-items: center;justify-content: center;flex-shrink: 0;">
+              <i class="fas fa-hourglass-half" style="font-size: 1.5rem;color: var(--link-color);animation: hg-breathe 2s ease-in-out infinite;"></i>
             </div>
           {% endif %}
 
           <div>
-            <div style="font-size:1.1rem;font-weight:700;color:#1a1a2e;">
+            <div style="font-size: 1.1rem;font-weight: 700;color: var(--text-header);">
               {{ job.ct_name|default:"Container " }}{{ job.vmid }}
             </div>
-            <div style="font-size:0.85rem;color:#7a7a7a;margin-top:0.2rem;">
-              CTID <span class="is-monospace" style="font-weight:600;color:#1a1a2e;">{{ job.vmid }}</span>
+            <div style="font-size: 0.85rem;color: var(--text-muted);margin-top: 0.2rem;">
+              CTID <span class="is-monospace" style="font-weight: 600;color: var(--text-header);">{{ job.vmid }}</span>
               &nbsp;&bull;&nbsp;
               Started {{ job.created_at|timesince }} ago
             </div>
           </div>
 
-          <div style="margin-left:auto;">
+          <div style="margin-left: auto;">
             {% if job.stage == 'DONE' %}
               <span class="status-badge vm-status-running">Complete</span>
             {% elif job.stage == 'FAILED' %}
               <span class="status-badge vm-status-stopped">Failed</span>
             {% else %}
-              <span class="status-badge" style="background:#3273dc;color:#fff;">Exporting</span>
+              <span class="status-badge" style="background: var(--link-color);color: var(--bg-card);">Exporting</span>
             {% endif %}
           </div>
         </div>
@@ -70,24 +70,24 @@
 
     {# ===== Terminal state actions ===== #}
     {% if job.stage == 'DONE' %}
-      <div class="proxmigrate-card" style="margin-top:1.5rem;">
-        <div class="card-body" style="padding:1.5rem;text-align:center;">
-          <i class="fas fa-check-circle" style="font-size:2rem;color:#48c78e;margin-bottom:1rem;display:block;"></i>
-          <h3 style="font-size:1.1rem;font-weight:700;color:#1a1a2e;margin-bottom:0.5rem;">Export Complete!</h3>
-          <p style="color:#7a7a7a;font-size:0.875rem;margin-bottom:1.5rem;">
+      <div class="proxmigrate-card" style="margin-top: 1.5rem;">
+        <div class="card-body" style="padding: 1.5rem;text-align: center;">
+          <i class="fas fa-check-circle" style="font-size: 2rem;color: var(--success-color);margin-bottom: 1rem;display: block;"></i>
+          <h3 style="font-size: 1.1rem;font-weight: 700;color: var(--text-header);margin-bottom: 0.5rem;">Export Complete!</h3>
+          <p style="color: var(--text-muted);font-size: 0.875rem;margin-bottom: 1.5rem;">
             <strong>{{ job.ct_name }}</strong> has been packaged and is ready to download.
             The file will be available for <strong>24 hours</strong>.
           </p>
-          <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-            <a href="{% url 'lxc_export_download' job.pk %}" class="button is-primary is-medium" style="font-weight:600;">
+          <div style="display: flex;gap: 1rem;justify-content: center;flex-wrap: wrap;">
+            <a href="{% url 'lxc_export_download' job.pk %}" class="button is-primary is-medium" style="font-weight: 600;">
               <span class="icon"><i class="fas fa-download"></i></span>
               <span>Download .px Package</span>
             </a>
-            <a href="{% url 'lxc_detail' job.vmid %}" class="button is-light is-medium" style="font-weight:600;">
+            <a href="{% url 'lxc_detail' job.vmid %}" class="button is-light is-medium" style="font-weight: 600;">
               <span class="icon"><i class="fas fa-cube"></i></span>
               <span>Back to Container</span>
             </a>
-            <a href="{% url 'lxc_export_index' %}" class="button is-light is-medium" style="font-weight:600;">
+            <a href="{% url 'lxc_export_index' %}" class="button is-light is-medium" style="font-weight: 600;">
               <span class="icon"><i class="fas fa-list"></i></span>
               <span>All Exports</span>
             </a>
@@ -96,20 +96,20 @@
       </div>
 
     {% elif job.stage == 'FAILED' %}
-      <div class="proxmigrate-card" style="margin-top:1.5rem;border-left:4px solid #f14668;border-radius:0 10px 10px 0;">
-        <div class="card-body" style="padding:1.5rem;">
-          <h3 style="font-size:1rem;font-weight:700;color:#cc0f35;margin-bottom:0.75rem;">
-            <i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i>Export Failed
+      <div class="proxmigrate-card" style="margin-top: 1.5rem;border-left: 4px solid var(--danger-color);border-radius: 0 10px 10px 0;">
+        <div class="card-body" style="padding: 1.5rem;">
+          <h3 style="font-size: 1rem;font-weight: 700;color: var(--danger-color);margin-bottom: 0.75rem;">
+            <i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem;"></i>Export Failed
           </h3>
           {% if job.error %}
-            <div style="background:#f9fafb;border:1px solid #e8ecf0;border-radius:6px;padding:1rem;font-family:monospace;font-size:0.8rem;color:#4a4a4a;white-space:pre-wrap;word-break:break-all;margin-bottom:1rem;">{{ job.error }}</div>
+            <div style="background: var(--bg-main);border: 1px solid var(--border-main);border-radius: 6px;padding: 1rem;font-family: monospace;font-size: 0.8rem;color: var(--text-semi);white-space: pre-wrap;word-break: break-all;margin-bottom: 1rem;">{{ job.error }}</div>
           {% endif %}
-          <div style="display:flex;gap:1rem;flex-wrap:wrap;">
-            <a href="{% url 'lxc_detail' job.vmid %}" class="button is-light" style="font-weight:600;">
+          <div style="display: flex;gap: 1rem;flex-wrap: wrap;">
+            <a href="{% url 'lxc_detail' job.vmid %}" class="button is-light" style="font-weight: 600;">
               <span class="icon"><i class="fas fa-cube"></i></span>
               <span>Back to Container</span>
             </a>
-            <a href="{% url 'lxc_export_index' %}" class="button is-light" style="font-weight:600;">
+            <a href="{% url 'lxc_export_index' %}" class="button is-light" style="font-weight: 600;">
               <span class="icon"><i class="fas fa-list"></i></span>
               <span>All Exports</span>
             </a>

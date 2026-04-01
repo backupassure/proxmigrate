@@ -88,13 +88,13 @@
   {# General #}
   <div class="column is-6">
     <div class="proxmigrate-card">
-      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-        <span><i class="fas fa-info-circle" style="color:#3273dc;"></i> General</span>
+      <div class="card-header" style="display: flex;justify-content: space-between;align-items: center;">
+        <span><i class="fas fa-info-circle" style="color: var(--link-color);"></i> General</span>
         <button class="button is-small is-white" onclick="openSettingsModal('general')" title="Edit description">
-          <i class="fas fa-pencil-alt" style="font-size:0.7rem;color:var(--text-muted, #7a7a7a);"></i>
+          <i class="fas fa-pencil-alt" style="font-size: 0.7rem;color: var(--text-muted);"></i>
         </button>
       </div>
-      <div class="card-body" style="padding:1rem 1.5rem;">
+      <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row"><div class="cert-detail-label">VMID</div><div class="cert-detail-value">{{ vm.vmid }}</div></div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">Name</div>
@@ -136,13 +136,13 @@
   {# Firmware #}
   <div class="column is-6">
     <div class="proxmigrate-card">
-      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-        <span><i class="fas fa-microchip" style="color:#7c3aed;"></i> Firmware &amp; Boot</span>
+      <div class="card-header" style="display: flex;justify-content: space-between;align-items: center;">
+        <span><i class="fas fa-microchip" style="color: var(--purple-color);"></i> Firmware &amp; Boot</span>
         <button class="button is-small is-white" onclick="openSettingsModal('firmware')" title="Edit firmware settings">
-          <i class="fas fa-pencil-alt" style="font-size:0.7rem;color:var(--text-muted, #7a7a7a);"></i>
+          <i class="fas fa-pencil-alt" style="font-size: 0.7rem;color: var(--text-muted);"></i>
         </button>
       </div>
-      <div class="card-body" style="padding:1rem 1.5rem;">
+      <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
           <div class="cert-detail-label">BIOS</div>
           <div class="cert-detail-value">{{ vm.bios|default:"SeaBIOS" }}</div>
@@ -150,24 +150,24 @@
         <div class="cert-detail-row">
           <div class="cert-detail-label">EFI Disk</div>
           <div class="cert-detail-value">
-            {% if vm.efidisk0 %}<span style="color:var(--success-color, #48c78e);">Yes</span>{% else %}<span style="color:var(--text-muted, #b5b5b5);">No</span>{% endif %}
+            {% if vm.efidisk0 %}<span style="color: var(--success-color);">Yes</span>{% else %}<span style="color: var(--text-muted);">No</span>{% endif %}
           </div>
         </div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">TPM</div>
           <div class="cert-detail-value">
-            {% if vm.tpmstate0 %}<span style="color:var(--success-color, #48c78e);">TPM 2.0</span>{% else %}<span style="color:var(--text-muted, #b5b5b5);">None</span>{% endif %}
+            {% if vm.tpmstate0 %}<span style="color: var(--success-color);">TPM 2.0</span>{% else %}<span style="color: var(--text-muted);">None</span>{% endif %}
           </div>
         </div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">Start on Boot</div>
           <div class="cert-detail-value">
-            {% if vm.onboot %}<span style="color:var(--success-color, #48c78e);">Yes</span>{% else %}No{% endif %}
+            {% if vm.onboot %}<span style="color: var(--success-color);">Yes</span>{% else %}No{% endif %}
           </div>
         </div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">Boot Order</div>
-          <div class="cert-detail-value" style="font-family:monospace;font-size:0.8rem;">{{ vm.boot|default:"—" }}</div>
+          <div class="cert-detail-value" style="font-family: monospace;font-size: 0.8rem;">{{ vm.boot|default:"—" }}</div>
         </div>
       </div>
     </div>
@@ -176,13 +176,13 @@
   {# CPU #}
   <div class="column is-6">
     <div class="proxmigrate-card">
-      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-        <span><i class="fas fa-microchip" style="color:var(--success-color, #48c78e);"></i> CPU</span>
+      <div class="card-header" style="display: flex;justify-content: space-between;align-items: center;">
+        <span><i class="fas fa-microchip" style="color: var(--success-color);"></i> CPU</span>
         <button class="button is-small is-white" onclick="openSettingsModal('cpu')" title="Edit CPU settings">
-          <i class="fas fa-pencil-alt" style="font-size:0.7rem;color:var(--text-muted, #7a7a7a);"></i>
+          <i class="fas fa-pencil-alt" style="font-size: 0.7rem;color: var(--text-muted);"></i>
         </button>
       </div>
-      <div class="card-body" style="padding:1rem 1.5rem;">
+      <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
           <div class="cert-detail-label">CPU Type</div>
           <div class="cert-detail-value">{{ vm.cpu|default:"—" }}</div>
@@ -210,13 +210,13 @@
   {# Memory #}
   <div class="column is-6">
     <div class="proxmigrate-card">
-      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-        <span><i class="fas fa-memory" style="color:#f59e0b;"></i> Memory</span>
+      <div class="card-header" style="display: flex;justify-content: space-between;align-items: center;">
+        <span><i class="fas fa-memory" style="color: var(--warning-color);"></i> Memory</span>
         <button class="button is-small is-white" onclick="openSettingsModal('memory')" title="Edit memory settings">
-          <i class="fas fa-pencil-alt" style="font-size:0.7rem;color:var(--text-muted, #7a7a7a);"></i>
+          <i class="fas fa-pencil-alt" style="font-size: 0.7rem;color: var(--text-muted);"></i>
         </button>
       </div>
-      <div class="card-body" style="padding:1rem 1.5rem;">
+      <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
           <div class="cert-detail-label">Allocated RAM</div>
           <div class="cert-detail-value"><strong>{{ vm.memory|default:"—" }} MB</strong></div>
@@ -236,13 +236,13 @@
   {# Disks #}
   <div class="column is-12">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-hdd" style="color:var(--success-color, #48c78e);"></i> Disks</div>
-      <div style="overflow-x:auto;">
+      <div class="card-header"><i class="fas fa-hdd" style="color: var(--success-color);"></i> Disks</div>
+      <div style="overflow-x: auto;">
         <div hx-get="{% url 'vm_disks' vmid %}"
              hx-trigger="load"
              hx-swap="innerHTML">
-          <div style="padding:1rem;text-align:center;color:var(--text-muted, #7a7a7a);">
-            <span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:0.5rem;"></span>
+          <div style="padding: 1rem;text-align: center;color: var(--text-muted);">
+            <span class="spinner" style="width: 16px;height: 16px;border-width: 2px;display: inline-block;vertical-align: middle;margin-right: 0.5rem;"></span>
             Loading disks...
           </div>
         </div>
@@ -253,13 +253,13 @@
   {# Network Interfaces #}
   <div class="column is-12">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-ethernet" style="color:#0369a1;"></i> Network Interfaces</div>
-      <div style="overflow-x:auto;">
+      <div class="card-header"><i class="fas fa-ethernet" style="color: var(--link-color);"></i> Network Interfaces</div>
+      <div style="overflow-x: auto;">
         <div hx-get="{% url 'vm_networks' vmid %}"
              hx-trigger="load"
              hx-swap="innerHTML">
-          <div style="padding:1rem;text-align:center;color:var(--text-muted, #7a7a7a);">
-            <span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:0.5rem;"></span>
+          <div style="padding: 1rem;text-align: center;color: var(--text-muted);">
+            <span class="spinner" style="width: 16px;height: 16px;border-width: 2px;display: inline-block;vertical-align: middle;margin-right: 0.5rem;"></span>
             Loading network interfaces...
           </div>
         </div>
@@ -270,8 +270,8 @@
   {# Display #}
   <div class="column is-6">
     <div class="proxmigrate-card">
-      <div class="card-header"><i class="fas fa-desktop" style="color:#7a7a7a;"></i> Display</div>
-      <div class="card-body" style="padding:1rem 1.5rem;">
+      <div class="card-header"><i class="fas fa-desktop" style="color: var(--text-muted);"></i> Display</div>
+      <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
           <div class="cert-detail-label">VGA Type</div>
           <div class="cert-detail-value">{{ vm.vga|default:"std" }}</div>

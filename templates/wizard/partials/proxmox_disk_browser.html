@@ -1,21 +1,21 @@
 {% if error %}
-<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:0.6rem 0.75rem;font-size:0.8rem;color:#991b1b;">
-  <i class="fas fa-exclamation-circle" style="margin-right:0.3rem;"></i>{{ error }}
+<div style="background: var(--bg-danger-light);border: 1px solid var(--danger-color);border-radius: 6px;padding: 0.6rem 0.75rem;font-size: 0.8rem;color: var(--danger-color);">
+  <i class="fas fa-exclamation-circle" style="margin-right: 0.3rem;"></i>{{ error }}
 </div>
 {% elif not files %}
-<div style="font-size:0.8rem;color:#6b7280;padding:0.5rem 0;">
-  <i class="fas fa-info-circle" style="margin-right:0.3rem;"></i>
+<div style="font-size: 0.8rem;color: var(--text-muted);padding: 0.5rem 0;">
+  <i class="fas fa-info-circle" style="margin-right: 0.3rem;"></i>
   No disk image files found in the Proxmox temp directory.
   Upload a disk image through ProxMigrate first, or place one in
   <code>{{ temp_dir|default:"/var/tmp" }}</code> on the Proxmox host.
 </div>
 {% else %}
-<div style="max-height:200px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;background:#fff;">
+<div style="max-height: 200px;overflow-y: auto;border: 1px solid var(--border-main);border-radius: 6px;background: var(--bg-card);">
   {% for f in files %}
-  <label style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0.7rem;cursor:pointer;{% if not forloop.last %}border-bottom:1px solid #f3f4f6;{% endif %}">
-    <input type="radio" class="proxmox-disk-choice" name="proxmox_disk_choice" value="{{ f.path }}" style="margin:0;flex-shrink:0;">
-    <span style="font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-      <i class="fas fa-hdd" style="color:#9ca3af;margin-right:0.3rem;font-size:0.75rem;"></i>{{ f.filename }}
+  <label style="display: flex;align-items: center;gap: 0.6rem;padding: 0.45rem 0.7rem;cursor: pointer;{% if not forloop.last %}border-bottom: 1px solid var(--border-light);{% endif %}">
+    <input type="radio" class="proxmox-disk-choice" name="proxmox_disk_choice" value="{{ f.path }}" style="margin: 0;flex-shrink: 0;">
+    <span style="font-size: 0.82rem;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">
+      <i class="fas fa-hdd" style="color: var(--text-muted);margin-right: 0.3rem;font-size: 0.75rem;"></i>{{ f.filename }}
     </span>
   </label>
   {% endfor %}

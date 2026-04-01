@@ -16,31 +16,31 @@
 
     <div class="proxmigrate-card">
       <div class="card-header">
-        <i class="fas fa-file-import" style="color:#3273dc;"></i> Upload .px Package
+        <i class="fas fa-file-import" style="color: var(--link-color);"></i> Upload .px Package
       </div>
       <div class="card-body">
 
         {% if error %}
-          <div class="notification is-danger is-light" style="margin-bottom:1.25rem;">
-            <i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i>{{ error }}
+          <div class="notification is-danger is-light" style="margin-bottom: 1.25rem;">
+            <i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem;"></i>{{ error }}
           </div>
         {% endif %}
 
         <form method="post" enctype="multipart/form-data" id="upload-form">
           {% csrf_token %}
 
-          <div class="field" style="margin-bottom:1.25rem;">
-            <label class="label" style="font-size:0.875rem;font-weight:600;">Package File</label>
+          <div class="field" style="margin-bottom: 1.25rem;">
+            <label class="label" style="font-size: 0.875rem;font-weight: 600;">Package File</label>
             <div class="control">
               <input class="input" type="file" name="px_file" accept=".px" id="px-file-input"
-                     style="height:auto;padding:0.5rem;" required>
+                     style="height: auto;padding: 0.5rem;" required>
             </div>
             <p class="field-hint">Select a <code>.px</code> file exported from ProxMigrate.</p>
           </div>
 
-          <div style="display:flex;justify-content:flex-end;gap:1rem;">
-            <a href="{% url 'export_index' %}" class="button is-light is-medium" style="font-weight:600;">Cancel</a>
-            <button type="submit" class="button is-info is-medium" id="btn-submit" style="font-weight:600;">
+          <div style="display: flex;justify-content: flex-end;gap: 1rem;">
+            <a href="{% url 'export_index' %}" class="button is-light is-medium" style="font-weight: 600;">Cancel</a>
+            <button type="submit" class="button is-info is-medium" id="btn-submit" style="font-weight: 600;">
               <span class="icon"><i class="fas fa-arrow-right"></i></span>
               <span>Upload &amp; Continue</span>
             </button>
@@ -55,21 +55,21 @@
   <div class="column is-5">
     <div class="proxmigrate-card">
       <div class="card-header">
-        <i class="fas fa-info-circle" style="color:#3273dc;"></i> What happens next
+        <i class="fas fa-info-circle" style="color: var(--link-color);"></i> What happens next
       </div>
-      <div class="card-body" style="font-size:0.85rem;color:#555;line-height:1.7;">
-        <p style="margin-bottom:0.75rem;">
+      <div class="card-body" style="font-size: 0.85rem;color: var(--text-semi);line-height: 1.7;">
+        <p style="margin-bottom: 0.75rem;">
           <strong>Step 1 — Upload</strong>: your <code>.px</code> package is uploaded and its manifest is validated.
         </p>
-        <p style="margin-bottom:0.75rem;">
+        <p style="margin-bottom: 0.75rem;">
           <strong>Step 2 — Configure</strong>: review and adjust all VM settings — name, CPU, memory, network, and storage — before anything is created on Proxmox.
         </p>
-        <p style="margin-bottom:0.75rem;">
+        <p style="margin-bottom: 0.75rem;">
           <strong>Step 3 — Deploy</strong>: ProxMigrate transfers the disk images to Proxmox and recreates the VM exactly as configured.
         </p>
-        <hr style="border:none;border-top:1px solid #e8ecf0;margin:0.75rem 0;">
-        <p style="font-size:0.78rem;color:#888;">
-          <i class="fas fa-shield-alt" style="margin-right:0.3rem;"></i>
+        <hr style="border: none;border-top: 1px solid var(--border-main);margin: 0.75rem 0;">
+        <p style="font-size: 0.78rem;color: var(--text-muted);">
+          <i class="fas fa-shield-alt" style="margin-right: 0.3rem;"></i>
           Packages are only accepted from ProxMigrate. Passwords are never included in exports.
         </p>
       </div>

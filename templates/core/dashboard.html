@@ -14,18 +14,18 @@
 
 {# ===== SETUP REQUIRED BANNER ===== #}
 {% if not wizard_complete %}
-<div class="proxmigrate-card setup-required-card" style="margin-bottom:2rem;">
-  <div class="card-body" style="padding:2rem;">
-    <div style="display:flex;align-items:flex-start;gap:1.5rem;">
-      <div style="width:56px;height:56px;border-radius:14px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i class="fas fa-cogs" style="font-size:1.5rem;color:#3273dc;"></i>
+<div class="proxmigrate-card setup-required-card" style="margin-bottom: 2rem;">
+  <div class="card-body" style="padding: 2rem;">
+    <div style="display: flex;align-items: flex-start;gap: 1.5rem;">
+      <div style="width: 56px;height: 56px;border-radius: 14px;background: var(--bg-info-light);display: flex;align-items: center;justify-content: center;flex-shrink: 0;">
+        <i class="fas fa-cogs" style="font-size: 1.5rem;color: var(--link-color);"></i>
       </div>
-      <div style="flex:1;">
-        <h2 style="font-size:1.15rem;font-weight:700;color:#1a1a2e;margin-bottom:0.4rem;">Setup Required</h2>
-        <p style="color:#7a7a7a;font-size:0.9rem;margin-bottom:1.25rem;line-height:1.6;">
+      <div style="flex: 1;">
+        <h2 style="font-size: 1.15rem;font-weight: 700;color: var(--text-header);margin-bottom: 0.4rem;">Setup Required</h2>
+        <p style="color: var(--text-muted);font-size: 0.9rem;margin-bottom: 1.25rem;line-height: 1.6;">
           ProxMigrate hasn't been connected to your Proxmox server yet. Run the setup wizard to configure your Proxmox host, SSH key authentication, API token, and default settings.
         </p>
-        <a href="{% url 'wizard_step1' %}" class="button is-primary" style="font-weight:600;">
+        <a href="{% url 'wizard_step1' %}" class="button is-primary" style="font-weight: 600;">
           <span class="icon"><i class="fas fa-magic"></i></span>
           <span>Run Setup Wizard</span>
           <span class="icon"><i class="fas fa-arrow-right"></i></span>
@@ -39,10 +39,10 @@
 {% if wizard_complete %}
 
 {# ===== VM STAT CARDS ===== #}
-<div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;font-weight:600;margin-bottom:0.5rem;">
-  <i class="fas fa-server" style="margin-right:0.3rem;"></i> Virtual Machines
+<div style="font-size: 0.78rem;text-transform: uppercase;letter-spacing: 1px;color: var(--text-muted);font-weight: 600;margin-bottom: 0.5rem;">
+  <i class="fas fa-server" style="margin-right: 0.3rem;"></i> Virtual Machines
 </div>
-<div class="columns is-multiline" style="margin-bottom:1rem;">
+<div class="columns is-multiline" style="margin-bottom: 1rem;">
   <div class="column is-3">
     <a href="{% url 'inventory' %}" class="stat-card stat-card-link">
       <div class="stat-card-icon is-blue">
@@ -82,7 +82,7 @@
         <i class="fas fa-database"></i>
       </div>
       <div>
-        <div class="stat-card-value" style="font-size:1rem;padding-top:0.3rem;">See inventory</div>
+        <div class="stat-card-value" style="font-size: 1rem;padding-top: 0.3rem;">See inventory</div>
         <div class="stat-card-label">VM Details</div>
       </div>
     </a>
@@ -90,10 +90,10 @@
 </div>
 
 {# ===== CONTAINER STAT CARDS ===== #}
-<div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;font-weight:600;margin-bottom:0.5rem;">
-  <i class="fas fa-cube" style="margin-right:0.3rem;"></i> LXC Containers
+<div style="font-size: 0.78rem;text-transform: uppercase;letter-spacing: 1px;color: var(--text-muted);font-weight: 600;margin-bottom: 0.5rem;">
+  <i class="fas fa-cube" style="margin-right: 0.3rem;"></i> LXC Containers
 </div>
-<div class="columns is-multiline" style="margin-bottom:0.5rem;">
+<div class="columns is-multiline" style="margin-bottom: 0.5rem;">
   <div class="column is-3">
     <a href="{% url 'lxc_list' %}" class="stat-card stat-card-link">
       <div class="stat-card-icon is-blue">
@@ -133,7 +133,7 @@
         <i class="fas fa-database"></i>
       </div>
       <div>
-        <div class="stat-card-value" style="font-size:1rem;padding-top:0.3rem;">See inventory</div>
+        <div class="stat-card-value" style="font-size: 1rem;padding-top: 0.3rem;">See inventory</div>
         <div class="stat-card-label">LXC Details</div>
       </div>
     </a>
@@ -141,26 +141,26 @@
 </div>
 
 {# ===== QUICK ACTIONS ===== #}
-<div class="columns" style="margin-top:1.5rem;">
+<div class="columns" style="margin-top: 1.5rem;">
   <div class="column is-4">
-    <div class="proxmigrate-card" style="height:100%;">
+    <div class="proxmigrate-card" style="height: 100%;">
       <div class="card-header">
-        <i class="fas fa-bolt" style="color:#f59e0b;"></i> Quick Actions
+        <i class="fas fa-bolt" style="color: var(--warning-color);"></i> Quick Actions
       </div>
-      <div class="card-body" style="display:flex;flex-direction:column;gap:0.75rem;">
-        <a href="{% url 'importer_upload' %}" class="button is-primary is-medium is-fullwidth" style="font-weight:600;justify-content:flex-start;padding-left:1.25rem;">
+      <div class="card-body" style="display: flex;flex-direction: column;gap: 0.75rem;">
+        <a href="{% url 'importer_upload' %}" class="button is-primary is-medium is-fullwidth" style="font-weight: 600;justify-content: flex-start;padding-left: 1.25rem;">
           <span class="icon"><i class="fas fa-upload"></i></span>
           <span>Import VM from Disk Image</span>
         </a>
-        <a href="{% url 'lxc_create' %}" class="button is-primary is-medium is-fullwidth" style="font-weight:600;justify-content:flex-start;padding-left:1.25rem;">
+        <a href="{% url 'lxc_create' %}" class="button is-primary is-medium is-fullwidth" style="font-weight: 600;justify-content: flex-start;padding-left: 1.25rem;">
           <span class="icon"><i class="fas fa-cube"></i></span>
           <span>New LXC Container</span>
         </a>
-        <a href="{% url 'inventory' %}" class="button is-light is-medium is-fullwidth" style="font-weight:600;justify-content:flex-start;padding-left:1.25rem;border:1px solid #e8ecf0;">
+        <a href="{% url 'inventory' %}" class="button is-light is-medium is-fullwidth" style="font-weight: 600;justify-content: flex-start;padding-left: 1.25rem;border: 1px solid var(--border-main);">
           <span class="icon"><i class="fas fa-server"></i></span>
           <span>View VM Inventory</span>
         </a>
-        <a href="{% url 'lxc_list' %}" class="button is-light is-medium is-fullwidth" style="font-weight:600;justify-content:flex-start;padding-left:1.25rem;border:1px solid #e8ecf0;">
+        <a href="{% url 'lxc_list' %}" class="button is-light is-medium is-fullwidth" style="font-weight: 600;justify-content: flex-start;padding-left: 1.25rem;border: 1px solid var(--border-main);">
           <span class="icon"><i class="fas fa-cube"></i></span>
           <span>View Container Inventory</span>
         </a>
@@ -170,21 +170,21 @@
 
   {# ===== RECENT JOBS ===== #}
   <div class="column is-8">
-    <div class="proxmigrate-card" style="height:100%;">
+    <div class="proxmigrate-card" style="height: 100%;">
       <div class="card-header">
-        <i class="fas fa-history" style="color:#3273dc;"></i> Recent Jobs
+        <i class="fas fa-history" style="color: var(--link-color);"></i> Recent Jobs
       </div>
-      <div style="overflow-x:auto;">
+      <div style="overflow-x: auto;">
         {% if recent_jobs %}
-          <table class="table is-fullwidth" style="margin:0;">
+          <table class="table is-fullwidth" style="margin: 0;">
             <thead>
-              <tr style="background:#f5f7fa;">
-                <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Source</th>
-                <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Name</th>
-                <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Type</th>
-                <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Status</th>
-                <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;">Date</th>
-                <th style="font-size:0.78rem;color:#7a7a7a;font-weight:600;border-bottom:1px solid #e8ecf0;text-align:right;">Actions</th>
+              <tr style="background: var(--bg-main);">
+                <th style="font-size: 0.78rem;color: var(--text-muted);font-weight: 600;border-bottom: 1px solid var(--border-main);">Source</th>
+                <th style="font-size: 0.78rem;color: var(--text-muted);font-weight: 600;border-bottom: 1px solid var(--border-main);">Name</th>
+                <th style="font-size: 0.78rem;color: var(--text-muted);font-weight: 600;border-bottom: 1px solid var(--border-main);">Type</th>
+                <th style="font-size: 0.78rem;color: var(--text-muted);font-weight: 600;border-bottom: 1px solid var(--border-main);">Status</th>
+                <th style="font-size: 0.78rem;color: var(--text-muted);font-weight: 600;border-bottom: 1px solid var(--border-main);">Date</th>
+                <th style="font-size: 0.78rem;color: var(--text-muted);font-weight: 600;border-bottom: 1px solid var(--border-main);text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -194,11 +194,11 @@
             </tbody>
           </table>
         {% else %}
-          <div class="empty-state" style="padding:2.5rem 1.5rem;">
+          <div class="empty-state" style="padding: 2.5rem 1.5rem;">
             <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
             <h3>No jobs yet</h3>
             <p>Import a disk image, create a VM, or spin up a container to get started.</p>
-            <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+            <div style="display: flex;gap: 0.75rem;justify-content: center;flex-wrap: wrap;">
               <a href="{% url 'vmcreator_create' %}" class="button is-primary is-small">
                 <span class="icon is-small"><i class="fas fa-plus-circle"></i></span>
                 <span>New VM</span>
@@ -220,37 +220,37 @@
 </div>
 
 {# ===== SYSTEM INFO ===== #}
-<div class="proxmigrate-card" style="margin-top:0.5rem;">
+<div class="proxmigrate-card" style="margin-top: 0.5rem;">
   <div class="card-header">
-    <i class="fas fa-info-circle" style="color:#7a7a7a;"></i> System Information
+    <i class="fas fa-info-circle" style="color: var(--text-muted);"></i> System Information
   </div>
   <div class="card-body">
     <div class="columns">
       <div class="column is-4">
-        <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;margin-bottom:0.35rem;font-weight:600;">Proxmox Host</div>
-        <div style="font-weight:600;color:#1a1a2e;font-family:monospace;">{{ proxmox_host|default:"Not configured" }}</div>
+        <div style="font-size: 0.78rem;text-transform: uppercase;letter-spacing: 1px;color: var(--text-muted);margin-bottom: 0.35rem;font-weight: 600;">Proxmox Host</div>
+        <div style="font-weight: 600;color: var(--text-header);font-family: monospace;">{{ proxmox_host|default:"Not configured" }}</div>
       </div>
       <div class="column is-4">
-        <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;margin-bottom:0.35rem;font-weight:600;">API Status</div>
+        <div style="font-size: 0.78rem;text-transform: uppercase;letter-spacing: 1px;color: var(--text-muted);margin-bottom: 0.35rem;font-weight: 600;">API Status</div>
         <div>
           {% if api_ok %}
             <span class="status-dot is-online"></span>
-            <span style="color:#257953;font-weight:600;">Connected</span>
+            <span style="color: var(--text-success-dark);font-weight: 600;">Connected</span>
           {% else %}
             <span class="status-dot is-offline"></span>
-            <span style="color:#cc0f35;font-weight:600;">Disconnected</span>
+            <span style="color: var(--danger-color);font-weight: 600;">Disconnected</span>
           {% endif %}
         </div>
       </div>
       <div class="column is-4">
-        <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;margin-bottom:0.35rem;font-weight:600;">SSH Key</div>
+        <div style="font-size: 0.78rem;text-transform: uppercase;letter-spacing: 1px;color: var(--text-muted);margin-bottom: 0.35rem;font-weight: 600;">SSH Key</div>
         <div>
           {% if ssh_key_ok %}
             <span class="status-dot is-online"></span>
-            <span style="color:#257953;font-weight:600;">Configured</span>
+            <span style="color: var(--text-success-dark);font-weight: 600;">Configured</span>
           {% else %}
             <span class="status-dot is-offline"></span>
-            <span style="color:#cc0f35;font-weight:600;">Not configured</span>
+            <span style="color: var(--danger-color);font-weight: 600;">Not configured</span>
           {% endif %}
         </div>
       </div>

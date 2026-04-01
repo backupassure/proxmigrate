@@ -3,15 +3,15 @@ Partial: single user <tr>. Used by users.html and HTMX toggle responses.
 Context: u (User), current_user (request.user)
 {% endcomment %}
 <tr id="user-row-{{ u.id }}">
-  <td style="vertical-align:middle;font-weight:600;color:#1a1a2e;">
-    <span class="icon" style="margin-right:0.3rem;color:#b5b5b5;"><i class="fas fa-user"></i></span>
+  <td style="vertical-align: middle;font-weight: 600;color: var(--text-header);">
+    <span class="icon" style="margin-right: 0.3rem;color: var(--text-muted);"><i class="fas fa-user"></i></span>
     {{ u.username }}
     {% if u == current_user %}
-      <span class="tag is-light" style="font-size:0.65rem;margin-left:0.3rem;">You</span>
+      <span class="tag is-light" style="font-size: 0.65rem;margin-left: 0.3rem;">You</span>
     {% endif %}
   </td>
-  <td style="vertical-align:middle;font-size:0.875rem;color:#4a4a4a;">{{ u.email|default:"—" }}</td>
-  <td style="vertical-align:middle;">
+  <td style="vertical-align: middle;font-size: 0.875rem;color: var(--text-semi);">{{ u.email|default:"—" }}</td>
+  <td style="vertical-align: middle;">
     {% if u.profile.auth_source == 'ldap' %}
       <span class="auth-badge auth-badge-ldap">LDAP</span>
     {% elif u.profile.auth_source == 'entra' %}
@@ -20,50 +20,50 @@ Context: u (User), current_user (request.user)
       <span class="auth-badge auth-badge-local">Local</span>
     {% endif %}
   </td>
-  <td style="vertical-align:middle;text-align:center;">
+  <td style="vertical-align: middle;text-align: center;">
     <span id="admin-status-{{ u.id }}">
       {% if u.is_superuser %}
-        <i class="fas fa-check-circle" style="color:#48c78e;" title="Admin"></i>
+        <i class="fas fa-check-circle" style="color: var(--success-color);" title="Admin"></i>
       {% else %}
-        <i class="fas fa-minus-circle" style="color:#dbdbdb;" title="Not admin"></i>
+        <i class="fas fa-minus-circle" style="color: var(--border-light);" title="Not admin"></i>
       {% endif %}
     </span>
     {% if u != current_user %}
-      <button class="button is-tiny is-ghost" style="font-size:0.7rem;padding:0 0.3rem;height:auto;"
+      <button class="button is-tiny is-ghost" style="font-size: 0.7rem;padding: 0 0.3rem;height: auto;"
               hx-post="{% url 'user_toggle_admin' u.id %}"
               hx-target="#user-row-{{ u.id }}"
               hx-swap="outerHTML"
               title="Toggle admin">
-        <i class="fas fa-exchange-alt" style="font-size:0.65rem;color:#b5b5b5;"></i>
+        <i class="fas fa-exchange-alt" style="font-size: 0.65rem;color: var(--text-muted);"></i>
       </button>
     {% endif %}
   </td>
-  <td style="vertical-align:middle;text-align:center;">
+  <td style="vertical-align: middle;text-align: center;">
     {% if u.is_active %}
-      <span class="status-badge vm-status-running" style="font-size:0.65rem;">Active</span>
+      <span class="status-badge vm-status-running" style="font-size: 0.65rem;">Active</span>
     {% else %}
-      <span class="status-badge vm-status-stopped" style="font-size:0.65rem;">Inactive</span>
+      <span class="status-badge vm-status-stopped" style="font-size: 0.65rem;">Inactive</span>
     {% endif %}
   </td>
-  <td style="vertical-align:middle;text-align:center;">
+  <td style="vertical-align: middle;text-align: center;">
     {% if u.profile.auth_source == 'entra' %}
-      <span style="font-size:0.65rem;color:#b5b5b5;" title="MFA managed by Entra ID">—</span>
+      <span style="font-size: 0.65rem;color: var(--text-muted);" title="MFA managed by Entra ID">—</span>
     {% elif u.profile.mfa_enabled %}
-      <i class="fas fa-shield-alt" style="color:#48c78e;" title="MFA enabled"></i>
+      <i class="fas fa-shield-alt" style="color: var(--success-color);" title="MFA enabled"></i>
     {% else %}
-      <i class="fas fa-shield-alt" style="color:#dbdbdb;" title="MFA not set up"></i>
+      <i class="fas fa-shield-alt" style="color: var(--border-light);" title="MFA not set up"></i>
     {% endif %}
   </td>
-  <td style="vertical-align:middle;font-size:0.82rem;color:#7a7a7a;">
+  <td style="vertical-align: middle;font-size: 0.82rem;color: var(--text-muted);">
     {% if u.last_login %}{{ u.last_login|timesince }} ago{% else %}Never{% endif %}
   </td>
-  <td style="vertical-align:middle;">
-    <div class="vm-actions" style="justify-content:flex-end;">
+  <td style="vertical-align: middle;">
+    <div class="vm-actions" style="justify-content: flex-end;">
       {% if u == current_user %}
         {# Own row: only change password #}
         <button class="button is-small is-light" title="Change my password"
                 onclick="showChangePasswordModal()">
-          <i class="fas fa-key" style="color:#3273dc;"></i>
+          <i class="fas fa-key" style="color: var(--link-color);"></i>
         </button>
       {% else %}
         <button class="button is-small is-light"
@@ -72,15 +72,15 @@ Context: u (User), current_user (request.user)
                 hx-swap="outerHTML"
                 title="{% if u.is_active %}Deactivate{% else %}Activate{% endif %}">
           {% if u.is_active %}
-            <i class="fas fa-user-slash" style="color:#f14668;"></i>
+            <i class="fas fa-user-slash" style="color: var(--danger-color);"></i>
           {% else %}
-            <i class="fas fa-user-check" style="color:#48c78e;"></i>
+            <i class="fas fa-user-check" style="color: var(--success-color);"></i>
           {% endif %}
         </button>
         {% if u.profile.auth_source == 'local' %}
           <button class="button is-small is-light" title="Reset password"
                   onclick="showResetPasswordModal({{ u.id }}, '{{ u.username }}')">
-            <i class="fas fa-key" style="color:#f59e0b;"></i>
+            <i class="fas fa-key" style="color: var(--warning-color);"></i>
           </button>
         {% endif %}
         {% if u.profile.mfa_enabled %}
@@ -89,12 +89,12 @@ Context: u (User), current_user (request.user)
                   hx-target="#user-row-{{ u.id }}"
                   hx-swap="outerHTML"
                   hx-confirm="Reset MFA for {{ u.username }}? They will need to set up their authenticator again.">
-            <i class="fas fa-shield-alt" style="color:#f59e0b;"></i>
+            <i class="fas fa-shield-alt" style="color: var(--warning-color);"></i>
           </button>
         {% endif %}
         <button class="button is-small is-light" title="Delete user"
                 onclick="confirmDeleteUser({{ u.id }}, '{{ u.username }}')">
-          <i class="fas fa-trash" style="color:#f14668;"></i>
+          <i class="fas fa-trash" style="color: var(--danger-color);"></i>
         </button>
       {% endif %}
     </div>

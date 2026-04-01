@@ -11,7 +11,7 @@
 
     {% if messages %}
       {% for message in messages %}
-        <div class="notification is-{{ message.tags }} is-light" style="margin-bottom:1rem;">
+        <div class="notification is-{{ message.tags }} is-light" style="margin-bottom: 1rem;">
           {{ message }}
         </div>
       {% endfor %}
@@ -19,47 +19,47 @@
 
     {# ── Status banner ── #}
     {% if config and config.is_enabled %}
-      <div class="notification is-success is-light" style="margin-bottom:1.5rem;padding:0.75rem 1rem;">
-        <i class="fas fa-check-circle" style="margin-right:0.4rem;"></i>
+      <div class="notification is-success is-light" style="margin-bottom: 1.5rem;padding: 0.75rem 1rem;">
+        <i class="fas fa-check-circle" style="margin-right: 0.4rem;"></i>
         Email delivery is <strong>enabled</strong> using
         {% if config.backend_type == 'smtp' %}<strong>SMTP</strong> ({{ config.smtp_host }}){% else %}<strong>Microsoft Graph API</strong>{% endif %}.
         Outgoing mail will be sent from <strong>{{ config.from_email }}</strong>.
       </div>
     {% else %}
-      <div class="notification is-warning is-light" style="margin-bottom:1.5rem;padding:0.75rem 1rem;">
-        <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
+      <div class="notification is-warning is-light" style="margin-bottom: 1.5rem;padding: 0.75rem 1rem;">
+        <i class="fas fa-exclamation-triangle" style="margin-right: 0.4rem;"></i>
         Email delivery is <strong>disabled</strong>. Password reset and alert emails will not be sent until email is configured and enabled.
       </div>
     {% endif %}
 
     {# ── Delivery method selector ── #}
-    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
+    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
       <div class="card-header">
-        <i class="fas fa-paper-plane" style="color:#3273dc;margin-right:0.5rem;"></i>
+        <i class="fas fa-paper-plane" style="color: var(--link-color);margin-right: 0.5rem;"></i>
         Delivery Method
       </div>
-      <div class="card-body" style="padding:1.25rem;">
-        <p style="font-size:0.875rem;color:#6b7280;margin-bottom:1rem;">Choose one delivery method. Only the selected method will be used for outgoing email.</p>
+      <div class="card-body" style="padding: 1.25rem;">
+        <p style="font-size: 0.875rem;color: var(--text-muted);margin-bottom: 1rem;">Choose one delivery method. Only the selected method will be used for outgoing email.</p>
         <div class="columns">
 
           {# SMTP card #}
           <div class="column is-half">
             <div id="card-smtp" class="method-card {% if not config or config.backend_type == 'smtp' %}is-selected{% endif %}"
                  onclick="selectMethod('smtp')"
-                 style="border:2px solid transparent;border-radius:8px;padding:1.25rem;cursor:pointer;transition:all 0.15s;background:#f8faff;">
-              <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
-                <div style="width:36px;height:36px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                  <i class="fas fa-envelope" style="color:#3273dc;font-size:1rem;"></i>
+                 style="border: 2px solid transparent;border-radius: 8px;padding: 1.25rem;cursor: pointer;transition: all 0.15s;background: var(--bg-info-light);">
+              <div style="display: flex;align-items: center;gap: 0.75rem;margin-bottom: 0.5rem;">
+                <div style="width: 36px;height: 36px;border-radius: 50%;background: var(--bg-info-light);display: flex;align-items: center;justify-content: center;flex-shrink: 0;">
+                  <i class="fas fa-envelope" style="color: var(--link-color);font-size: 1rem;"></i>
                 </div>
                 <div>
-                  <div style="font-weight:700;color:#1a1a2e;">SMTP</div>
-                  <div style="font-size:0.78rem;color:#6b7280;">Standard mail server</div>
+                  <div style="font-weight: 700;color: var(--text-header);">SMTP</div>
+                  <div style="font-size: 0.78rem;color: var(--text-muted);">Standard mail server</div>
                 </div>
-                <span class="method-check" style="margin-left:auto;font-size:1.1rem;color:#48c78e;display:none;">
+                <span class="method-check" style="margin-left: auto;font-size: 1.1rem;color: var(--success-color);display: none;">
                   <i class="fas fa-check-circle"></i>
                 </span>
               </div>
-              <p style="font-size:0.82rem;color:#4a4a4a;line-height:1.5;">
+              <p style="font-size: 0.82rem;color: var(--text-semi);line-height: 1.5;">
                 Works with any SMTP server — Office 365, Gmail, Postfix, SendGrid, or your own mail relay.
               </p>
             </div>
@@ -69,20 +69,20 @@
           <div class="column is-half">
             <div id="card-graph" class="method-card {% if config and config.backend_type == 'graph' %}is-selected{% endif %}"
                  onclick="selectMethod('graph')"
-                 style="border:2px solid transparent;border-radius:8px;padding:1.25rem;cursor:pointer;transition:all 0.15s;background:#f8faff;">
-              <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
-                <div style="width:36px;height:36px;border-radius:50%;background:#e8f4ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                  <i class="fab fa-microsoft" style="color:#0078d4;font-size:1rem;"></i>
+                 style="border: 2px solid transparent;border-radius: 8px;padding: 1.25rem;cursor: pointer;transition: all 0.15s;background: var(--bg-info-light);">
+              <div style="display: flex;align-items: center;gap: 0.75rem;margin-bottom: 0.5rem;">
+                <div style="width: 36px;height: 36px;border-radius: 50%;background: var(--bg-info-light);display: flex;align-items: center;justify-content: center;flex-shrink: 0;">
+                  <i class="fab fa-microsoft" style="color: var(--link-color);font-size: 1rem;"></i>
                 </div>
                 <div>
-                  <div style="font-weight:700;color:#1a1a2e;">Microsoft Graph API</div>
-                  <div style="font-size:0.78rem;color:#6b7280;">Microsoft 365 / Azure AD</div>
+                  <div style="font-weight: 700;color: var(--text-header);">Microsoft Graph API</div>
+                  <div style="font-size: 0.78rem;color: var(--text-muted);">Microsoft 365 / Azure AD</div>
                 </div>
-                <span class="method-check" style="margin-left:auto;font-size:1.1rem;color:#48c78e;display:none;">
+                <span class="method-check" style="margin-left: auto;font-size: 1.1rem;color: var(--success-color);display: none;">
                   <i class="fas fa-check-circle"></i>
                 </span>
               </div>
-              <p style="font-size:0.82rem;color:#4a4a4a;line-height:1.5;">
+              <p style="font-size: 0.82rem;color: var(--text-semi);line-height: 1.5;">
                 Sends via Microsoft Graph API using an Azure App Registration. No SMTP credentials required — ideal for Microsoft 365 tenants.
               </p>
             </div>
@@ -98,10 +98,10 @@
     <div id="pane-smtp" class="{% if config and config.backend_type == 'graph' %}is-hidden{% endif %}">
       <div class="proxmigrate-card">
         <div class="card-header">
-          <i class="fas fa-envelope" style="color:#3273dc;margin-right:0.5rem;"></i>
+          <i class="fas fa-envelope" style="color: var(--link-color);margin-right: 0.5rem;"></i>
           SMTP Configuration
         </div>
-        <div class="card-body" style="padding:1.5rem;">
+        <div class="card-body" style="padding: 1.5rem;">
           <form method="post" action="{% url 'email_settings_save' 'smtp' %}" id="smtp-form">
             {% csrf_token %}
 
@@ -120,7 +120,7 @@
               </div>
             </div>
 
-            <hr style="margin:1rem 0;">
+            <hr style="margin: 1rem 0;">
 
             <div class="columns">
               <div class="column is-6">
@@ -191,9 +191,9 @@
               </div>
             </div>
 
-            <hr style="margin:1rem 0;">
+            <hr style="margin: 1rem 0;">
 
-            <div class="columns" style="align-items:flex-end;">
+            <div class="columns" style="align-items: flex-end;">
               <div class="column is-4">
                 <div class="field">
                   <label class="label">Send Test Email To</label>
@@ -204,7 +204,7 @@
                   </div>
                 </div>
               </div>
-              <div class="column is-narrow" style="padding-bottom:0.75rem;">
+              <div class="column is-narrow" style="padding-bottom: 0.75rem;">
                 <button type="button" class="button is-info is-light"
                         hx-post="{% url 'email_settings_test' 'smtp' %}"
                         hx-include="#smtp-form"
@@ -214,17 +214,17 @@
                   <span>Send Test</span>
                 </button>
               </div>
-              <div class="column" style="padding-bottom:0.75rem;">
+              <div class="column" style="padding-bottom: 0.75rem;">
                 <div id="smtp-test-result"></div>
               </div>
             </div>
 
-            <div class="field" style="margin-top:0.5rem;display:flex;align-items:center;gap:1.5rem;">
+            <div class="field" style="margin-top: 0.5rem;display: flex;align-items: center;gap: 1.5rem;">
               <button type="submit" class="button is-primary">
                 <span class="icon"><i class="fas fa-save"></i></span>
                 <span>Save Settings</span>
               </button>
-              <label class="checkbox" style="font-size:0.9rem;">
+              <label class="checkbox" style="font-size: 0.9rem;">
                 <input type="checkbox" name="is_enabled"
                        {% if config and config.is_enabled and config.backend_type == 'smtp' %}checked{% endif %}>
                 Enable email delivery
@@ -241,19 +241,19 @@
     <div id="pane-graph" class="{% if not config or config.backend_type != 'graph' %}is-hidden{% endif %}">
       <div class="proxmigrate-card">
         <div class="card-header">
-          <i class="fab fa-microsoft" style="color:#0078d4;margin-right:0.5rem;"></i>
+          <i class="fab fa-microsoft" style="color: var(--link-color);margin-right: 0.5rem;"></i>
           Microsoft Graph API
         </div>
-        <div class="card-body" style="padding:1.5rem;">
+        <div class="card-body" style="padding: 1.5rem;">
 
           {# ── Azure App Registration Guide (collapsible) ── #}
-          <div class="form-section" style="margin-bottom:1.5rem;">
+          <div class="form-section" style="margin-bottom: 1.5rem;">
             <div class="form-section-header">
-              <div style="display:flex;align-items:center;gap:0.5rem;">
-                <i class="fas fa-book" style="color:#0369a1;"></i>
+              <div style="display: flex;align-items: center;gap: 0.5rem;">
+                <i class="fas fa-book" style="color: var(--link-color);"></i>
                 Azure App Registration Guide — Mail.Send via Client Credentials
               </div>
-              <i class="fas fa-chevron-down section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+              <i class="fas fa-chevron-down section-toggle-icon" style="color: var(--text-muted);font-size: 0.8rem;"></i>
             </div>
             <div class="form-section-body">
               <ol class="step-guide">
@@ -279,25 +279,25 @@
                   <div class="step-guide-num">3</div>
                   <div class="step-guide-text">
                     Go to <strong>API permissions</strong> &rarr; <strong>Add a permission</strong> &rarr; <strong>Microsoft Graph</strong> &rarr; <strong>Application permissions</strong> (not Delegated — this is server-to-server) and add the following:
-                    <table style="margin-top:0.6rem;font-size:0.8rem;border-collapse:collapse;width:100%;">
+                    <table style="margin-top: 0.6rem;font-size: 0.8rem;border-collapse: collapse;width: 100%;">
                       <thead>
-                        <tr style="background:#f0f4f8;">
-                          <th style="padding:0.35rem 0.6rem;text-align:left;border:1px solid #dde3ea;">Permission</th>
-                          <th style="padding:0.35rem 0.6rem;text-align:left;border:1px solid #dde3ea;">Type</th>
-                          <th style="padding:0.35rem 0.6rem;text-align:left;border:1px solid #dde3ea;">Admin consent</th>
-                          <th style="padding:0.35rem 0.6rem;text-align:left;border:1px solid #dde3ea;">Purpose</th>
+                        <tr style="background: var(--bg-main);">
+                          <th style="padding: 0.35rem 0.6rem;text-align: left;border: 1px solid var(--border-main);">Permission</th>
+                          <th style="padding: 0.35rem 0.6rem;text-align: left;border: 1px solid var(--border-main);">Type</th>
+                          <th style="padding: 0.35rem 0.6rem;text-align: left;border: 1px solid var(--border-main);">Admin consent</th>
+                          <th style="padding: 0.35rem 0.6rem;text-align: left;border: 1px solid var(--border-main);">Purpose</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;font-family:monospace;">Mail.Send</td>
-                          <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;">Application</td>
-                          <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;"><span class="tag is-warning is-light" style="font-size:0.72rem;">Required</span></td>
-                          <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;">Allows ProxMigrate to send email as the configured From mailbox</td>
+                          <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);font-family: monospace;">Mail.Send</td>
+                          <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);">Application</td>
+                          <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);"><span class="tag is-warning is-light" style="font-size: 0.72rem;">Required</span></td>
+                          <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);">Allows ProxMigrate to send email as the configured From mailbox</td>
                         </tr>
                       </tbody>
                     </table>
-                    <p style="margin-top:0.5rem;color:#6b7280;">
+                    <p style="margin-top: 0.5rem;color: var(--text-muted);">
                       After adding <code>Mail.Send</code>, click <strong>Grant admin consent for &lt;your tenant&gt;</strong>.
                       The status column must show a green <strong>Granted</strong> tick — the permission will not work without it.
                     </p>
@@ -310,13 +310,13 @@
                     <strong>Restrict the permission to a specific mailbox (recommended).</strong>
                     By default, <code>Mail.Send</code> as an Application permission allows the app to send as <em>any</em> mailbox in your tenant.
                     To restrict it to a single mailbox, create an <strong>Application Access Policy</strong> in Exchange Online PowerShell:
-                    <pre style="margin-top:0.5rem;background:#f0f4ff;border:1px solid #c8d8ff;border-radius:6px;padding:0.6rem 0.8rem;font-size:0.78rem;overflow-x:auto;"><code># Run in Exchange Online PowerShell
+                    <pre style="margin-top: 0.5rem;background: var(--bg-info-light);border: 1px solid var(--border-main);border-radius: 6px;padding: 0.6rem 0.8rem;font-size: 0.78rem;overflow-x: auto;"><code># Run in Exchange Online PowerShell
 New-ApplicationAccessPolicy `
   -AppId "&lt;your-client-id&gt;" `
   -PolicyScopeGroupId "&lt;mailbox@yourcompany.com&gt;" `
   -AccessRight RestrictAccess `
   -Description "Restrict ProxMigrate to send from one mailbox"</code></pre>
-                    <p style="margin-top:0.4rem;color:#6b7280;">This is optional but strongly recommended for production. A shared mailbox (e.g. <code>alerts@yourcompany.com</code>) works well as the From address.</p>
+                    <p style="margin-top: 0.4rem;color: var(--text-muted);">This is optional but strongly recommended for production. A shared mailbox (e.g. <code>alerts@yourcompany.com</code>) works well as the From address.</p>
                   </div>
                 </li>
 
@@ -359,7 +359,7 @@ New-ApplicationAccessPolicy `
               </div>
             </div>
 
-            <hr style="margin:1rem 0;">
+            <hr style="margin: 1rem 0;">
 
             <div class="columns">
               <div class="column is-6">
@@ -402,9 +402,9 @@ New-ApplicationAccessPolicy `
               </div>
             </div>
 
-            <hr style="margin:1rem 0;">
+            <hr style="margin: 1rem 0;">
 
-            <div class="columns" style="align-items:flex-end;">
+            <div class="columns" style="align-items: flex-end;">
               <div class="column is-4">
                 <div class="field">
                   <label class="label">Send Test Email To</label>
@@ -415,7 +415,7 @@ New-ApplicationAccessPolicy `
                   </div>
                 </div>
               </div>
-              <div class="column is-narrow" style="padding-bottom:0.75rem;">
+              <div class="column is-narrow" style="padding-bottom: 0.75rem;">
                 <button type="button" class="button is-info is-light"
                         hx-post="{% url 'email_settings_test' 'graph' %}"
                         hx-include="#graph-form"
@@ -425,17 +425,17 @@ New-ApplicationAccessPolicy `
                   <span>Send Test</span>
                 </button>
               </div>
-              <div class="column" style="padding-bottom:0.75rem;">
+              <div class="column" style="padding-bottom: 0.75rem;">
                 <div id="graph-test-result"></div>
               </div>
             </div>
 
-            <div class="field" style="margin-top:0.5rem;display:flex;align-items:center;gap:1.5rem;">
+            <div class="field" style="margin-top: 0.5rem;display: flex;align-items: center;gap: 1.5rem;">
               <button type="submit" class="button is-primary">
                 <span class="icon"><i class="fas fa-save"></i></span>
                 <span>Save Settings</span>
               </button>
-              <label class="checkbox" style="font-size:0.9rem;">
+              <label class="checkbox" style="font-size: 0.9rem;">
                 <input type="checkbox" name="is_enabled"
                        {% if config and config.is_enabled and config.backend_type == 'graph' %}checked{% endif %}>
                 Enable email delivery

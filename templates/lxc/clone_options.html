@@ -15,27 +15,27 @@
   <div class="column is-7">
 
     {% if error %}
-      <div class="notification is-warning is-light" style="margin-bottom:1.25rem;">
-        <i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i> {{ error }}
+      <div class="notification is-warning is-light" style="margin-bottom: 1.25rem;">
+        <i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem;"></i> {{ error }}
       </div>
     {% endif %}
 
     {# ── Source container summary ── #}
-    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
-      <div class="card-body" style="padding:1.25rem 1.5rem;">
-        <div style="display:flex;align-items:center;gap:1rem;">
-          <div style="width:44px;height:44px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <i class="fas fa-cube" style="color:#3273dc;font-size:1.1rem;"></i>
+    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+      <div class="card-body" style="padding: 1.25rem 1.5rem;">
+        <div style="display: flex;align-items: center;gap: 1rem;">
+          <div style="width: 44px;height: 44px;border-radius: 8px;background: var(--bg-info-light);display: flex;align-items: center;justify-content: center;flex-shrink: 0;">
+            <i class="fas fa-cube" style="color: var(--link-color);font-size: 1.1rem;"></i>
           </div>
           <div>
-            <div style="font-weight:700;color:#1a1a2e;font-size:1rem;">{{ ct_name }}</div>
-            <div style="font-size:0.82rem;color:#7a7a7a;margin-top:0.2rem;">
+            <div style="font-weight: 700;color: var(--text-header);font-size: 1rem;">{{ ct_name }}</div>
+            <div style="font-size: 0.82rem;color: var(--text-muted);margin-top: 0.2rem;">
               CTID {{ vmid }}
               &nbsp;&bull;&nbsp;
               {% if ct_status == 'running' %}
-                <span style="color:#48c78e;font-weight:600;"><i class="fas fa-circle" style="font-size:0.5rem;vertical-align:middle;margin-right:0.25rem;"></i>Running</span>
+                <span style="color: var(--success-color);font-weight: 600;"><i class="fas fa-circle" style="font-size: 0.5rem;vertical-align: middle;margin-right: 0.25rem;"></i>Running</span>
               {% else %}
-                <span style="color:#7a7a7a;"><i class="fas fa-circle" style="font-size:0.5rem;vertical-align:middle;margin-right:0.25rem;"></i>Stopped</span>
+                <span style="color: var(--text-muted);"><i class="fas fa-circle" style="font-size: 0.5rem;vertical-align: middle;margin-right: 0.25rem;"></i>Stopped</span>
               {% endif %}
             </div>
           </div>
@@ -50,17 +50,17 @@
       {# ---- General ---- #}
       <div class="form-section">
         <div class="form-section-header">
-          <div style="display:flex;align-items:center;gap:0.6rem;">
-            <div class="section-icon" style="background:#eff6ff;color:#3273dc;"><i class="fas fa-tag"></i></div>
+          <div style="display: flex;align-items: center;gap: 0.6rem;">
+            <div class="section-icon" style="background: var(--bg-info-light);color: var(--link-color);"><i class="fas fa-tag"></i></div>
             General
           </div>
-          <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+          <i class="fas fa-chevron-up section-toggle-icon" style="color: var(--text-muted);font-size: 0.8rem;"></i>
         </div>
         <div class="form-section-body is-open">
           <div class="columns">
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">New Hostname <span style="color:#f14668;">*</span></label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">New Hostname <span style="color: var(--danger-color);">*</span></label>
                 <div class="control">
                   <input class="input" type="text" name="hostname" value="{{ ct_name }}-clone" placeholder="{{ ct_name }}-clone" autofocus>
                 </div>
@@ -69,7 +69,7 @@
             </div>
             <div class="column is-3">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">CTID</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">CTID</label>
                 <div class="control">
                   <input class="input" type="number" name="vmid" value="" placeholder="{{ suggested_vmid }}"
                          hx-get="/inventory/api/vmid/check/"
@@ -78,7 +78,7 @@
                          hx-include="[name=vmid]">
                 </div>
                 <p class="field-hint">Leave blank to auto-assign.</p>
-                <div id="vmid-feedback" style="margin-top:0.25rem;"></div>
+                <div id="vmid-feedback" style="margin-top: 0.25rem;"></div>
               </div>
             </div>
           </div>
@@ -88,17 +88,17 @@
       {# ---- Target ---- #}
       <div class="form-section">
         <div class="form-section-header">
-          <div style="display:flex;align-items:center;gap:0.6rem;">
-            <div class="section-icon" style="background:#f0fdf4;color:#257953;"><i class="fas fa-server"></i></div>
+          <div style="display: flex;align-items: center;gap: 0.6rem;">
+            <div class="section-icon" style="background: var(--bg-success-light);color: var(--text-success-dark);"><i class="fas fa-server"></i></div>
             Target
           </div>
-          <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+          <i class="fas fa-chevron-up section-toggle-icon" style="color: var(--text-muted);font-size: 0.8rem;"></i>
         </div>
         <div class="form-section-body is-open">
           <div class="columns">
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Target Node</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Target Node</label>
                 <div class="control">
                   <div class="select is-fullwidth">
                     <select name="target_node">
@@ -113,7 +113,7 @@
             </div>
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Target Storage</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Target Storage</label>
                 <div class="control">
                   <div class="select is-fullwidth">
                     <select name="target_storage">
@@ -133,9 +133,9 @@
 
       <input type="hidden" name="clone_mode" value="full">
 
-      <div style="display:flex;justify-content:flex-end;gap:1rem;margin-top:1.5rem;margin-bottom:2rem;">
-        <a href="{% url 'lxc_detail' vmid %}" class="button is-light is-medium" style="font-weight:600;">Cancel</a>
-        <button type="submit" class="button is-primary is-medium" style="font-weight:600;">
+      <div style="display: flex;justify-content: flex-end;gap: 1rem;margin-top: 1.5rem;margin-bottom: 2rem;">
+        <a href="{% url 'lxc_detail' vmid %}" class="button is-light is-medium" style="font-weight: 600;">Cancel</a>
+        <button type="submit" class="button is-primary is-medium" style="font-weight: 600;">
           <span class="icon"><i class="fas fa-clone"></i></span>
           <span>Clone Container</span>
         </button>
@@ -148,18 +148,18 @@
   <div class="column is-5">
     <div class="proxmigrate-card">
       <div class="card-header">
-        <i class="fas fa-info-circle" style="color:#3273dc;"></i> About Container Clone
+        <i class="fas fa-info-circle" style="color: var(--link-color);"></i> About Container Clone
       </div>
-      <div class="card-body" style="font-size:0.85rem;color:#555;line-height:1.7;">
-        <p style="margin-bottom:0.75rem;">
+      <div class="card-body" style="font-size: 0.85rem;color: var(--text-semi);line-height: 1.7;">
+        <p style="margin-bottom: 0.75rem;">
           Cloning creates a full, independent copy of this container with a new CTID and hostname. The clone includes the complete rootfs and all configuration.
         </p>
-        <p style="margin-bottom:0.75rem;">
+        <p style="margin-bottom: 0.75rem;">
           The cloned container is fully standalone — no dependency on the source. You can freely modify or delete either container afterwards.
         </p>
-        <hr style="border:none;border-top:1px solid #e8ecf0;margin:0.75rem 0;">
-        <p style="font-size:0.78rem;color:#888;">
-          <i class="fas fa-network-wired" style="margin-right:0.3rem;"></i>
+        <hr style="border: none;border-top: 1px solid var(--border-main);margin: 0.75rem 0;">
+        <p style="font-size: 0.78rem;color: var(--text-muted);">
+          <i class="fas fa-network-wired" style="margin-right: 0.3rem;"></i>
           The clone will inherit the source container's network config. You may need to update the IP address in Proxmox after cloning to avoid conflicts.
         </p>
       </div>

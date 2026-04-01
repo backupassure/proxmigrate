@@ -1,6 +1,6 @@
 {# Directory browser partial — loaded into #dir-browser-body via HTMX #}
 
-<div style="display:flex;align-items:center;gap:0.5rem;padding:0.6rem 1rem;background:#f5f7fa;border-bottom:1px solid #e8ecf0;font-size:0.85rem;">
+<div style="display: flex;align-items: center;gap: 0.5rem;padding: 0.6rem 1rem;background: var(--bg-main);border-bottom: 1px solid var(--border-main);font-size: 0.85rem;">
   {# Up one level #}
   {% if path != "/" %}
     <button class="button is-small is-light"
@@ -11,7 +11,7 @@
       <span class="icon is-small"><i class="fas fa-level-up-alt"></i></span>
     </button>
   {% endif %}
-  <span class="is-monospace" style="color:#4a4a4a;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+  <span class="is-monospace" style="color: var(--text-semi);font-weight: 600;flex: 1;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">
     {{ path }}
   </span>
   <button class="button is-small is-primary" onclick="selectDir('{{ path }}')">
@@ -21,27 +21,27 @@
 </div>
 
 {% if error %}
-  <div style="padding:1rem;color:#f14668;font-size:0.85rem;">
-    <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
+  <div style="padding: 1rem;color: var(--danger-color);font-size: 0.85rem;">
+    <i class="fas fa-exclamation-triangle" style="margin-right: 0.4rem;"></i>
     {{ error }}
   </div>
 {% elif not dirs %}
-  <div style="padding:1.25rem 1rem;color:#b5b5b5;font-size:0.85rem;text-align:center;">
-    <i class="fas fa-folder-open" style="margin-right:0.4rem;"></i>
+  <div style="padding: 1.25rem 1rem;color: var(--text-muted);font-size: 0.85rem;text-align: center;">
+    <i class="fas fa-folder-open" style="margin-right: 0.4rem;"></i>
     No subdirectories here.
     <br>
-    <button class="button is-small is-primary is-light" style="margin-top:0.75rem;" onclick="selectDir('{{ path }}')">
-      <i class="fas fa-check" style="margin-right:0.3rem;"></i>
+    <button class="button is-small is-primary is-light" style="margin-top: 0.75rem;" onclick="selectDir('{{ path }}')">
+      <i class="fas fa-check" style="margin-right: 0.3rem;"></i>
       Use <code>{{ path }}</code>
     </button>
   </div>
 {% else %}
-  <ul style="list-style:none;margin:0;padding:0;max-height:320px;overflow-y:auto;">
+  <ul style="list-style: none;margin: 0;padding: 0;max-height: 320px;overflow-y: auto;">
     {% for dir in dirs %}
-      <li style="border-bottom:1px solid #f0f0f0;">
-        <div style="display:flex;align-items:center;padding:0.45rem 1rem;gap:0.5rem;">
-          <i class="fas fa-folder" style="color:#f59e0b;flex-shrink:0;"></i>
-          <button class="button is-ghost" style="flex:1;justify-content:flex-start;text-align:left;font-size:0.875rem;padding:0;height:auto;font-family:monospace;"
+      <li style="border-bottom: 1px solid var(--border-light);">
+        <div style="display: flex;align-items: center;padding: 0.45rem 1rem;gap: 0.5rem;">
+          <i class="fas fa-folder" style="color: var(--warning-color);flex-shrink: 0;"></i>
+          <button class="button is-ghost" style="flex: 1;justify-content: flex-start;text-align: left;font-size: 0.875rem;padding: 0;height: auto;font-family: monospace;"
                   hx-get="{% url 'wizard_step5_browse' %}?path={{ path }}/{{ dir }}"
                   hx-target="#dir-browser-body"
                   hx-swap="innerHTML">

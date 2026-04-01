@@ -6,7 +6,7 @@
 {% block content %}
 
 {# ===== Bulma Tabs ===== #}
-<div class="tabs is-boxed" id="auth-tabs" style="margin-bottom:0;border-bottom:none;">
+<div class="tabs is-boxed" id="auth-tabs" style="margin-bottom: 0;border-bottom: none;">
   <ul>
     <li class="{% if active_tab == 'local' or not active_tab %}is-active{% endif %}" data-tab="local">
       <a onclick="switchTab('local')">
@@ -18,21 +18,21 @@
       <a onclick="switchTab('ldap')">
         <span class="icon is-small"><i class="fas fa-building"></i></span>
         <span>LDAP / Active Directory</span>
-        {% if ldap_enabled %}<span class="tag is-success is-light" style="margin-left:0.5rem;font-size:0.65rem;">Enabled</span>{% endif %}
+        {% if ldap_enabled %}<span class="tag is-success is-light" style="margin-left: 0.5rem;font-size: 0.65rem;">Enabled</span>{% endif %}
       </a>
     </li>
     <li class="{% if active_tab == 'entra' %}is-active{% endif %}" data-tab="entra">
       <a onclick="switchTab('entra')">
         <span class="icon is-small"><i class="fab fa-microsoft"></i></span>
         <span>Entra ID (Microsoft)</span>
-        {% if entra_enabled %}<span class="tag is-success is-light" style="margin-left:0.5rem;font-size:0.65rem;">Enabled</span>{% endif %}
+        {% if entra_enabled %}<span class="tag is-success is-light" style="margin-left: 0.5rem;font-size: 0.65rem;">Enabled</span>{% endif %}
       </a>
     </li>
     <li class="{% if active_tab == 'mfa' %}is-active{% endif %}" data-tab="mfa">
       <a onclick="switchTab('mfa')">
         <span class="icon is-small"><i class="fas fa-shield-alt"></i></span>
         <span>MFA</span>
-        {% if mfa_enforced %}<span class="tag is-warning is-light" style="margin-left:0.5rem;font-size:0.65rem;">Enforced</span>{% endif %}
+        {% if mfa_enforced %}<span class="tag is-warning is-light" style="margin-left: 0.5rem;font-size: 0.65rem;">Enforced</span>{% endif %}
       </a>
     </li>
   </ul>
@@ -42,12 +42,12 @@
 
   {# ===== Tab 1: Local Accounts ===== #}
   <div class="tab-pane {% if active_tab == 'local' or not active_tab %}is-active{% endif %}" id="tab-local">
-    <div class="proxmigrate-card" style="border-radius:0 10px 10px 10px;">
+    <div class="proxmigrate-card" style="border-radius: 0 10px 10px 10px;">
       <div class="card-header">
-        <i class="fas fa-user" style="color:#3273dc;"></i> Local Authentication
+        <i class="fas fa-user" style="color: var(--link-color);"></i> Local Authentication
       </div>
       <div class="card-body">
-        <div class="info-box is-success" style="margin-bottom:1.5rem;">
+        <div class="info-box is-success" style="margin-bottom: 1.5rem;">
           <div class="info-box-icon"><i class="fas fa-check-circle"></i></div>
           <div>
             <strong>Local authentication is always enabled</strong> and cannot be disabled.
@@ -55,11 +55,11 @@
           </div>
         </div>
 
-        <p style="font-size:0.875rem;color:#4a4a4a;margin-bottom:1.25rem;">
+        <p style="font-size: 0.875rem;color: var(--text-semi);margin-bottom: 1.25rem;">
           Local accounts are stored in ProxMigrate's database. Use the User Management page to create, edit, and deactivate local users.
         </p>
 
-        <a href="{% url 'user_list' %}" class="button is-primary" style="font-weight:600;">
+        <a href="{% url 'user_list' %}" class="button is-primary" style="font-weight: 600;">
           <span class="icon"><i class="fas fa-users"></i></span>
           <span>Manage Local Users</span>
           <span class="icon"><i class="fas fa-arrow-right"></i></span>
@@ -70,23 +70,23 @@
 
   {# ===== Tab: MFA ===== #}
   <div class="tab-pane {% if active_tab == 'mfa' %}is-active{% endif %}" id="tab-mfa">
-    <div class="proxmigrate-card" style="border-radius:0 10px 10px 10px;">
+    <div class="proxmigrate-card" style="border-radius: 0 10px 10px 10px;">
       <div class="card-header">
-        <i class="fas fa-shield-alt" style="color:#f59e0b;"></i> Multi-Factor Authentication
+        <i class="fas fa-shield-alt" style="color: var(--warning-color);"></i> Multi-Factor Authentication
       </div>
       <div class="card-body">
-        <p style="font-size:0.875rem;color:#4a4a4a;margin-bottom:1.5rem;line-height:1.6;">
+        <p style="font-size: 0.875rem;color: var(--text-semi);margin-bottom: 1.5rem;line-height: 1.6;">
           MFA adds a second layer of security by requiring an authenticator app code (Google Authenticator, Authy, Microsoft Authenticator)
           after username and password. Applies to <strong>Local</strong> and <strong>LDAP</strong> accounts.
           Entra ID users are excluded — MFA is managed by their identity provider.
         </p>
 
-        <div style="display:flex;align-items:center;justify-content:space-between;background:#f5f7fa;border-radius:8px;padding:1.25rem 1.5rem;">
+        <div style="display: flex;align-items: center;justify-content: space-between;background: var(--bg-main);border-radius: 8px;padding: 1.25rem 1.5rem;">
           <div>
-            <div style="font-weight:600;font-size:0.95rem;color:#1a1a2e;">
+            <div style="font-weight: 600;font-size: 0.95rem;color: var(--text-header);">
               Global Enforcement
             </div>
-            <p style="font-size:0.82rem;color:#7a7a7a;margin-top:0.3rem;">
+            <p style="font-size: 0.82rem;color: var(--text-muted);margin-top: 0.3rem;">
               {% if mfa_enforced %}
                 All local and LDAP users are <strong>required</strong> to set up MFA on their next login.
                 Users cannot disable MFA while enforcement is active.
@@ -95,10 +95,10 @@
               {% endif %}
             </p>
           </div>
-          <form method="post" action="{% url 'auth_settings_toggle' 'mfa' %}" style="margin-left:1.5rem;flex-shrink:0;">
+          <form method="post" action="{% url 'auth_settings_toggle' 'mfa' %}" style="margin-left: 1.5rem;flex-shrink: 0;">
             {% csrf_token %}
             <button type="submit" class="button {% if mfa_enforced %}is-warning{% else %}is-light{% endif %}"
-                    style="font-weight:600;"
+                    style="font-weight: 600;"
                     onclick="return confirm('{% if mfa_enforced %}Disable MFA enforcement? Users will be able to disable their MFA.{% else %}Enforce MFA for all local and LDAP users? They will be required to set up an authenticator app on their next login.{% endif %}')">
               {% if mfa_enforced %}
                 <span class="icon"><i class="fas fa-lock"></i></span>
@@ -111,12 +111,12 @@
           </form>
         </div>
 
-        <div style="display:flex;align-items:center;justify-content:space-between;background:#f5f7fa;border-radius:8px;padding:1.25rem 1.5rem;margin-top:1.25rem;">
+        <div style="display: flex;align-items: center;justify-content: space-between;background: var(--bg-main);border-radius: 8px;padding: 1.25rem 1.5rem;margin-top: 1.25rem;">
           <div>
-            <div style="font-weight:600;font-size:0.95rem;color:#1a1a2e;">
+            <div style="font-weight: 600;font-size: 0.95rem;color: var(--text-header);">
               Email Recovery
             </div>
-            <p style="font-size:0.82rem;color:#7a7a7a;margin-top:0.3rem;">
+            <p style="font-size: 0.82rem;color: var(--text-muted);margin-top: 0.3rem;">
               {% if mfa_email_recovery %}
                 Users can receive a one-time bypass code via email if they lose access to their authenticator.
                 Requires email to be configured (SMTP or Graph API).
@@ -125,10 +125,10 @@
               {% endif %}
             </p>
           </div>
-          <form method="post" action="{% url 'auth_settings_toggle' 'mfa_email' %}" style="margin-left:1.5rem;flex-shrink:0;">
+          <form method="post" action="{% url 'auth_settings_toggle' 'mfa_email' %}" style="margin-left: 1.5rem;flex-shrink: 0;">
             {% csrf_token %}
             <button type="submit" class="button {% if mfa_email_recovery %}is-info is-light{% else %}is-light{% endif %}"
-                    style="font-weight:600;">
+                    style="font-weight: 600;">
               {% if mfa_email_recovery %}
                 <span class="icon"><i class="fas fa-envelope"></i></span>
                 <span>Enabled</span>
@@ -140,10 +140,10 @@
           </form>
         </div>
 
-        <div style="margin-top:1.5rem;">
-          <div class="info-box" style="margin-bottom:1rem;">
+        <div style="margin-top: 1.5rem;">
+          <div class="info-box" style="margin-bottom: 1rem;">
             <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
-            <div style="font-size:0.82rem;">
+            <div style="font-size: 0.82rem;">
               <strong>Recovery options:</strong> Users always get 8 one-time recovery codes at setup.
               Admins can reset a user's MFA from the User Management page.
             </div>
@@ -155,17 +155,17 @@
 
   {# ===== Tab 2: LDAP ===== #}
   <div class="tab-pane {% if active_tab == 'ldap' %}is-active{% endif %}" id="tab-ldap">
-    <div class="proxmigrate-card" style="border-radius:0 10px 10px 10px;">
+    <div class="proxmigrate-card" style="border-radius: 0 10px 10px 10px;">
       <div class="card-header">
-        <i class="fas fa-building" style="color:#f59e0b;"></i> LDAP / Active Directory
+        <i class="fas fa-building" style="color: var(--warning-color);"></i> LDAP / Active Directory
       </div>
       <div class="card-body">
 
         {# Enable toggle #}
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem;background:#f5f7fa;border-radius:8px;margin-bottom:1.5rem;">
+        <div style="display: flex;align-items: center;justify-content: space-between;padding: 1rem;background: var(--bg-main);border-radius: 8px;margin-bottom: 1.5rem;">
           <div>
-            <div style="font-weight:600;color:#1a1a2e;">Enable LDAP Authentication</div>
-            <div style="font-size:0.82rem;color:#7a7a7a;margin-top:0.2rem;">Allow users to sign in with LDAP/Active Directory credentials.</div>
+            <div style="font-weight: 600;color: var(--text-header);">Enable LDAP Authentication</div>
+            <div style="font-size: 0.82rem;color: var(--text-muted);margin-top: 0.2rem;">Allow users to sign in with LDAP/Active Directory credentials.</div>
           </div>
           <input type="checkbox" {% if ldap_enabled %}checked{% endif %}
             hx-post="{% url 'auth_settings_toggle' 'ldap' %}"
@@ -181,25 +181,25 @@
           <div class="columns">
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">LDAP Server URI</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">LDAP Server URI</label>
                 <div class="control has-icons-left">
                   <input class="input is-monospace" type="text" name="server_uri"
                     value="{{ ldap_config.server_uri|default:'' }}"
                     placeholder="ldap://dc.example.com:389">
-                  <span class="icon is-left"><i class="fas fa-server" style="color:#b5b5b5;"></i></span>
+                  <span class="icon is-left"><i class="fas fa-server" style="color: var(--text-muted);"></i></span>
                 </div>
                 <p class="field-hint">Use <code>ldaps://</code> for SSL. Example: <code>ldap://192.168.1.10:389</code></p>
               </div>
             </div>
             <div class="column is-4">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Options</label>
-                <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.5rem;">
-                  <label class="checkbox" style="font-size:0.875rem;">
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Options</label>
+                <div style="display: flex;flex-direction: column;gap: 0.5rem;margin-top: 0.5rem;">
+                  <label class="checkbox" style="font-size: 0.875rem;">
                     <input type="checkbox" name="use_tls" {% if ldap_config.use_tls %}checked{% endif %}>
                     &nbsp;Use STARTTLS
                   </label>
-                  <label class="checkbox" style="font-size:0.875rem;">
+                  <label class="checkbox" style="font-size: 0.875rem;">
                     <input type="checkbox" name="skip_cert_verify" {% if ldap_config.skip_cert_verify %}checked{% endif %}>
                     &nbsp;Skip certificate verification
                   </label>
@@ -211,7 +211,7 @@
           <div class="columns">
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Bind DN</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Bind DN</label>
                 <div class="control">
                   <input class="input is-monospace" type="text" name="bind_dn"
                     value="{{ ldap_config.bind_dn|default:'' }}"
@@ -221,11 +221,11 @@
             </div>
             <div class="column is-4">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Bind Password</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Bind Password</label>
                 <div class="control has-icons-left">
                   <input class="input" type="password" name="bind_password"
                     placeholder="{% if ldap_config.bind_password_set %}(saved — leave blank to keep){% else %}Enter password{% endif %}">
-                  <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+                  <span class="icon is-left"><i class="fas fa-lock" style="color: var(--text-muted);"></i></span>
                 </div>
               </div>
             </div>
@@ -234,7 +234,7 @@
           <div class="columns">
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">User Search Base</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">User Search Base</label>
                 <div class="control">
                   <input class="input is-monospace" type="text" name="user_search_base"
                     value="{{ ldap_config.user_search_base|default:'' }}"
@@ -244,7 +244,7 @@
             </div>
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">User Search Filter</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">User Search Filter</label>
                 <div class="control">
                   <input class="input is-monospace" type="text" name="user_search_filter"
                     value="{{ ldap_config.user_search_filter|default:'(sAMAccountName=%(user)s)' }}"
@@ -258,7 +258,7 @@
           <div class="columns">
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Require Group (optional)</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Require Group (optional)</label>
                 <div class="control">
                   <input class="input is-monospace" type="text" name="require_group"
                     value="{{ ldap_config.require_group|default:'' }}"
@@ -269,7 +269,7 @@
             </div>
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Admin Group (optional)</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Admin Group (optional)</label>
                 <div class="control">
                   <input class="input is-monospace" type="text" name="admin_group"
                     value="{{ ldap_config.admin_group|default:'' }}"
@@ -281,14 +281,14 @@
           </div>
 
           {# CA Certificate trust #}
-          <div class="field" style="margin-bottom:1.25rem;">
-            <label class="label" style="font-size:0.875rem;font-weight:600;">
-              Trusted CA Certificate (PEM) <span style="font-weight:400;color:#7a7a7a;">— optional</span>
+          <div class="field" style="margin-bottom: 1.25rem;">
+            <label class="label" style="font-size: 0.875rem;font-weight: 600;">
+              Trusted CA Certificate (PEM) <span style="font-weight: 400;color: var(--text-muted);">— optional</span>
             </label>
             <div class="control">
               <textarea class="textarea is-small" name="ca_cert" rows="4"
                 placeholder="-----BEGIN CERTIFICATE-----&#10;Paste the CA or LDAP server certificate here to trust it for LDAPS connections.&#10;Leave blank to use system CAs or if Skip Certificate Verification is enabled.&#10;-----END CERTIFICATE-----"
-                style="font-family:monospace;font-size:0.75rem;resize:vertical;">{{ ldap_config.ca_cert|default:'' }}</textarea>
+                style="font-family: monospace;font-size: 0.75rem;resize: vertical;">{{ ldap_config.ca_cert|default:'' }}</textarea>
             </div>
             <p class="field-hint">
               Paste either the <strong>CA certificate</strong> that signed the LDAP server's cert, or the <strong>LDAP server certificate</strong> itself.
@@ -297,8 +297,8 @@
             </p>
           </div>
 
-          <div style="display:flex;gap:1rem;align-items:center;margin-top:0.5rem;flex-wrap:wrap;">
-            <button type="submit" class="button is-primary" style="font-weight:600;">
+          <div style="display: flex;gap: 1rem;align-items: center;margin-top: 0.5rem;flex-wrap: wrap;">
+            <button type="submit" class="button is-primary" style="font-weight: 600;">
               <span class="icon"><i class="fas fa-save"></i></span>
               <span>Save LDAP Settings</span>
             </button>
@@ -310,7 +310,7 @@
               <span class="icon"><i class="fas fa-plug"></i></span>
               <span>Test Connection</span>
             </button>
-            <div id="ldap-test-result" style="flex:1;"></div>
+            <div id="ldap-test-result" style="flex: 1;"></div>
           </div>
         </form>
       </div>
@@ -319,10 +319,10 @@
 
   {# ===== Tab 3: Entra ID ===== #}
   <div class="tab-pane {% if active_tab == 'entra' %}is-active{% endif %}" id="tab-entra">
-    <div class="proxmigrate-card" style="border-radius:0 10px 10px 10px;">
+    <div class="proxmigrate-card" style="border-radius: 0 10px 10px 10px;">
       <div class="card-header">
-        <span style="display:inline-flex;align-items:center;gap:0.5rem;">
-          <svg width="16" height="16" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+        <span style="display: inline-flex;align-items: center;gap: 0.5rem;">
+          <svg width="16" height="16" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
             <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
             <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
             <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
@@ -334,10 +334,10 @@
       <div class="card-body">
 
         {# Enable toggle #}
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem;background:#f5f7fa;border-radius:8px;margin-bottom:1.5rem;">
+        <div style="display: flex;align-items: center;justify-content: space-between;padding: 1rem;background: var(--bg-main);border-radius: 8px;margin-bottom: 1.5rem;">
           <div>
-            <div style="font-weight:600;color:#1a1a2e;">Enable Entra ID Authentication</div>
-            <div style="font-size:0.82rem;color:#7a7a7a;margin-top:0.2rem;">Allow users to sign in with their Microsoft work accounts.</div>
+            <div style="font-weight: 600;color: var(--text-header);">Enable Entra ID Authentication</div>
+            <div style="font-size: 0.82rem;color: var(--text-muted);margin-top: 0.2rem;">Allow users to sign in with their Microsoft work accounts.</div>
           </div>
           <input type="checkbox" {% if entra_enabled %}checked{% endif %}
             hx-post="{% url 'auth_settings_toggle' 'entra' %}"
@@ -346,10 +346,10 @@
         <div id="entra-toggle-result"></div>
 
         {# Redirect URL — must be registered in Azure #}
-        <div class="field" style="margin-bottom:1.5rem;">
-          <label class="label" style="font-size:0.875rem;font-weight:600;">Redirect URI (register this in Azure)</label>
-          <div style="display:flex;gap:0.5rem;align-items:center;">
-            <div class="redirect-url-box" style="flex:1;" id="redirect-url-box">
+        <div class="field" style="margin-bottom: 1.5rem;">
+          <label class="label" style="font-size: 0.875rem;font-weight: 600;">Redirect URI (register this in Azure)</label>
+          <div style="display: flex;gap: 0.5rem;align-items: center;">
+            <div class="redirect-url-box" style="flex: 1;" id="redirect-url-box">
               https://{{ request.get_host }}/accounts/microsoft/login/callback/
             </div>
             <button type="button" class="button is-small is-light" onclick="copyRedirectUrl()">
@@ -360,13 +360,13 @@
         </div>
 
         {# Azure App Registration guide #}
-        <div class="form-section" style="margin-bottom:1.5rem;">
+        <div class="form-section" style="margin-bottom: 1.5rem;">
           <div class="form-section-header">
-            <div style="display:flex;align-items:center;gap:0.5rem;">
-              <i class="fas fa-book" style="color:#0369a1;"></i>
+            <div style="display: flex;align-items: center;gap: 0.5rem;">
+              <i class="fas fa-book" style="color: var(--link-color);"></i>
               Azure App Registration Guide
             </div>
-            <i class="fas fa-chevron-down section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+            <i class="fas fa-chevron-down section-toggle-icon" style="color: var(--text-muted);font-size: 0.8rem;"></i>
           </div>
           <div class="form-section-body">
             <ol class="step-guide">
@@ -392,31 +392,31 @@
                 <div class="step-guide-num">4</div>
                 <div class="step-guide-text">
                   Go to <strong>API permissions</strong> &rarr; <strong>Add a permission</strong> &rarr; <strong>Microsoft Graph</strong> &rarr; <strong>Delegated permissions</strong> and confirm the following are present:
-                  <table style="margin-top:0.6rem;font-size:0.8rem;border-collapse:collapse;width:100%;">
+                  <table style="margin-top: 0.6rem;font-size: 0.8rem;border-collapse: collapse;width: 100%;">
                     <thead>
-                      <tr style="background:#f0f4f8;">
-                        <th style="padding:0.35rem 0.6rem;text-align:left;border:1px solid #dde3ea;">Permission</th>
-                        <th style="padding:0.35rem 0.6rem;text-align:left;border:1px solid #dde3ea;">Type</th>
-                        <th style="padding:0.35rem 0.6rem;text-align:left;border:1px solid #dde3ea;">Admin consent</th>
-                        <th style="padding:0.35rem 0.6rem;text-align:left;border:1px solid #dde3ea;">Purpose</th>
+                      <tr style="background: var(--bg-main);">
+                        <th style="padding: 0.35rem 0.6rem;text-align: left;border: 1px solid var(--border-main);">Permission</th>
+                        <th style="padding: 0.35rem 0.6rem;text-align: left;border: 1px solid var(--border-main);">Type</th>
+                        <th style="padding: 0.35rem 0.6rem;text-align: left;border: 1px solid var(--border-main);">Admin consent</th>
+                        <th style="padding: 0.35rem 0.6rem;text-align: left;border: 1px solid var(--border-main);">Purpose</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr>
-                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;font-family:monospace;">User.Read</td>
-                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;">Delegated</td>
-                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;"><span class="tag is-success is-light" style="font-size:0.72rem;">Not required</span></td>
-                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;">Sign in, read user profile &amp; email — added by default</td>
+                        <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);font-family: monospace;">User.Read</td>
+                        <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);">Delegated</td>
+                        <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);"><span class="tag is-success is-light" style="font-size: 0.72rem;">Not required</span></td>
+                        <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);">Sign in, read user profile &amp; email — added by default</td>
                       </tr>
-                      <tr style="background:#fafafa;">
-                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;font-family:monospace;">GroupMember.Read.All</td>
-                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;">Delegated</td>
-                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;"><span class="tag is-warning is-light" style="font-size:0.72rem;">Required</span></td>
-                        <td style="padding:0.35rem 0.6rem;border:1px solid #dde3ea;">Check group membership — required if Require Group ID or Admin Group ID is set</td>
+                      <tr style="background: var(--bg-main);">
+                        <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);font-family: monospace;">GroupMember.Read.All</td>
+                        <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);">Delegated</td>
+                        <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);"><span class="tag is-warning is-light" style="font-size: 0.72rem;">Required</span></td>
+                        <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);">Check group membership — required if Require Group ID or Admin Group ID is set</td>
                       </tr>
                     </tbody>
                   </table>
-                  <p style="margin-top:0.5rem;color:#6b7280;">After adding permissions, click <strong>Grant admin consent for &lt;your tenant&gt;</strong> to activate the <code>GroupMember.Read.All</code> permission.</p>
+                  <p style="margin-top: 0.5rem;color: var(--text-muted);">After adding permissions, click <strong>Grant admin consent for &lt;your tenant&gt;</strong> to activate the <code>GroupMember.Read.All</code> permission.</p>
                 </div>
               </li>
               <li>
@@ -437,7 +437,7 @@
           <div class="columns">
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Directory (Tenant) ID</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Directory (Tenant) ID</label>
                 <div class="control">
                   <input class="input is-monospace" type="text" name="tenant_id"
                     value="{{ entra_config.tenant_id|default:'' }}"
@@ -447,7 +447,7 @@
             </div>
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Application (Client) ID</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Application (Client) ID</label>
                 <div class="control">
                   <input class="input is-monospace" type="text" name="client_id"
                     value="{{ entra_config.client_id|default:'' }}"
@@ -460,17 +460,17 @@
           <div class="columns">
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Client Secret</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Client Secret</label>
                 <div class="control has-icons-left">
                   <input class="input" type="password" name="client_secret"
                     placeholder="{% if entra_config.client_secret_set %}(saved — leave blank to keep){% else %}Paste client secret here{% endif %}">
-                  <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+                  <span class="icon is-left"><i class="fas fa-lock" style="color: var(--text-muted);"></i></span>
                 </div>
               </div>
             </div>
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Allowed Domains (optional)</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Allowed Domains (optional)</label>
                 <div class="control">
                   <input class="input" type="text" name="allowed_domains"
                     value="{{ entra_config.allowed_domains|default:'' }}"
@@ -484,7 +484,7 @@
           <div class="columns">
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Require Group Object ID (optional)</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Require Group Object ID (optional)</label>
                 <div class="control">
                   <input class="input is-monospace" type="text" name="require_group_id"
                     value="{{ entra_config.require_group_id|default:'' }}"
@@ -495,7 +495,7 @@
             </div>
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Admin Group Object ID (optional)</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Admin Group Object ID (optional)</label>
                 <div class="control">
                   <input class="input is-monospace" type="text" name="admin_group_id"
                     value="{{ entra_config.admin_group_id|default:'' }}"
@@ -506,8 +506,8 @@
             </div>
           </div>
 
-          <div style="margin-top:1rem;">
-            <button type="submit" class="button is-primary" style="font-weight:600;">
+          <div style="margin-top: 1rem;">
+            <button type="submit" class="button is-primary" style="font-weight: 600;">
               <span class="icon"><i class="fas fa-save"></i></span>
               <span>Save Entra ID Settings</span>
             </button>
