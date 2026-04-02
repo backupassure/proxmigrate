@@ -23,6 +23,24 @@ CHALLENGE_CHOICES = [
     (CHALLENGE_DNS01, "DNS-01"),
 ]
 
+DNS_PROVIDER_NONE = "none"
+DNS_PROVIDER_CLOUDFLARE = "cloudflare"
+DNS_PROVIDER_ROUTE53 = "route53"
+DNS_PROVIDER_AZURE = "azure"
+DNS_PROVIDER_GODADDY = "godaddy"
+DNS_PROVIDER_DIGITALOCEAN = "digitalocean"
+DNS_PROVIDER_MANUAL = "manual"
+
+DNS_PROVIDER_CHOICES = [
+    (DNS_PROVIDER_NONE, "None (HTTP-01 only)"),
+    (DNS_PROVIDER_CLOUDFLARE, "Cloudflare"),
+    (DNS_PROVIDER_ROUTE53, "AWS Route 53"),
+    (DNS_PROVIDER_AZURE, "Azure DNS"),
+    (DNS_PROVIDER_GODADDY, "GoDaddy"),
+    (DNS_PROVIDER_DIGITALOCEAN, "DigitalOcean"),
+    (DNS_PROVIDER_MANUAL, "Manual (email TXT record to admins)"),
+]
+
 DIRECTORY_URLS = {
     PROVIDER_LETSENCRYPT: "https://acme-v02.api.letsencrypt.org/directory",
     PROVIDER_LETSENCRYPT_STAGING: "https://acme-staging-v02.api.letsencrypt.org/directory",
@@ -57,6 +75,25 @@ class AcmeConfig(models.Model):
         max_length=10,
         choices=CHALLENGE_CHOICES,
         default=CHALLENGE_HTTP01,
+    )
+
+    # DNS provider for automated DNS-01 challenges
+    dns_provider = models.CharField(
+        max_length=20,
+        choices=DNS_PROVIDER_CHOICES,
+        default=DNS_PROVIDER_NONE,
+    )
+    dns_api_token = EncryptedCharField(
+        max_length=500, blank=True,
+        help_text="API token for the DNS provider.",
+    )
+    dns_api_secret = EncryptedCharField(
+        max_length=500, blank=True,
+        help_text="API secret (Route 53 secret key, GoDaddy API secret).",
+    )
+    dns_zone_id = models.CharField(
+        max_length=255, blank=True,
+        help_text="Zone ID or hosted zone ID (Cloudflare, Route 53, Azure).",
     )
 
     # ACME account credentials (encrypted at rest)

@@ -250,9 +250,40 @@ def issue_acme_certificate(self):
                         AcmeLog.log("challenge_completed", "HTTP-01 challenge submitted")
 
                     else:
-                        raise AcmeError(
-                            "DNS-01 challenge requires using the Issue Certificate "
-                            "button first to generate the TXT record."
+                        # DNS-01 with API provider — fully automated
+                        from apps.certificates import dns_providers
+                        from apps.certificates.models import DNS_PROVIDER_MANUAL, DNS_PROVIDER_NONE
+
+                        if config.dns_provider in (DNS_PROVIDER_NONE, DNS_PROVIDER_MANUAL, ""):
+                            raise AcmeError(
+                                "DNS-01 challenge requires a DNS provider API or "
+                                "using the Issue Certificate button to generate "
+                                "the TXT record manually."
+                            )
+
+                        challenge = acme.get_dns01_challenge(auth)
+                        if not challenge:
+                            raise AcmeError("No DNS-01 challenge available")
+
+                        txt_value = acme.compute_dns01_txt_value(
+                            key_pem, challenge["token"],
+                        )
+
+                        _set_stage(f"Creating DNS TXT record via {config.get_dns_provider_display()}...")
+                        dns_providers.create_txt_record(
+                            config.dns_provider,
+                            config.domain,
+                            txt_value,
+                            api_token=config.dns_api_token,
+                            api_secret=config.dns_api_secret,
+                            zone_id=config.dns_zone_id,
+                        )
+                        AcmeLog.log("challenge_completed",
+                                    f"DNS TXT record created via {config.get_dns_provider_display()}")
+
+                        _set_stage("Responding to DNS-01 challenge...")
+                        acme.respond_to_challenge(
+                            key_pem, account_url, challenge["url"], verify=verify,
                         )
 
                 # Poll order until ready
@@ -293,6 +324,21 @@ def issue_acme_certificate(self):
         _install_cert_and_key(cert_pem, cert_key_pem)
         _reload_nginx()
         logger.info("ACME certificate installed for %s", config.domain)
+
+        # Clean up DNS TXT record if we created one via API
+        if config.dns_provider not in ("none", "manual", ""):
+            try:
+                from apps.certificates import dns_providers
+
+                dns_providers.delete_txt_record(
+                    config.dns_provider,
+                    config.domain,
+                    api_token=config.dns_api_token,
+                    api_secret=config.dns_api_secret,
+                    zone_id=config.dns_zone_id,
+                )
+            except Exception as exc:
+                logger.warning("DNS TXT cleanup failed (non-fatal): %s", exc)
 
         # Step 6: Update config
         config.is_enabled = True
@@ -364,10 +410,24 @@ def check_cert_expiry():
             AcmeLog.log("renewal_triggered", f"Auto-renewal (HTTP-01), {days_remaining} days remaining")
             return
         else:
-            # DNS-01: auto-trigger the order and email the TXT value
-            logger.info("Auto-triggering DNS-01 renewal, emailing TXT value to admins")
-            _auto_trigger_dns01_renewal(config, days_remaining)
-            return
+            # DNS-01: if API provider configured, fully automatic. Otherwise email.
+            from apps.certificates.models import DNS_PROVIDER_MANUAL, DNS_PROVIDER_NONE
+
+            if config.dns_provider not in (DNS_PROVIDER_NONE, DNS_PROVIDER_MANUAL, ""):
+                logger.info("Auto-renewing certificate via ACME (DNS-01 with %s API)",
+                            config.dns_provider)
+                config.issuing_in_progress = True
+                config.issuing_stage = "Auto-renewal starting..."
+                config.save(update_fields=["issuing_in_progress", "issuing_stage", "updated_at"])
+                issue_acme_certificate.delay()
+                AcmeLog.log("renewal_triggered",
+                            f"Auto-renewal (DNS-01 via {config.get_dns_provider_display()}), "
+                            f"{days_remaining} days remaining")
+                return
+            else:
+                logger.info("Auto-triggering DNS-01 renewal, emailing TXT value to admins")
+                _auto_trigger_dns01_renewal(config, days_remaining)
+                return
 
     # Send email alerts at thresholds
     _send_expiry_alerts(config, days_remaining)

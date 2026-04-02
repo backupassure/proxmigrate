@@ -563,6 +563,8 @@
               <div class="cert-detail-value">
                 {% if acme.challenge_type == 'http-01' %}
                   <span style="color:#257953;"><i class="fas fa-check"></i> Automatic (renews at half cert validity)</span>
+                {% elif acme.dns_provider and acme.dns_provider != 'none' and acme.dns_provider != 'manual' %}
+                  <span style="color:#257953;"><i class="fas fa-check"></i> Automatic via {{ acme.get_dns_provider_display }} (renews at half cert validity)</span>
                 {% else %}
                   <span style="color:#257953;"><i class="fas fa-check"></i> Semi-automatic (emails TXT record to admins at half cert validity)</span>
                 {% endif %}
@@ -758,17 +760,64 @@
                 <label class="label form-label">Challenge Type</label>
                 <div class="control">
                   <label class="radio" style="font-size:0.85rem;display:block;margin-bottom:0.5rem;">
-                    <input type="radio" name="challenge_type" value="http-01" checked>
-                    <strong>HTTP-01</strong> &mdash; Port 80 must be open to the internet. Fully automatic renewal.
+                    <input type="radio" name="challenge_type" value="http-01" checked onchange="onChallengeTypeChange()">
+                    <strong>HTTP-01</strong> &mdash; Port 80 must be open to the internet. Fully automatic.
                   </label>
                   <label class="radio" style="font-size:0.85rem;display:block;">
-                    <input type="radio" name="challenge_type" value="dns-01">
-                    <strong>DNS-01</strong> &mdash; Works on private networks. Manual TXT record required for each renewal.
+                    <input type="radio" name="challenge_type" value="dns-01" onchange="onChallengeTypeChange()">
+                    <strong>DNS-01</strong> &mdash; Works on private networks. Automatic with DNS provider API.
                   </label>
                 </div>
                 <p class="field-hint" style="margin-top:0.5rem;">
                   Some internal CAs may issue certificates without a challenge &mdash; if so, the challenge step will be skipped automatically.
                 </p>
+              </div>
+
+              {# DNS Provider — shown when DNS-01 is selected #}
+              <div id="dns-provider-section" style="display:none;margin-bottom:1.25rem;">
+                <div class="field" style="margin-bottom:1rem;">
+                  <label class="label form-label">DNS Provider</label>
+                  <div class="control">
+                    <div class="select is-fullwidth">
+                      <select name="dns_provider" id="dns-provider-select" onchange="onDnsProviderChange()">
+                        <option value="cloudflare">Cloudflare</option>
+                        <option value="route53">AWS Route 53</option>
+                        <option value="azure">Azure DNS</option>
+                        <option value="godaddy">GoDaddy</option>
+                        <option value="digitalocean">DigitalOcean</option>
+                        <option value="manual">Manual (email TXT record to admins)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="dns-api-fields">
+                  <div class="field" style="margin-bottom:1rem;">
+                    <label class="label form-label" id="dns-token-label">API Token</label>
+                    <div class="control">
+                      <input class="input" type="password" name="dns_api_token"
+                             placeholder="Your API token" style="font-family:monospace;">
+                    </div>
+                    <p class="field-hint" id="dns-token-hint">API token with DNS edit permissions.</p>
+                  </div>
+
+                  <div class="field" id="dns-secret-field" style="margin-bottom:1rem;display:none;">
+                    <label class="label form-label" id="dns-secret-label">API Secret</label>
+                    <div class="control">
+                      <input class="input" type="password" name="dns_api_secret"
+                             placeholder="API secret key" style="font-family:monospace;">
+                    </div>
+                  </div>
+
+                  <div class="field" id="dns-zone-field" style="margin-bottom:1rem;">
+                    <label class="label form-label" id="dns-zone-label">Zone ID</label>
+                    <div class="control">
+                      <input class="input" type="text" name="dns_zone_id"
+                             placeholder="" id="dns-zone-input" style="font-family:monospace;">
+                    </div>
+                    <p class="field-hint" id="dns-zone-hint">Optional — auto-detected if not provided.</p>
+                  </div>
+                </div>
               </div>
 
               {# Advanced section for internal CAs #}
@@ -853,6 +902,71 @@ document.addEventListener('DOMContentLoaded', function() {
     switchCertTab('upload-signed');
   {% endif %}
 });
+
+// Challenge type change — show/hide DNS provider section
+function onChallengeTypeChange() {
+  var isDns = document.querySelector('input[name="challenge_type"]:checked');
+  var section = document.getElementById('dns-provider-section');
+  if (isDns && isDns.value === 'dns-01') {
+    section.style.display = '';
+    onDnsProviderChange();
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+// DNS provider change — adjust labels and show/hide fields per provider
+function onDnsProviderChange() {
+  var provider = document.getElementById('dns-provider-select').value;
+  var apiFields = document.getElementById('dns-api-fields');
+  var secretField = document.getElementById('dns-secret-field');
+  var zoneField = document.getElementById('dns-zone-field');
+  var tokenLabel = document.getElementById('dns-token-label');
+  var tokenHint = document.getElementById('dns-token-hint');
+  var zoneLabel = document.getElementById('dns-zone-label');
+  var zoneHint = document.getElementById('dns-zone-hint');
+  var zoneInput = document.getElementById('dns-zone-input');
+
+  if (provider === 'manual') {
+    apiFields.style.display = 'none';
+    return;
+  }
+  apiFields.style.display = '';
+  secretField.style.display = 'none';
+  zoneField.style.display = '';
+
+  if (provider === 'cloudflare') {
+    tokenLabel.textContent = 'API Token';
+    tokenHint.textContent = 'Cloudflare API token with Zone:DNS:Edit permission.';
+    zoneLabel.textContent = 'Zone ID';
+    zoneHint.textContent = 'Optional — auto-detected from domain if not provided.';
+    zoneInput.placeholder = 'e.g. 1234567890abcdef';
+  } else if (provider === 'route53') {
+    tokenLabel.textContent = 'AWS Access Key ID';
+    tokenHint.textContent = 'IAM user access key with Route 53 permissions.';
+    secretField.style.display = '';
+    document.getElementById('dns-secret-label').textContent = 'AWS Secret Access Key';
+    zoneLabel.textContent = 'Hosted Zone ID';
+    zoneHint.textContent = 'Required. Found in the Route 53 console.';
+    zoneInput.placeholder = 'e.g. Z1234567890ABC';
+  } else if (provider === 'azure') {
+    tokenLabel.textContent = 'Bearer Token';
+    tokenHint.textContent = 'Azure AD service principal token with DNS Contributor role.';
+    zoneLabel.textContent = 'DNS Zone Resource ID';
+    zoneHint.textContent = 'Full resource ID: /subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Network/dnsZones/{zone}';
+    zoneInput.placeholder = '/subscriptions/...';
+  } else if (provider === 'godaddy') {
+    tokenLabel.textContent = 'API Key';
+    tokenHint.textContent = 'GoDaddy API key from developer.godaddy.com.';
+    secretField.style.display = '';
+    document.getElementById('dns-secret-label').textContent = 'API Secret';
+    zoneField.style.display = 'none';
+  } else if (provider === 'digitalocean') {
+    tokenLabel.textContent = 'Personal Access Token';
+    tokenHint.textContent = 'DigitalOcean token with read/write scope.';
+    zoneField.style.display = 'none';
+  }
+}
 
 // ACME provider change handler
 function onAcmeProviderChange() {

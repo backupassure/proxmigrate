@@ -475,6 +475,13 @@ def acme_configure(request):
     config.challenge_type = challenge_type
     config.ca_bundle = ca_bundle
     config.skip_tls_verify = skip_tls
+
+    # DNS provider settings (for automated DNS-01)
+    config.dns_provider = request.POST.get("dns_provider", "none")
+    config.dns_api_token = request.POST.get("dns_api_token", "")
+    config.dns_api_secret = request.POST.get("dns_api_secret", "")
+    config.dns_zone_id = request.POST.get("dns_zone_id", "")
+
     config.save()
 
     # Register ACME account
@@ -697,6 +704,10 @@ def acme_reset(request):
     config.skip_tls_verify = False
     config.dns_txt_value = ""
     config.dns_challenge_pending = False
+    config.dns_provider = "none"
+    config.dns_api_token = ""
+    config.dns_api_secret = ""
+    config.dns_zone_id = ""
     config.pending_order_url = ""
     config.pending_challenge_url = ""
     config.issuing_in_progress = False
