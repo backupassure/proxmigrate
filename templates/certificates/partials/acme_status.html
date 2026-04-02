@@ -1,8 +1,10 @@
-{# HTMX partial: ACME issuance status — polled every 3s during issuance #}
+{# HTMX partial: ACME issuance status.
+   In-progress states include hx-get/hx-trigger to keep polling.
+   Terminal states (success, error) have no polling — they stay put. #}
 
 {% if acme.issuing_in_progress %}
   <div class="proxmigrate-card" style="margin-top:1.25rem;border-left:4px solid #3273dc;border-radius:0 10px 10px 0;"
-       hx-get="{% url 'acme_status' %}" hx-trigger="every 3s" hx-swap="outerHTML">
+       hx-get="{% url 'acme_status' %}" hx-trigger="every 3s" hx-target="#acme-status-area" hx-swap="innerHTML">
     <div class="card-header" style="background:#eff6ff;">
       <i class="fas fa-spinner fa-spin" style="color:#3273dc;"></i> Certificate Issuance In Progress
     </div>
@@ -22,7 +24,7 @@
     <div class="card-body">
       <div style="font-size:0.85rem;color:#257953;">
         Certificate installed and nginx reloaded.
-        {% if cert_days_remaining %}Expires in {{ cert_days_remaining }} days.{% endif %}
+        {% if cert_days_remaining %} Expires in {{ cert_days_remaining }} days.{% endif %}
       </div>
       <p style="font-size:0.78rem;color:#7a7a7a;margin-top:0.5rem;">
         Renewed: {{ acme.last_renewed_at|date:"N j, Y g:i A" }}
@@ -42,16 +44,4 @@
     </div>
   </div>
 
-{% else %}
-  {# Nothing to show — no issuance attempted yet #}
-{% endif %}
-
-{% if acme_logs %}
-<div style="margin-top:0.75rem;">
-  {% for log in acme_logs %}
-  <div style="font-size:0.75rem;color:#7a7a7a;padding:0.15rem 0;">
-    {{ log.created_at|date:"g:i A" }} — {{ log.event }}: {{ log.detail|truncatechars:50 }}
-  </div>
-  {% endfor %}
-</div>
 {% endif %}

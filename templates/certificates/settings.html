@@ -687,11 +687,8 @@
             </div>
             {% endif %}
 
-            {# Live status area — polls during issuance #}
-            <div id="acme-status-area"
-                 hx-get="{% url 'acme_status' %}"
-                 hx-trigger="{% if acme.issuing_in_progress %}every 3s{% else %}none{% endif %}"
-                 hx-swap="innerHTML">
+            {# Live status area — partial controls its own polling #}
+            <div id="acme-status-area">
               {% include "certificates/partials/acme_status.html" %}
             </div>
 
