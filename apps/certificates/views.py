@@ -582,11 +582,15 @@ def acme_issue(request):
 
             txt_value = acme.compute_dns01_txt_value(key_pem, challenge["token"])
 
-            # Save to database — this persists until the user confirms
+            # Save order URL, challenge URL, and TXT value so the task
+            # can resume this exact order after the user confirms DNS
             config.dns_txt_value = txt_value
             config.dns_challenge_pending = True
+            config.pending_order_url = order_url
+            config.pending_challenge_url = challenge["url"]
             config.save(update_fields=[
                 "dns_txt_value", "dns_challenge_pending",
+                "pending_order_url", "pending_challenge_url",
                 "last_renewal_error", "updated_at",
             ])
 
@@ -693,6 +697,10 @@ def acme_reset(request):
     config.skip_tls_verify = False
     config.dns_txt_value = ""
     config.dns_challenge_pending = False
+    config.pending_order_url = ""
+    config.pending_challenge_url = ""
+    config.issuing_in_progress = False
+    config.issuing_stage = ""
     config.last_renewal_error = ""
     config.save()
     AcmeLog.log("config_changed", f"Configuration reset by {request.user}")

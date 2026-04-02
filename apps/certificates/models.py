@@ -77,6 +77,10 @@ class AcmeConfig(models.Model):
     dns_txt_value = models.CharField(max_length=500, blank=True)
     dns_challenge_pending = models.BooleanField(default=False)
 
+    # Saved order/challenge state (so the task can resume the view's order)
+    pending_order_url = models.CharField(max_length=500, blank=True)
+    pending_challenge_url = models.CharField(max_length=500, blank=True)
+
     # Issuance tracking
     issuing_in_progress = models.BooleanField(default=False)
     issuing_stage = models.CharField(max_length=100, blank=True)

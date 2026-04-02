@@ -170,75 +170,96 @@ def issue_acme_certificate(self):
         key_pem = config.acme_account_key_pem
         account_url = config.acme_account_url
 
-        # Step 2: Create order
-        _set_stage("Creating certificate order...")
-        logger.info("Creating ACME order for %s", config.domain)
-        order_url, order = acme.create_order(
-            key_pem, account_url, config.directory_url, config.domain,
-            verify=verify,
-        )
-        AcmeLog.log("order_created", f"Order for {config.domain}")
+        # Step 2: Create or resume order
+        if config.pending_order_url and config.pending_challenge_url:
+            # DNS-01: resume the order created by the view
+            _set_stage("Responding to DNS-01 challenge...")
+            order_url = config.pending_order_url
+            logger.info("Resuming ACME order for %s (challenge URL: %s)",
+                        config.domain, config.pending_challenge_url)
 
-        # Step 3: Handle authorizations (if needed)
-        _set_stage("Validating domain ownership...")
-        if order.get("status") not in ("ready", "valid"):
-            for auth_url in order.get("authorizations", []):
-                auth = acme.get_authorization(
-                    key_pem, account_url, auth_url, verify=verify,
-                )
+            acme.respond_to_challenge(
+                key_pem, account_url, config.pending_challenge_url,
+                verify=verify,
+            )
+            AcmeLog.log("challenge_completed", "DNS-01 challenge submitted")
 
-                if auth.get("status") == "valid":
-                    continue
-
-                if config.challenge_type == "http-01":
-                    challenge = acme.get_http01_challenge(auth)
-                    if not challenge:
-                        raise AcmeError("No HTTP-01 challenge available")
-
-                    token = challenge["token"]
-                    key_auth = acme.compute_key_authorization(key_pem, token)
-
-                    # Write challenge token file
-                    os.makedirs(CHALLENGE_DIR, exist_ok=True)
-                    token_path = os.path.join(CHALLENGE_DIR, token)
-                    with open(token_path, "w") as f:
-                        f.write(key_auth)
-
-                    # Enable nginx port 80 block
-                    _write_acme_nginx(ACME_NGINX_BLOCK)
-                    if not _test_nginx():
-                        _cleanup_challenge(token)
-                        raise AcmeError(
-                            "nginx config test failed — port 80 may be in use. "
-                            "Ensure port 80 is available for HTTP-01 challenges."
-                        )
-                    _reload_nginx()
-
-                    # Respond to challenge
-                    acme.respond_to_challenge(
-                        key_pem, account_url, challenge["url"], verify=verify,
-                    )
-                    AcmeLog.log("challenge_completed", "HTTP-01 challenge submitted")
-
-                else:
-                    # DNS-01: the view already created the order and showed the
-                    # TXT record to the user. The user confirmed the DNS record
-                    # exists, so we just respond to the challenge now.
-                    challenge = acme.get_dns01_challenge(auth)
-                    if not challenge:
-                        raise AcmeError("No DNS-01 challenge available")
-
-                    _set_stage("Responding to DNS-01 challenge...")
-                    acme.respond_to_challenge(
-                        key_pem, account_url, challenge["url"], verify=verify,
-                    )
-                    AcmeLog.log("challenge_completed", "DNS-01 challenge submitted")
+            # Clear pending state
+            config.pending_order_url = ""
+            config.pending_challenge_url = ""
+            config.dns_txt_value = ""
+            config.save(update_fields=[
+                "pending_order_url", "pending_challenge_url",
+                "dns_txt_value", "updated_at",
+            ])
 
             # Poll order until ready
             _set_stage("Waiting for CA to validate challenge...")
             order = acme.poll_order(
                 key_pem, account_url, order_url, verify=verify,
             )
+
+        else:
+            # HTTP-01 or fresh order: create new order and handle inline
+            _set_stage("Creating certificate order...")
+            logger.info("Creating ACME order for %s", config.domain)
+            order_url, order = acme.create_order(
+                key_pem, account_url, config.directory_url, config.domain,
+                verify=verify,
+            )
+            AcmeLog.log("order_created", f"Order for {config.domain}")
+
+            _set_stage("Validating domain ownership...")
+            if order.get("status") not in ("ready", "valid"):
+                for auth_url in order.get("authorizations", []):
+                    auth = acme.get_authorization(
+                        key_pem, account_url, auth_url, verify=verify,
+                    )
+
+                    if auth.get("status") == "valid":
+                        continue
+
+                    if config.challenge_type == "http-01":
+                        challenge = acme.get_http01_challenge(auth)
+                        if not challenge:
+                            raise AcmeError("No HTTP-01 challenge available")
+
+                        token = challenge["token"]
+                        key_auth = acme.compute_key_authorization(key_pem, token)
+
+                        # Write challenge token file
+                        os.makedirs(CHALLENGE_DIR, exist_ok=True)
+                        token_path = os.path.join(CHALLENGE_DIR, token)
+                        with open(token_path, "w") as f:
+                            f.write(key_auth)
+
+                        # Enable nginx port 80 block
+                        _write_acme_nginx(ACME_NGINX_BLOCK)
+                        if not _test_nginx():
+                            _cleanup_challenge(token)
+                            raise AcmeError(
+                                "nginx config test failed — port 80 may be in use. "
+                                "Ensure port 80 is available for HTTP-01 challenges."
+                            )
+                        _reload_nginx()
+
+                        # Respond to challenge
+                        acme.respond_to_challenge(
+                            key_pem, account_url, challenge["url"], verify=verify,
+                        )
+                        AcmeLog.log("challenge_completed", "HTTP-01 challenge submitted")
+
+                    else:
+                        raise AcmeError(
+                            "DNS-01 challenge requires using the Issue Certificate "
+                            "button first to generate the TXT record."
+                        )
+
+                # Poll order until ready
+                _set_stage("Waiting for CA to validate challenge...")
+                order = acme.poll_order(
+                    key_pem, account_url, order_url, verify=verify,
+                )
 
         # Step 4: Generate CSR and finalize
         _set_stage("Generating CSR and finalizing order...")
