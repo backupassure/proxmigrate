@@ -556,6 +556,8 @@ a.stat-card-link:hover {
 .htmx-indicator { display: none; }
 .htmx-request .htmx-indicator { display: inline-block; }
 .htmx-request.htmx-indicator  { display: inline-block; }
+.spinner.htmx-indicator { display: none; }
+.htmx-request .spinner.htmx-indicator { display: inline-block; }
 
 /* Spinner */
 .spinner {
