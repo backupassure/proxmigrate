@@ -54,6 +54,10 @@
   --border-success: #bbf7d0;
   --bg-warning-badge: #fff8f0;
   --key-text: #a8d8a8;
+  --glow-success: rgba(72, 199, 142, 0.2);
+  --glow-danger: rgba(241, 70, 104, 0.2);
+  --auth-gradient-mid: #16213e;
+  --auth-gradient-end: #0f3460;
   --bg-hover-light: #eef0f3;
   --gradient-start: #667eea;
   --gradient-end: #764ba2;
@@ -110,6 +114,10 @@
   --border-success: rgba(74, 222, 128, 0.2);
   --bg-warning-badge: rgba(251, 191, 36, 0.1);
   --key-text: #86efac;
+  --glow-success: rgba(74, 222, 128, 0.2);
+  --glow-danger: rgba(251, 113, 133, 0.2);
+  --auth-gradient-mid: #0f172a;
+  --auth-gradient-end: #020617;
   --bg-hover-light: rgba(255, 255, 255, 0.05);
   --gradient-start: #818cf8;
   --gradient-end: #a78bfa;
@@ -890,8 +898,8 @@ a.stat-card-link:hover {
   margin-right: 0.4rem;
 }
 
-.status-dot.is-online  { background: var(--success-color); box-shadow: 0 0 0 3px rgba(72,199,142,0.2); }
-.status-dot.is-offline { background: var(--danger-color); box-shadow: 0 0 0 3px rgba(241,70,104,0.2); }
+.status-dot.is-online  { background: var(--success-color); box-shadow: 0 0 0 3px var(--glow-success); }
+.status-dot.is-offline { background: var(--danger-color); box-shadow: 0 0 0 3px var(--glow-danger); }
 .status-dot.is-unknown { background: var(--text-muted); }
 
 /* --------------------------------------------------------------------------
