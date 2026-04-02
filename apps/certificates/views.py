@@ -492,6 +492,7 @@ def acme_configure(request):
 
     verify = _get_verify(config)
     try:
+        # Step 1: Register ACME account
         account_url = acme.register_account(
             config.acme_account_key_pem,
             config.directory_url,
@@ -502,11 +503,73 @@ def acme_configure(request):
         config.save(update_fields=["acme_account_url", "updated_at"])
         AcmeLog.log("account_registered", f"Account: {account_url}")
         AcmeLog.log("config_changed", f"Configured by {request.user}")
-        messages.success(
-            request,
-            f"ACME configured and account registered with "
-            f"{config.get_provider_display()}.",
+
+        # Step 2: Test DNS API if provider is configured
+        dns_api_ok = False
+        if (challenge_type == "dns-01"
+                and config.dns_provider
+                and config.dns_provider not in ("none", "manual")):
+            try:
+                from apps.certificates import dns_providers
+
+                # Quick validation — create and immediately delete a test record
+                dns_providers.create_txt_record(
+                    config.dns_provider,
+                    config.domain,
+                    "proxmigrate-api-test",
+                    api_token=config.dns_api_token,
+                    api_secret=config.dns_api_secret,
+                    zone_id=config.dns_zone_id,
+                )
+                dns_providers.delete_txt_record(
+                    config.dns_provider,
+                    config.domain,
+                    api_token=config.dns_api_token,
+                    api_secret=config.dns_api_secret,
+                    zone_id=config.dns_zone_id,
+                )
+                dns_api_ok = True
+                AcmeLog.log("config_changed",
+                            f"DNS API test passed ({config.get_dns_provider_display()})")
+            except Exception as exc:
+                logger.error("DNS API test failed: %s", exc)
+                messages.error(
+                    request,
+                    f"ACME account registered, but DNS API test failed: {exc}. "
+                    f"Check your API credentials and try again.",
+                )
+                return redirect("/settings/certificates/?tab=acme")
+
+        # Step 3: Auto-issue if we can (HTTP-01 or DNS-01 with working API)
+        can_auto_issue = (
+            challenge_type == "http-01"
+            or (challenge_type == "dns-01" and dns_api_ok)
         )
+
+        if can_auto_issue:
+            from apps.certificates.tasks import issue_acme_certificate
+
+            config.issuing_in_progress = True
+            config.issuing_stage = "Starting certificate issuance..."
+            config.last_renewal_error = ""
+            config.save(update_fields=[
+                "issuing_in_progress", "issuing_stage",
+                "last_renewal_error", "updated_at",
+            ])
+            issue_acme_certificate.delay()
+            AcmeLog.log("renewal_triggered", f"Auto-issue after configure by {request.user}")
+            messages.success(
+                request,
+                f"ACME configured with {config.get_provider_display()}. "
+                f"Certificate issuance started automatically.",
+            )
+        else:
+            messages.success(
+                request,
+                f"ACME configured and account registered with "
+                f"{config.get_provider_display()}.",
+            )
+
     except Exception as exc:
         logger.error("ACME account registration failed: %s", exc)
         messages.error(request, f"Account registration failed: {exc}")
