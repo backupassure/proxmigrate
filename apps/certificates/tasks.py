@@ -2,7 +2,6 @@ import logging
 import os
 import tempfile
 
-import redis
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -20,10 +19,6 @@ KEY_FILE = os.path.join(CERT_DIR, "proxmigrate.key")
 CHALLENGE_DIR = os.path.join(CERT_DIR, "acme-challenge")
 ACME_NGINX_CONF = "/opt/proxmigrate/deploy/acme-challenge.conf"
 
-REDIS_DNS_CONFIRM_KEY = "acme:dns_confirmed"
-DNS_POLL_INTERVAL = 10
-DNS_POLL_TIMEOUT = 1800  # 30 minutes
-
 ACME_NGINX_BLOCK = """server {
     listen 80;
     server_name _;
@@ -35,12 +30,6 @@ ACME_NGINX_BLOCK = """server {
     }
 }
 """
-
-
-def _get_redis():
-    """Return a Redis client using the Celery broker URL."""
-    broker_url = getattr(settings, "CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
-    return redis.Redis.from_url(broker_url)
 
 
 def _install_cert_and_key(cert_pem, key_pem):
@@ -232,47 +221,14 @@ def issue_acme_certificate(self):
                     AcmeLog.log("challenge_completed", "HTTP-01 challenge submitted")
 
                 else:
-                    # DNS-01
+                    # DNS-01: the view already created the order and showed the
+                    # TXT record to the user. The user confirmed the DNS record
+                    # exists, so we just respond to the challenge now.
                     challenge = acme.get_dns01_challenge(auth)
                     if not challenge:
                         raise AcmeError("No DNS-01 challenge available")
 
-                    txt_value = acme.compute_dns01_txt_value(
-                        key_pem, challenge["token"],
-                    )
-                    config.dns_txt_value = txt_value
-                    config.dns_challenge_pending = True
-                    config.save(update_fields=[
-                        "dns_txt_value", "dns_challenge_pending", "updated_at",
-                    ])
-
-                    # Wait for user to confirm DNS record creation
-                    r = _get_redis()
-                    r.delete(REDIS_DNS_CONFIRM_KEY)
-                    logger.info(
-                        "Waiting for DNS-01 TXT record confirmation. "
-                        "Record: _acme-challenge.%s = %s",
-                        config.domain, txt_value,
-                    )
-
-                    import time
-
-                    deadline = time.time() + DNS_POLL_TIMEOUT
-                    while time.time() < deadline:
-                        if r.get(REDIS_DNS_CONFIRM_KEY):
-                            break
-                        time.sleep(DNS_POLL_INTERVAL)
-                    else:
-                        config.dns_challenge_pending = False
-                        config.save(update_fields=["dns_challenge_pending", "updated_at"])
-                        raise AcmeError(
-                            "DNS-01 confirmation timed out after 30 minutes"
-                        )
-
-                    config.dns_challenge_pending = False
-                    config.save(update_fields=["dns_challenge_pending", "updated_at"])
-                    r.delete(REDIS_DNS_CONFIRM_KEY)
-
+                    _set_stage("Responding to DNS-01 challenge...")
                     acme.respond_to_challenge(
                         key_pem, account_url, challenge["url"], verify=verify,
                     )
