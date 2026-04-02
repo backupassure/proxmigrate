@@ -25,8 +25,26 @@
       <p style="font-size:0.78rem;color:#7a7a7a;margin-top:0.5rem;">
         Renewed: {{ acme.last_renewed_at|date:"N j, Y g:i A" }}
       </p>
+      <p style="font-size:0.78rem;color:#7a7a7a;margin-top:0.5rem;">
+        <i class="fas fa-sync-alt" style="margin-right:0.3rem;"></i>
+        Page will refresh in <strong><span id="acme-countdown">10</span></strong> seconds...
+      </p>
     </div>
   </div>
+  <script>
+    (function() {
+      var seconds = 10;
+      var el = document.getElementById('acme-countdown');
+      var timer = setInterval(function() {
+        seconds--;
+        if (el) el.textContent = seconds;
+        if (seconds <= 0) {
+          clearInterval(timer);
+          window.location.href = '/settings/certificates/?tab=acme';
+        }
+      }, 1000);
+    })();
+  </script>
 
 {% elif acme.last_renewal_error %}
   <div class="proxmigrate-card" style="margin-top:1.25rem;border-left:4px solid #f14668;border-radius:0 10px 10px 0;">
