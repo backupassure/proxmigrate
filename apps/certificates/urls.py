@@ -15,4 +15,5 @@ urlpatterns = [
     path("acme/status/", views.acme_status, name="acme_status"),
     path("acme/dns-confirm/", views.acme_dns_confirm, name="acme_dns_confirm"),
     path("acme/disable/", views.acme_disable, name="acme_disable"),
+    path("acme/reset/", views.acme_reset, name="acme_reset"),
 ]

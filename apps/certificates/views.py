@@ -569,3 +569,27 @@ def acme_disable(request):
     AcmeLog.log("acme_disabled", f"Disabled by {request.user}")
     messages.success(request, "ACME automation disabled. Current certificate is unchanged.")
     return redirect("cert_settings")
+
+
+@_staff_required
+@require_POST
+def acme_reset(request):
+    """Reset ACME configuration so the user can reconfigure from scratch."""
+    config = AcmeConfig.get_config()
+    config.is_enabled = False
+    config.provider = "letsencrypt"
+    config.directory_url = DIRECTORY_URLS["letsencrypt"]
+    config.domain = ""
+    config.email = ""
+    config.challenge_type = "http-01"
+    config.acme_account_key_pem = ""
+    config.acme_account_url = ""
+    config.ca_bundle = ""
+    config.skip_tls_verify = False
+    config.dns_txt_value = ""
+    config.dns_challenge_pending = False
+    config.last_renewal_error = ""
+    config.save()
+    AcmeLog.log("config_changed", f"Configuration reset by {request.user}")
+    messages.success(request, "ACME configuration reset. You can now reconfigure.")
+    return redirect("cert_settings")

@@ -656,12 +656,20 @@
               </form>
             </div>
             {% else %}
-            <div style="margin-top:1.25rem;">
-              <form method="post" action="{% url 'acme_issue' %}">
+            <div style="display:flex;gap:0.5rem;margin-top:1.25rem;">
+              <form method="post" action="{% url 'acme_issue' %}" style="flex:1;">
                 {% csrf_token %}
                 <button type="submit" class="button is-primary is-fullwidth" style="font-weight:600;">
                   <span class="icon"><i class="fas fa-certificate"></i></span>
                   <span>Issue Certificate</span>
+                </button>
+              </form>
+              <form method="post" action="{% url 'acme_reset' %}">
+                {% csrf_token %}
+                <button type="submit" class="button is-light" style="font-weight:600;"
+                  onclick="return confirm('Reset ACME configuration? You can then reconfigure with different settings.')">
+                  <span class="icon"><i class="fas fa-undo"></i></span>
+                  <span>Reconfigure</span>
                 </button>
               </form>
             </div>
