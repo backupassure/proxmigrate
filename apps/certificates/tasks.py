@@ -447,25 +447,28 @@ def check_cert_expiry():
         return
 
     now = timezone.now()
-    days_remaining = (cert_info["not_after"] - now).days
-    total_validity = (cert_info["not_after"] - cert_info["not_before"]).days
-    renewal_threshold = max(total_validity // 2, 7)  # half validity, minimum 7 days
+    remaining_seconds = (cert_info["not_after"] - now).total_seconds()
+    total_seconds = (cert_info["not_after"] - cert_info["not_before"]).total_seconds()
+    remaining_hours = remaining_seconds / 3600
+    total_hours = total_seconds / 3600
+    renewal_threshold_hours = total_hours / 2  # renew at half validity
 
     logger.info(
-        "Certificate: %d days remaining, %d day validity, renew at %d days",
-        days_remaining, total_validity, renewal_threshold,
+        "Certificate: %.1f hours remaining, %.1f hours total validity, "
+        "renew at %.1f hours",
+        remaining_hours, total_hours, renewal_threshold_hours,
     )
 
     config = AcmeConfig.get_config()
 
-    if config.is_enabled and days_remaining <= renewal_threshold:
+    if config.is_enabled and remaining_hours <= renewal_threshold_hours:
         if config.challenge_type == "http-01":
             logger.info("Auto-renewing certificate via ACME (HTTP-01)")
             config.issuing_in_progress = True
             config.issuing_stage = "Auto-renewal starting..."
             config.save(update_fields=["issuing_in_progress", "issuing_stage", "updated_at"])
             issue_acme_certificate.delay()
-            AcmeLog.log("renewal_triggered", f"Auto-renewal (HTTP-01), {days_remaining} days remaining")
+            AcmeLog.log("renewal_triggered", f"Auto-renewal (HTTP-01), {remaining_hours:.0f} hours remaining")
             return
         else:
             # DNS-01: if API provider configured, fully automatic. Otherwise email.
@@ -480,14 +483,15 @@ def check_cert_expiry():
                 issue_acme_certificate.delay()
                 AcmeLog.log("renewal_triggered",
                             f"Auto-renewal (DNS-01 via {config.get_dns_provider_display()}), "
-                            f"{days_remaining} days remaining")
+                            f"{remaining_hours:.0f} hours remaining")
                 return
             else:
                 logger.info("Auto-triggering DNS-01 renewal, emailing TXT value to admins")
-                _auto_trigger_dns01_renewal(config, days_remaining)
+                _auto_trigger_dns01_renewal(config, int(remaining_hours / 24))
                 return
 
     # Send email alerts at thresholds
+    days_remaining = int(remaining_hours / 24)
     _send_expiry_alerts(config, days_remaining)
 
 
