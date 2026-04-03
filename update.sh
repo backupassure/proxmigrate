@@ -57,6 +57,59 @@ sudo -u "${APP_USER}" \
     "${PYTHON}" "${APP_HOME}/manage.py" collectstatic --noinput \
     --settings=proxmigrate.settings.production
 
+# ---------------------------------------------------------------------------
+# Ensure ACME certificate automation prerequisites exist
+# ---------------------------------------------------------------------------
+echo "==> Checking ACME prerequisites..."
+
+# ACME challenge directory
+ACME_CHALLENGE_DIR="${APP_HOME}/certs/acme-challenge"
+if [[ ! -d "${ACME_CHALLENGE_DIR}" ]]; then
+    mkdir -p "${ACME_CHALLENGE_DIR}"
+    chown "${APP_USER}:${APP_USER}" "${ACME_CHALLENGE_DIR}"
+    echo "    Created ${ACME_CHALLENGE_DIR}"
+fi
+
+# Empty ACME challenge nginx config
+ACME_CONF="${APP_HOME}/deploy/acme-challenge.conf"
+if [[ ! -f "${ACME_CONF}" ]]; then
+    touch "${ACME_CONF}"
+    chown "${APP_USER}:${APP_USER}" "${ACME_CONF}"
+    echo "    Created ${ACME_CONF}"
+fi
+
+# Add ACME include to live nginx config if not present
+NGINX_CONF=""
+for p in /etc/nginx/sites-enabled/proxmigrate /etc/nginx/sites-available/proxmigrate /etc/nginx/conf.d/proxmigrate.conf; do
+    if [[ -f "${p}" ]]; then
+        NGINX_CONF="${p}"
+        break
+    fi
+done
+
+if [[ -n "${NGINX_CONF}" ]] && ! grep -q "acme-challenge.conf" "${NGINX_CONF}" 2>/dev/null; then
+    echo "" >> "${NGINX_CONF}"
+    echo "# ACME HTTP-01 challenge server (managed by ProxMigrate)" >> "${NGINX_CONF}"
+    echo "include ${ACME_CONF};" >> "${NGINX_CONF}"
+    echo "    Added ACME include to ${NGINX_CONF}"
+    nginx -t 2>/dev/null && nginx -s reload 2>/dev/null && echo "    nginx reloaded"
+fi
+
+# Add ACME sudoers rule if not present
+SUDOERS_FILE="/etc/sudoers.d/proxmigrate-nginx"
+if [[ -f "${SUDOERS_FILE}" ]] && ! grep -q "acme-challenge" "${SUDOERS_FILE}" 2>/dev/null; then
+    echo "${APP_USER} ALL=(ALL) NOPASSWD: /usr/bin/tee ${ACME_CONF}" >> "${SUDOERS_FILE}"
+    echo "    Added ACME sudoers rule"
+fi
+
+# Update celery service to include Beat scheduler (-B flag)
+CELERY_SERVICE="/etc/systemd/system/proxmigrate-celery.service"
+if [[ -f "${CELERY_SERVICE}" ]] && ! grep -q "\-B" "${CELERY_SERVICE}" 2>/dev/null; then
+    cp "${APP_HOME}/deploy/celery.service.template" "${CELERY_SERVICE}"
+    systemctl daemon-reload
+    echo "    Updated celery service with Beat scheduler"
+fi
+
 echo "==> Restarting services..."
 systemctl restart proxmigrate-gunicorn proxmigrate-celery
 systemctl is-active proxmigrate-gunicorn proxmigrate-celery
