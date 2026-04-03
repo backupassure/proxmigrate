@@ -31,7 +31,7 @@
           {# Expiry banner #}
           <div class="notification
             {% if cert_days_remaining > 30 %}is-success is-light
-            {% elif cert_days_remaining > 0 %}is-warning is-light
+            {% elif cert_days_remaining > 0 or cert_hours_remaining > 0 %}is-warning is-light
             {% else %}is-danger is-light
             {% endif %}"
             data-persist="true"
@@ -42,6 +42,9 @@
             {% elif cert_days_remaining > 0 %}
               <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
               <strong>Expires soon</strong> — {{ cert_days_remaining }} days remaining.
+            {% elif cert_hours_remaining > 0 %}
+              <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
+              <strong>Expires soon</strong> — {{ cert_hours_remaining }} hours remaining.
             {% else %}
               <i class="fas fa-times-circle" style="margin-right:0.4rem;"></i>
               <strong>Certificate has expired!</strong> Replace it immediately.

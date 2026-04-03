@@ -63,7 +63,9 @@ def cert_settings(request):
     cert_days_remaining = None
     if cert_info and "not_after" in cert_info:
         delta = cert_info["not_after"] - datetime.datetime.now(datetime.timezone.utc)
-        cert_days_remaining = delta.days
+        total_seconds = delta.total_seconds()
+        cert_days_remaining = delta.days if total_seconds > 0 else -1
+        cert_hours_remaining = int(total_seconds // 3600) if total_seconds > 0 else 0
 
     acme_config = AcmeConfig.get_config()
     acme_logs = AcmeLog.objects.all()[:10]
@@ -71,6 +73,7 @@ def cert_settings(request):
     return render(request, "certificates/settings.html", {
         "cert_info": cert_info,
         "cert_days_remaining": cert_days_remaining,
+        "cert_hours_remaining": cert_hours_remaining,
         "pending_csr": get_pending_csr(),
         "has_csr_key": os.path.exists(CSR_KEY_FILE),
         "current_port": get_current_port(),
@@ -705,7 +708,9 @@ def acme_status(request):
     cert_days_remaining = None
     if cert_info and "not_after" in cert_info:
         delta = cert_info["not_after"] - datetime.datetime.now(datetime.timezone.utc)
-        cert_days_remaining = delta.days
+        total_seconds = delta.total_seconds()
+        cert_days_remaining = delta.days if total_seconds > 0 else -1
+        cert_hours_remaining = int(total_seconds // 3600) if total_seconds > 0 else 0
 
     return render(request, "certificates/partials/acme_status.html", {
         "acme": config,
