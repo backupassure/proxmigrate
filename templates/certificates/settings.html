@@ -705,7 +705,7 @@
               </div>
             </div>
 
-            <form method="post" action="{% url 'acme_configure' %}">
+            <form method="post" action="{% url 'acme_configure' %}" enctype="multipart/form-data">
               {% csrf_token %}
 
               <div class="field" style="margin-bottom:1.25rem;">
@@ -829,13 +829,40 @@
               </div>
               <div class="form-section-body" id="acme-advanced" style="padding-top:1rem;">
                 <div class="field" style="margin-bottom:1rem;">
-                  <label class="label form-label">CA Certificate (PEM)</label>
-                  <div class="control">
-                    <textarea class="textarea is-small" name="ca_bundle" rows="4"
-                      placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
-                      style="font-family:monospace;font-size:0.78rem;resize:vertical;"></textarea>
+                  <label class="label form-label">CA Certificate</label>
+                  <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">
+                    <button type="button" id="ca-mode-upload" class="button is-small is-primary" onclick="setCaBundleMode('upload')" style="font-weight:600;">
+                      <span class="icon is-small"><i class="fas fa-upload"></i></span>
+                      <span>Upload File</span>
+                    </button>
+                    <button type="button" id="ca-mode-paste" class="button is-small is-light" onclick="setCaBundleMode('paste')" style="font-weight:600;">
+                      <span class="icon is-small"><i class="fas fa-paste"></i></span>
+                      <span>Paste PEM</span>
+                    </button>
                   </div>
-                  <p class="field-hint">PEM-encoded root certificate for verifying the ACME server's TLS. Only needed for internal CAs with private root certificates.</p>
+                  <div id="ca-bundle-upload">
+                    <div class="control">
+                      <div class="file has-name is-fullwidth">
+                        <label class="file-label">
+                          <input class="file-input" type="file" name="ca_bundle_file" accept=".pem,.crt,.cer"
+                            onchange="this.closest('.file').querySelector('.file-name').textContent = this.files[0].name">
+                          <span class="file-cta">
+                            <span class="file-icon"><i class="fas fa-upload"></i></span>
+                            <span class="file-label">Choose file</span>
+                          </span>
+                          <span class="file-name">No file selected</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="ca-bundle-paste" style="display:none;">
+                    <div class="control">
+                      <textarea class="textarea is-small" name="ca_bundle" rows="4"
+                        placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
+                        style="font-family:monospace;font-size:0.78rem;resize:vertical;"></textarea>
+                    </div>
+                  </div>
+                  <p class="field-hint" style="margin-top:0.5rem;">Root or intermediate CA certificate for verifying the ACME server's TLS. Only needed for internal CAs with private root certificates.</p>
                 </div>
 
                 <div class="field">
@@ -902,6 +929,15 @@ document.addEventListener('DOMContentLoaded', function() {
     switchCertTab('upload-signed');
   {% endif %}
 });
+
+// CA bundle mode toggle — upload file vs paste PEM
+function setCaBundleMode(mode) {
+  var isUpload = mode === 'upload';
+  document.getElementById('ca-bundle-upload').style.display = isUpload ? '' : 'none';
+  document.getElementById('ca-bundle-paste').style.display = isUpload ? 'none' : '';
+  document.getElementById('ca-mode-upload').className = 'button is-small ' + (isUpload ? 'is-primary' : 'is-light');
+  document.getElementById('ca-mode-paste').className = 'button is-small ' + (isUpload ? 'is-light' : 'is-primary');
+}
 
 // Challenge type change — show/hide DNS provider section
 function onChallengeTypeChange() {

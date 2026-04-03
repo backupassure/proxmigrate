@@ -452,7 +452,12 @@ def acme_configure(request):
     domain = request.POST.get("domain", "").strip()
     email = request.POST.get("email", "").strip()
     challenge_type = request.POST.get("challenge_type", "http-01")
-    ca_bundle = request.POST.get("ca_bundle", "").strip()
+    # CA bundle: accept file upload or pasted PEM text
+    ca_bundle_file = request.FILES.get("ca_bundle_file")
+    if ca_bundle_file:
+        ca_bundle = ca_bundle_file.read().decode("utf-8").strip()
+    else:
+        ca_bundle = request.POST.get("ca_bundle", "").strip()
     skip_tls = request.POST.get("skip_tls_verify") == "on"
 
     if not domain:
