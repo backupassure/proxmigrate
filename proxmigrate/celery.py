@@ -12,6 +12,6 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     "check-cert-expiry": {
         "task": "certificates.check_cert_expiry",
-        "schedule": crontab(hour=3, minute=30),
+        "schedule": crontab(hour="*/6", minute=30),  # Every 6 hours: 00:30, 06:30, 12:30, 18:30
     },
 }

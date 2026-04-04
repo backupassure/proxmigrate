@@ -164,9 +164,21 @@ def _get_cert_info():
         return None
 
 
-@shared_task(bind=True, name="certificates.issue_acme_certificate")
+@shared_task(
+    bind=True,
+    name="certificates.issue_acme_certificate",
+    autoretry_for=(Exception,),
+    retry_backoff=60,
+    retry_backoff_max=3600,
+    max_retries=5,
+)
 def issue_acme_certificate(self):
-    """Issue or renew a certificate via ACME protocol."""
+    """Issue or renew a certificate via ACME protocol.
+
+    Retries up to 5 times with exponential backoff (1min, 2min, 4min, 8min, 16min)
+    capped at 1 hour. This ensures short-lived certs get renewed even if the
+    first attempt fails (CA unreachable, DNS propagation, network issues).
+    """
     from apps.certificates.models import AcmeConfig, AcmeLog
 
     config = AcmeConfig.get_config()
