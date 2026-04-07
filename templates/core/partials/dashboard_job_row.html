@@ -7,11 +7,11 @@
       hx-swap="outerHTML"
     {% endif %}>
   <td style="vertical-align:middle;max-width:160px;">
-    <span style="font-family:monospace;font-size:0.78rem;color:#4a4a4a;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ job.display_name }}">
+    <span style="font-family:monospace;font-size:0.78rem;color:var(--text-muted);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ job.display_name }}">
       {{ job.display_name|truncatechars:28 }}
     </span>
   </td>
-  <td style="vertical-align:middle;font-weight:500;color:#1a1a2e;">
+  <td style="vertical-align:middle;font-weight:500;color:var(--text-header);">
     {{ job.vm_name|default:"—" }}
   </td>
   <td style="vertical-align:middle;">
@@ -50,7 +50,7 @@
       </div>
     {% endif %}
   </td>
-  <td style="vertical-align:middle;color:#7a7a7a;font-size:0.85rem;white-space:nowrap;">
+  <td style="vertical-align:middle;color:var(--text-muted);font-size:0.85rem;white-space:nowrap;">
     {{ job.created_at|date:"M j, Y" }}
   </td>
   <td style="vertical-align:middle;text-align:right;white-space:nowrap;">
