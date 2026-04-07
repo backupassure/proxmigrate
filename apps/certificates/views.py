@@ -238,17 +238,22 @@ def upload_signed_cert(request):
 def upload_own_cert(request):
     """Upload a certificate and private key supplied by the user."""
     cert_file = request.FILES.get("cert_file")
+    cert_pem_text = request.POST.get("cert_pem", "").strip()
     key_file = request.FILES.get("key_file")
+    key_pem_text = request.POST.get("key_pem", "").strip()
 
-    if not cert_file or not key_file:
+    has_cert = cert_file or cert_pem_text
+    has_key = key_file or key_pem_text
+
+    if not has_cert or not has_key:
         messages.error(
-            request, "Both certificate and private key files are required.",
+            request, "Both certificate and private key are required.",
         )
         return redirect("cert_settings")
 
     try:
-        cert_content = cert_file.read()
-        key_content = key_file.read()
+        cert_content = cert_file.read() if cert_file else cert_pem_text.encode("utf-8")
+        key_content = key_file.read() if key_file else key_pem_text.encode("utf-8")
 
         validate_cert_key_pair(cert_content, key_content)
         install_cert_and_key(cert_content, key_content)

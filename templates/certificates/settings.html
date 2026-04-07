@@ -427,7 +427,26 @@
             </div>
           </div>
 
-          <form method="post" action="{% url 'cert_upload' %}" enctype="multipart/form-data">
+          {# Toggle: Upload files vs Paste PEM #}
+          <div style="display: flex;gap: 0.5rem;margin-bottom: 1.25rem;">
+            <button type="button" id="own-mode-upload"
+              class="button is-small is-primary"
+              onclick="setOwnCertMode('upload')"
+              style="font-weight: 600;">
+              <span class="icon is-small"><i class="fas fa-upload"></i></span>
+              <span>Upload Files</span>
+            </button>
+            <button type="button" id="own-mode-paste"
+              class="button is-small is-light"
+              onclick="setOwnCertMode('paste')"
+              style="font-weight: 600;">
+              <span class="icon is-small"><i class="fas fa-paste"></i></span>
+              <span>Paste PEM</span>
+            </button>
+          </div>
+
+          {# File upload form #}
+          <form id="own-form-upload" method="post" action="{% url 'cert_upload' %}" enctype="multipart/form-data">
             {% csrf_token %}
 
             <div class="field" style="margin-bottom: 1.25rem;">
@@ -475,7 +494,44 @@
               </div>
             </div>
 
-            <button type="submit" class="button is-warning is-fullwidth" style="font-weight: 600;">
+            <button type="submit" class="button is-primary is-fullwidth" style="font-weight: 600;">
+              <span class="icon"><i class="fas fa-certificate"></i></span>
+              <span>Install Certificate</span>
+            </button>
+          </form>
+
+          {# Paste PEM form #}
+          <form id="own-form-paste" method="post" action="{% url 'cert_upload' %}" style="display: none;">
+            {% csrf_token %}
+
+            <div class="field" style="margin-bottom: 1.25rem;">
+              <label class="label form-label">Certificate (PEM text)</label>
+              <div class="control">
+                <textarea class="textarea" name="cert_pem" rows="8"
+                  placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
+                  style="font-family: monospace;font-size: 0.78rem;resize: vertical;"></textarea>
+              </div>
+              <p class="field-hint">Paste the full PEM — include the full chain (server cert + intermediates) if provided by your CA.</p>
+            </div>
+
+            <div class="field" style="margin-bottom: 1.5rem;">
+              <label class="label form-label">Private Key (PEM text)</label>
+              <div class="control">
+                <textarea class="textarea" name="key_pem" rows="8"
+                  placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
+                  style="font-family: monospace;font-size: 0.78rem;resize: vertical;"></textarea>
+              </div>
+              <p class="field-hint">RSA or ECDSA private key. Must not be password-protected.</p>
+            </div>
+
+            <div class="info-box is-warning" style="margin-bottom: 1.25rem;">
+              <div class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
+              <div style="font-size: 0.8rem;">
+                Installing the certificate will reload nginx. You may need to refresh the page after a few seconds.
+              </div>
+            </div>
+
+            <button type="submit" class="button is-primary is-fullwidth" style="font-weight: 600;">
               <span class="icon"><i class="fas fa-certificate"></i></span>
               <span>Install Certificate</span>
             </button>
@@ -914,6 +970,14 @@ function setSignedMode(mode) {
   document.getElementById('signed-form-paste').style.display = isUpload ? 'none' : '';
   document.getElementById('signed-mode-upload').className = 'button is-small ' + (isUpload ? 'is-primary' : 'is-light');
   document.getElementById('signed-mode-paste').className = 'button is-small ' + (isUpload ? 'is-light' : 'is-primary');
+}
+
+function setOwnCertMode(mode) {
+  var isUpload = mode === 'upload';
+  document.getElementById('own-form-upload').style.display = isUpload ? '' : 'none';
+  document.getElementById('own-form-paste').style.display = isUpload ? 'none' : '';
+  document.getElementById('own-mode-upload').className = 'button is-small ' + (isUpload ? 'is-primary' : 'is-light');
+  document.getElementById('own-mode-paste').className = 'button is-small ' + (isUpload ? 'is-light' : 'is-primary');
 }
 
 function switchCertTab(name) {
