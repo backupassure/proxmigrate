@@ -46,6 +46,10 @@ Use the search box in the table header to filter by container name or CTID. The 
 
 The container table automatically refreshes every 10 seconds to keep status information current. A manual Refresh button is also available in the page header.
 
+## Community Scripts
+
+Want to deploy a pre-built app like Docker, Pi-hole, or Home Assistant? Visit **Community Scripts** from the sidebar or the New Container page. Browse 460+ community scripts and deploy with one click. See the [Community Scripts help page](/help/lxc-community-scripts/) for details.
+
 ## Common issues
 
 **Container table shows error or is empty** — The Proxmox API may be temporarily unavailable. Check the API status on the Dashboard. Try refreshing.

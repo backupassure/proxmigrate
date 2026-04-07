@@ -1,0 +1,100 @@
+<div id="community-pipeline-status"
+  {% if job.stage != 'DONE' and job.stage != 'FAILED' and job.stage != 'CANCELLED' %}
+    hx-get="{% url 'lxc_community_scripts_job_status' job.id %}"
+    hx-trigger="every 5s"
+    hx-target="#community-pipeline-status"
+    hx-swap="outerHTML"
+  {% else %}
+    data-terminal="true"
+  {% endif %}
+>
+
+  <div class="proxmigrate-card">
+    <div class="card-header">
+      <i class="fas fa-tasks" style="color:var(--text-muted, #7a7a7a);"></i>
+      Deployment Pipeline
+      {% if job.stage != 'DONE' and job.stage != 'FAILED' and job.stage != 'CANCELLED' %}
+        <span style="margin-left:auto;font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:400;">
+          <span class="spinner" style="margin-right:0.3rem;"></span>
+          Auto-updating
+        </span>
+      {% endif %}
+    </div>
+    <div class="card-body" style="padding:1rem 1.25rem;">
+
+      {% for stage in stages %}
+        <div class="pipeline-stage
+          {% if stage.state == 'DONE' %}is-done
+          {% elif stage.state == 'ACTIVE' or stage.state == 'RUNNING' %}is-active
+          {% elif stage.state == 'FAILED' %}is-failed
+          {% else %}is-queued
+          {% endif %}">
+
+          <div class="stage-icon">
+            {% if stage.state == 'DONE' %}
+              <i class="fas fa-check-circle" style="color:var(--success-color, #48c78e);"></i>
+            {% elif stage.state == 'ACTIVE' or stage.state == 'RUNNING' %}
+              <i class="fas fa-spinner fa-spin" style="color:var(--link-color, #3273dc);"></i>
+            {% elif stage.state == 'FAILED' %}
+              <i class="fas fa-times-circle" style="color:var(--danger-color, #f14668);"></i>
+            {% else %}
+              <i class="far fa-circle" style="color:var(--border-main, #e8ecf0);"></i>
+            {% endif %}
+          </div>
+
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <div class="stage-name">{{ stage.label }}</div>
+              <div class="stage-status">
+                {% if stage.state == 'DONE' %}
+                  <span style="color:var(--text-success-dark, #257953);font-size:0.78rem;font-weight:600;">Done</span>
+                {% elif stage.state == 'FAILED' %}
+                  <span style="color:var(--text-danger-dark, #cc0f35);font-size:0.78rem;font-weight:600;">Failed</span>
+                {% endif %}
+              </div>
+            </div>
+
+            {% if stage.state == 'ACTIVE' or stage.state == 'RUNNING' %}
+              <div style="margin-top:0.4rem;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:0.2rem;">
+                  <span style="font-size:0.72rem;color:var(--text-semi, #4a4a4a);">{{ stage.message|default:"Working..." }}</span>
+                  <span style="font-size:0.72rem;color:var(--link-color, #3273dc);font-weight:600;font-variant-numeric:tabular-nums;">
+                    {% if elapsed_min %}{{ elapsed_min }}m {% endif %}{{ elapsed_sec }}s
+                  </span>
+                </div>
+                {# Indeterminate bar — we can't track script progress mid-execution #}
+                <progress class="progress is-primary is-small" max="100" style="height:6px;margin-bottom:0;"></progress>
+              </div>
+            {% endif %}
+
+            {% if stage.state == 'FAILED' and stage.message %}
+              <div style="font-size:0.8rem;color:var(--text-danger-dark, #cc0f35);margin-top:0.25rem;">{{ stage.message }}</div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+
+      {% if stages %}
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-light, #f0f0f0);display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:0.8rem;color:var(--text-muted, #7a7a7a);">
+            {% if job.stage == 'DONE' %}
+              All stages complete
+            {% elif job.stage == 'FAILED' %}
+              Pipeline stopped due to error
+            {% elif job.stage == 'CANCELLED' %}
+              Deployment cancelled
+            {% else %}
+              Running — {% if elapsed_min %}{{ elapsed_min }}m {% endif %}{{ elapsed_sec }}s elapsed
+            {% endif %}
+          </div>
+          <div style="font-size:0.8rem;color:var(--text-semi, #4a4a4a);font-weight:600;">
+            {{ stages_done_count|default:0 }} / {{ stages|length }} stages
+          </div>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+
+</div>

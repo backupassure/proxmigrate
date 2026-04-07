@@ -23,6 +23,8 @@
       <span style="font-size:0.72rem;background:#fff7ed;color:#c2410c;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">Clone</span>
     {% elif job.job_type == 'lxc_snapshot' %}
       <span style="font-size:0.72rem;background:#ecfdf5;color:#047857;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">Snapshot</span>
+    {% elif job.job_type == 'community_script' %}
+      <span style="font-size:0.72rem;background:var(--bg-warning-light, #fffbeb);color:var(--text-warning-dark, #b45309);border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">Community</span>
     {% else %}
       <span style="font-size:0.72rem;background:#f0fdf4;color:#257953;border-radius:4px;padding:0.15rem 0.5rem;font-weight:600;">New VM</span>
     {% endif %}
@@ -55,7 +57,7 @@
   </td>
   <td style="vertical-align:middle;text-align:right;white-space:nowrap;">
     {% if job.stage == 'DONE' %}
-      {% if job.job_type == 'lxc_create' or job.job_type == 'lxc_clone' or job.job_type == 'lxc_snapshot' %}
+      {% if job.job_type == 'lxc_create' or job.job_type == 'lxc_clone' or job.job_type == 'lxc_snapshot' or job.job_type == 'community_script' %}
         {% if job.vmid %}
           <a href="{% url 'lxc_detail' job.vmid %}" class="button is-small is-light" title="View Container">
             <i class="fas fa-cube"></i>
@@ -87,6 +89,10 @@
       {% elif job.job_type == 'lxc_snapshot' %}
         <a href="{% url 'lxc_detail' job.vmid %}" class="button is-small is-warning is-light" title="View container">
           <i class="fas fa-cube"></i>
+        </a>
+      {% elif job.job_type == 'community_script' %}
+        <a href="{% url 'lxc_community_scripts_deploy' job.app_slug %}" class="button is-small is-warning is-light" title="Retry deploy">
+          <i class="fas fa-redo"></i>
         </a>
       {% else %}
         <a href="{% url 'vmcreator_configure' job.id %}" class="button is-small is-warning is-light" title="Retry — edit config and re-run">
@@ -139,6 +145,17 @@
           <span class="icon is-small"><i class="fas fa-play"></i></span>
           <span>Continue</span>
         </a>
+      {% elif job.job_type == 'community_script' %}
+        <a href="{% url 'lxc_community_scripts_progress' job.id %}" class="button is-small is-primary is-light" title="Continue — view progress">
+          <span class="icon is-small"><i class="fas fa-play"></i></span>
+          <span>Continue</span>
+        </a>
+        <form method="post" action="{% url 'lxc_community_scripts_cancel' job.id %}" style="display:inline;" onsubmit="return confirm('Cancel this job?')">
+          {% csrf_token %}
+          <button type="submit" class="button is-small is-danger is-light" title="Cancel job">
+            <i class="fas fa-trash"></i>
+          </button>
+        </form>
       {% elif job.job_type == 'create' %}
         <a href="{% url 'vmcreator_configure' job.id %}" class="button is-small is-primary is-light" title="Continue — configure and deploy">
           <span class="icon is-small"><i class="fas fa-play"></i></span>
@@ -178,6 +195,16 @@
         <a href="{% url 'lxc_clone_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
           <i class="fas fa-tasks"></i>
         </a>
+      {% elif job.job_type == 'community_script' %}
+        <a href="{% url 'lxc_community_scripts_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
+          <i class="fas fa-tasks"></i>
+        </a>
+        <form method="post" action="{% url 'lxc_community_scripts_cancel' job.id %}" style="display:inline;" onsubmit="return confirm('Cancel this running job?')">
+          {% csrf_token %}
+          <button type="submit" class="button is-small is-warning is-light" title="Cancel job">
+            <i class="fas fa-ban"></i>
+          </button>
+        </form>
       {% else %}
         <a href="{% url 'vmcreator_progress' job.id %}" class="button is-small is-info is-light" title="View progress">
           <i class="fas fa-tasks"></i>

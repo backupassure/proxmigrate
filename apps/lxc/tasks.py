@@ -9,7 +9,67 @@ from celery import shared_task
 
 from apps.proxmox.api import ProxmoxAPIError
 from apps.proxmox.ssh import SSHCommandError
-from apps.lxc.models import LxcCloneJob, LxcCreateJob
+import re as _re
+
+from apps.lxc.models import CommunityScriptJob, LxcCloneJob, LxcCreateJob
+
+# Regex to strip ANSI escape sequences (colors, cursor movement, clear screen)
+_ANSI_RE = _re.compile(r'\x1b\[[0-9;]*[a-zA-Z]|\x1b\][^\x07]*\x07|\x1b\(B')
+
+# Braille spinner characters used by Node.js spinners (ora, listr, etc.)
+_SPINNER_CHARS = frozenset('⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏')
+
+
+def _collapse_spinners(text):
+    """Collapse consecutive spinner lines that show the same status message.
+
+    Terminal spinners cycle through Braille characters (⠋⠙⠹ etc.) while
+    showing the same message. In a captured log these produce hundreds of
+    near-identical lines. Keep only the last frame for each consecutive run.
+    """
+    lines = text.split('\n')
+    if len(lines) <= 1:
+        return text
+
+    result = [lines[0]]
+    for line in lines[1:]:
+        stripped = line.strip()
+        prev_stripped = result[-1].strip()
+
+        if (stripped and prev_stripped
+                and stripped[0] in _SPINNER_CHARS
+                and prev_stripped[0] in _SPINNER_CHARS
+                and stripped[1:].strip() == prev_stripped[1:].strip()):
+            # Same spinner message — keep only the latest frame
+            result[-1] = line
+        else:
+            result.append(line)
+
+    return '\n'.join(result)
+
+
+def _clean_terminal_output(text):
+    """Strip ANSI escapes, process carriage returns, and collapse spinners."""
+    # Strip ANSI escape codes
+    text = _ANSI_RE.sub('', text)
+
+    # Process carriage returns: for each line, only keep text after the last \r
+    lines = text.split('\n')
+    cleaned = []
+    for line in lines:
+        if '\r' in line:
+            # Keep only the portion after the last \r
+            line = line.rsplit('\r', 1)[-1]
+        # Skip empty lines from cleared screens
+        stripped = line.strip()
+        if stripped:
+            cleaned.append(line)
+
+    if not cleaned:
+        return ''
+
+    # Collapse consecutive spinner lines within this chunk
+    return _collapse_spinners('\n'.join(cleaned))
 from apps.wizard.models import ProxmoxConfig
 
 logger = logging.getLogger(__name__)
@@ -380,3 +440,211 @@ def run_lxc_clone_pipeline(self, job_id):
             except Exception:
                 logger.warning("LxcCloneJob %d: could not clean up temp snapshot %s",
                                job.pk, temp_snap)
+
+
+# =========================================================================
+# Community Script Deployment
+# =========================================================================
+
+def _check_community_cancelled(job):
+    """Re-read community job from DB and raise if cancelled."""
+    job.refresh_from_db(fields=["cancelled"])
+    if job.cancelled:
+        raise JobCancelled(f"CommunityScriptJob {job.pk} was cancelled by user")
+
+
+def _fail_community(job, error_message):
+    logger.error("CommunityScriptJob %d FAILED: %s", job.pk, error_message)
+    job.stage = CommunityScriptJob.STAGE_FAILED
+    job.error = error_message
+    job.save(update_fields=["stage", "error", "updated_at"])
+
+
+def _build_env_string(deploy_config):
+    """Build a shell-safe environment variable string for non-interactive script execution.
+
+    The community scripts check the `mode` variable in install_script():
+      CHOICE="${mode:-${1:-}}"
+    Setting mode=default bypasses the whiptail menu entirely and uses
+    default installation. var_diagnostics=no skips the telemetry prompt.
+    """
+    env_parts = [
+        "mode=default",
+        "var_diagnostics=no",
+    ]
+
+    # Map deploy config keys to var_* names the scripts expect
+    mappings = [
+        ("cpu", "var_cpu"),
+        ("ram", "var_ram"),
+        ("disk", "var_disk"),
+        ("os", "var_os"),
+        ("version", "var_version"),
+        ("bridge", "var_brg"),
+    ]
+    for config_key, var_name in mappings:
+        value = deploy_config.get(config_key)
+        if value is not None:
+            env_parts.append(f"{var_name}={shlex.quote(str(value))}")
+
+    # Unprivileged: 1 = yes, 0 = no
+    unpriv = deploy_config.get("unprivileged", True)
+    env_parts.append(f"var_unprivileged={shlex.quote('1' if unpriv else '0')}")
+
+    # Optional overrides
+    hostname = deploy_config.get("hostname", "").strip()
+    if hostname:
+        env_parts.append(f"var_hostname={shlex.quote(hostname)}")
+
+    ip_config = deploy_config.get("ip_config", "dhcp")
+    if ip_config == "static":
+        ip_addr = deploy_config.get("ip_address", "").strip()
+        gateway = deploy_config.get("gateway", "").strip()
+        if ip_addr:
+            env_parts.append(f"var_net={shlex.quote(ip_addr)}")
+        if gateway:
+            env_parts.append(f"var_gateway={shlex.quote(gateway)}")
+
+    container_storage = deploy_config.get("container_storage", "").strip()
+    if container_storage:
+        env_parts.append(f"var_container_storage={shlex.quote(container_storage)}")
+
+    return " ".join(env_parts)
+
+
+@shared_task(bind=True, name="lxc.run_community_script")
+def run_community_script(self, job_id):
+    """Deploy a community script by downloading and executing it on the Proxmox host.
+
+    The script runs non-interactively using var_* environment variables
+    that the community scripts' build.func library respects.
+
+    Stages: DOWNLOADING_SCRIPT → RUNNING_SCRIPT → DONE
+    """
+    try:
+        job = CommunityScriptJob.objects.get(pk=job_id)
+    except CommunityScriptJob.DoesNotExist:
+        logger.error("run_community_script: CommunityScriptJob %d not found", job_id)
+        return
+
+    config = ProxmoxConfig.get_config()
+    deploy_config = job.deploy_config
+
+    try:
+        # ── 1. DOWNLOADING SCRIPT ────────────────────────────────────────
+        _check_community_cancelled(job)
+        job.set_stage(CommunityScriptJob.STAGE_DOWNLOADING_SCRIPT,
+                      f"Preparing to deploy {job.app_name}...", percent=10)
+
+        env_str = _build_env_string(deploy_config)
+        script_url = job.script_url
+
+        # Build the command: export env vars then curl + execute the script.
+        # Variables must be exported (not just set as inline prefixes) so
+        # they propagate into the nested subshell created by $(curl ...).
+        # TERM=xterm prevents "TERM not set" errors from `clear`.
+        inner_cmd = f'export TERM=xterm {env_str}; bash -c "$(curl -fsSL {shlex.quote(script_url)})"'
+
+        # ── 2. RUNNING SCRIPT ────────────────────────────────────────────
+        _check_community_cancelled(job)
+        job.set_stage(CommunityScriptJob.STAGE_RUNNING_SCRIPT,
+                      f"Deploying {job.app_name}...", percent=30)
+
+        logger.info("CommunityScriptJob %d: executing script for %s on node %s",
+                     job.pk, job.app_name, job.node)
+
+        # Stream output so the progress page can show a live log.
+        # Buffer chunks and flush to DB every ~3 seconds to avoid
+        # hammering writes on every line.
+        _log_buf = []
+        _last_flush = [time.time()]
+        MAX_LOG_SIZE = 50000  # keep last 50k chars to avoid bloating the DB
+
+        def _on_output(chunk):
+            _log_buf.append(chunk)
+            now = time.time()
+            if now - _last_flush[0] >= 3:
+                raw = "".join(_log_buf)
+                cleaned = _clean_terminal_output(raw)
+                if cleaned:
+                    full_log = job.log_output + ("\n" if job.log_output else "") + cleaned
+                    # Collapse spinners across flush boundaries
+                    full_log = _collapse_spinners(full_log)
+                    if len(full_log) > MAX_LOG_SIZE:
+                        full_log = full_log[-MAX_LOG_SIZE:]
+                    job.log_output = full_log
+                job.save(update_fields=["log_output", "updated_at"])
+                _log_buf.clear()
+                _last_flush[0] = now
+
+        with config.get_ssh_client() as ssh:
+            stdout, stderr, rc = ssh.run_streaming(
+                ["bash", "-c", inner_cmd], on_output=_on_output,
+                get_pty=True, auto_respond=True,
+            )
+
+        # Final flush of any remaining buffered output
+        if _log_buf:
+            raw = "".join(_log_buf)
+            cleaned = _clean_terminal_output(raw)
+            if cleaned:
+                full_log = job.log_output + ("\n" if job.log_output else "") + cleaned
+                full_log = _collapse_spinners(full_log)
+                if len(full_log) > MAX_LOG_SIZE:
+                    full_log = full_log[-MAX_LOG_SIZE:]
+                job.log_output = full_log
+            job.save(update_fields=["log_output", "updated_at"])
+
+        if rc != 0:
+            raise SSHCommandError(
+                ["bash", "-c", f"<community-script:{job.app_slug}>"],
+                stdout, stderr, rc,
+            )
+
+        # ── 3. EXTRACT VMID ─────────────────────────────────────────────
+        # Community scripts typically print "Successfully created <APP> LXC to CT <VMID>"
+        vmid_match = _re.search(r'CT\s+(\d+)', stdout)
+        if vmid_match:
+            job.vmid = int(vmid_match.group(1))
+            job.save(update_fields=["vmid", "updated_at"])
+
+        # ── DONE ─────────────────────────────────────────────────────────
+        job.set_stage(CommunityScriptJob.STAGE_DONE,
+                      f"{job.app_name} deployed successfully!", percent=100)
+        logger.info("CommunityScriptJob %d: complete. app=%s vmid=%s",
+                     job.pk, job.app_name, job.vmid)
+
+    except JobCancelled:
+        job.set_stage(CommunityScriptJob.STAGE_CANCELLED, "Cancelled by user.")
+        logger.info("CommunityScriptJob %d: cancelled by user", job.pk)
+    except SSHCommandError as exc:
+        _fail_community(job, f"Script execution failed (exit code {exc.exit_code}): {exc.stderr[-500:]}")
+    except ProxmoxAPIError as exc:
+        _fail_community(job, f"Proxmox API error: {exc.message}")
+    except Exception as exc:
+        _fail_community(job, str(exc))
+        logger.error("CommunityScriptJob %d: unexpected error", job_id, exc_info=True)
+
+
+# =========================================================================
+# Community Catalog Refresh
+# =========================================================================
+
+@shared_task(bind=True, name="lxc.refresh_community_catalog")
+def refresh_community_catalog(self):
+    """Rebuild the community scripts catalog from GitHub.
+
+    Called via the community scripts UI when an update is available.
+    """
+    from apps.lxc.catalog import rebuild_catalog
+
+    logger.info("Starting community catalog refresh...")
+    result = rebuild_catalog()
+
+    if result["success"]:
+        logger.info("Catalog refresh complete: %d scripts, %d categories",
+                     result["script_count"], result["category_count"])
+    else:
+        logger.error("Catalog refresh failed: %s", result["error"])
+
+    return result

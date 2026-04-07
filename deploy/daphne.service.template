@@ -1,0 +1,24 @@
+[Unit]
+Description=ProxMigrate Daphne WebSocket server
+After=network.target redis-server.service
+Requires=redis-server.service
+
+[Service]
+Type=simple
+User=proxmigrate
+Group=proxmigrate
+WorkingDirectory=/opt/proxmigrate
+EnvironmentFile=/opt/proxmigrate/.env
+RuntimeDirectory=proxmigrate
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+ExecStart=/opt/proxmigrate/venv/bin/daphne \
+    -u /run/proxmigrate/daphne.sock \
+    --access-log /var/log/proxmigrate/daphne-access.log \
+    --verbosity 1 \
+    proxmigrate.asgi:application
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

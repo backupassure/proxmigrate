@@ -76,6 +76,9 @@
       <a href="{% url 'lxc_list' %}" class="{% if request.resolver_match.url_name == 'lxc_list' %}is-active{% endif %}">
         <i class="fas fa-cube"></i> Container Inventory
       </a>
+      <a href="{% url 'lxc_community_scripts' %}" class="{% if 'lxc_community_scripts' in request.resolver_match.url_name %}is-active{% endif %}">
+        <i class="fas fa-store"></i> Community Scripts
+      </a>
       <a href="{% url 'lxc_export_index' %}" class="{% if 'lxc_export' in request.resolver_match.url_name or 'lxc_px' in request.resolver_match.url_name %}is-active{% endif %}">
         <i class="fas fa-file-export"></i> Export &amp; Import
       </a>

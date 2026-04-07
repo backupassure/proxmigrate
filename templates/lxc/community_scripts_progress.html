@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Deploying {{ job.app_name }} — ProxMigrate{% endblock %}
+{% block page_title %}Deploying Community Script{% endblock %}
+{% block help_slug %}lxc-community-scripts{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'xterm/xterm.css' %}">
+<style>
+  #terminal-container {
+    height: 420px;
+    border-radius: 0 0 10px 10px;
+    overflow: hidden;
+  }
+  #terminal-container .xterm {
+    padding: 8px;
+  }
+  /* Make the terminal fill the container */
+  #terminal-container .xterm-screen {
+    width: 100% !important;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="columns">
+  <div class="column is-8 is-offset-2">
+
+    {# ===== Header card ===== #}
+    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
+      <div class="card-body" style="padding:1.5rem;">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          {% if job.stage == 'DONE' %}
+            <div style="width:52px;height:52px;border-radius:50%;background:var(--bg-success-light, #f0fdf4);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i class="fas fa-check-circle" style="font-size:1.5rem;color:var(--success-color, #48c78e);"></i>
+            </div>
+          {% elif job.stage == 'FAILED' %}
+            <div style="width:52px;height:52px;border-radius:50%;background:var(--bg-danger-light, #fff5f7);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i class="fas fa-times-circle" style="font-size:1.5rem;color:var(--danger-color, #f14668);"></i>
+            </div>
+          {% elif job.stage == 'CANCELLED' %}
+            <div style="width:52px;height:52px;border-radius:50%;background:var(--bg-warning-light, #fffbeb);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i class="fas fa-ban" style="font-size:1.5rem;color:var(--text-warning-dark, #b45309);"></i>
+            </div>
+          {% else %}
+            <div style="width:52px;height:52px;border-radius:50%;background:var(--bg-info-light, #eff6ff);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i class="fas fa-cog fa-spin" style="font-size:1.5rem;color:var(--link-color, #3273dc);"></i>
+            </div>
+          {% endif %}
+
+          <div>
+            <div style="font-size:1.1rem;font-weight:700;color:var(--text-header, #1a1a2e);">
+              {{ job.app_name }}
+            </div>
+            <div style="font-size:0.85rem;color:var(--text-muted, #7a7a7a);margin-top:0.2rem;">
+              {% if job.vmid %}
+                CTID <span class="is-monospace" style="font-weight:600;color:var(--text-header, #1a1a2e);">{{ job.vmid }}</span>
+                &nbsp;&bull;&nbsp;
+              {% endif %}
+              <i class="fas fa-cube" style="margin-right:0.2rem;"></i>Community Script
+              &nbsp;&bull;&nbsp;
+              Started {{ job.created_at|timesince }} ago
+            </div>
+          </div>
+
+          <div style="margin-left:auto;">
+            {% if job.stage == 'DONE' %}
+              <span class="status-badge vm-status-running">Complete</span>
+            {% elif job.stage == 'FAILED' %}
+              <span class="status-badge vm-status-stopped">Failed</span>
+            {% elif job.stage == 'CANCELLED' %}
+              <span class="status-badge" style="background:var(--text-warning-dark, #b45309);color:#fff;">Cancelled</span>
+            {% else %}
+              <span class="status-badge" style="background:var(--link-color, #3273dc);color:#fff;">In Progress</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ===== Pipeline stages (HTMX polling) ===== #}
+    {% include "lxc/partials/community_job_status.html" %}
+
+    {# ===== Interactive Terminal ===== #}
+    <div class="proxmigrate-card" style="margin-top:1rem;">
+      <div class="card-header">
+        <i class="fas fa-terminal" style="color:var(--text-muted, #7a7a7a);"></i>
+        Terminal
+        {% if job.stage != 'DONE' and job.stage != 'FAILED' and job.stage != 'CANCELLED' %}
+          <span style="margin-left:auto;font-size:0.72rem;color:var(--text-muted, #7a7a7a);font-weight:400;">
+            <span class="spinner" style="margin-right:0.3rem;"></span>
+            Interactive session
+          </span>
+        {% endif %}
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div id="terminal-container"
+             data-job-id="{{ job.id }}"
+             data-ws-path="/ws/lxc/community-scripts/{{ job.id }}/terminal/"
+             data-is-terminal="{% if job.stage == 'DONE' or job.stage == 'FAILED' or job.stage == 'CANCELLED' %}true{% else %}false{% endif %}"
+             {% if job.stage == 'DONE' or job.stage == 'FAILED' or job.stage == 'CANCELLED' %}
+               data-replay-data="{{ job.log_output|escapejs }}"
+             {% endif %}
+        ></div>
+      </div>
+    </div>
+
+    {# ===== Terminal state actions ===== #}
+    {% if job.stage == 'DONE' %}
+      <div class="proxmigrate-card" style="margin-top:1.5rem;">
+        <div class="card-body" style="padding:1.5rem;text-align:center;">
+          <i class="fas fa-check-circle" style="font-size:2rem;color:var(--success-color, #48c78e);margin-bottom:1rem;display:block;"></i>
+          <h3 style="font-size:1.1rem;font-weight:700;color:var(--text-header, #1a1a2e);margin-bottom:0.5rem;">{{ job.app_name }} Deployed Successfully!</h3>
+          <p style="color:var(--text-muted, #7a7a7a);font-size:0.875rem;margin-bottom:1.5rem;">
+            {% if job.vmid %}CTID <strong>{{ job.vmid }}</strong> is ready on node <strong>{{ job.node }}</strong>.{% endif %}
+          </p>
+          <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+            <a href="{% url 'lxc_list' %}" class="button is-primary is-medium" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-cube"></i></span>
+              <span>View Containers</span>
+              <span class="icon"><i class="fas fa-arrow-right"></i></span>
+            </a>
+            <a href="{% url 'lxc_community_scripts' %}" class="button is-light is-medium" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-store"></i></span>
+              <span>Deploy Another</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    {% elif job.stage == 'FAILED' %}
+      <div class="proxmigrate-card" style="margin-top:1.5rem;border-left:4px solid var(--danger-color, #f14668);border-radius:0 10px 10px 0;">
+        <div class="card-body" style="padding:1.5rem;">
+          <h3 style="font-size:1rem;font-weight:700;color:var(--text-danger-dark, #cc0f35);margin-bottom:0.75rem;">
+            <i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i>Script Deployment Failed
+          </h3>
+          {% if job.error %}
+            <div style="background:var(--bg-main, #f5f7fa);border:1px solid var(--border-main, #e8ecf0);border-radius:6px;padding:1rem;font-family:monospace;font-size:0.8rem;color:var(--text-semi, #4a4a4a);white-space:pre-wrap;word-break:break-all;margin-bottom:1rem;max-height:300px;overflow-y:auto;">{{ job.error }}</div>
+          {% endif %}
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+            <a href="{% url 'lxc_community_scripts_deploy' job.app_slug %}" class="button is-danger is-light" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-redo"></i></span>
+              <span>Try Again</span>
+            </a>
+            <a href="{% url 'lxc_community_scripts' %}" class="button is-light" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-store"></i></span>
+              <span>Back to Community Scripts</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    {% elif job.stage == 'CANCELLED' %}
+      <div class="proxmigrate-card" style="margin-top:1.5rem;border-left:4px solid var(--text-warning-dark, #b45309);border-radius:0 10px 10px 0;">
+        <div class="card-body" style="padding:1.5rem;text-align:center;">
+          <i class="fas fa-ban" style="font-size:1.5rem;color:var(--text-warning-dark, #b45309);margin-bottom:0.75rem;display:block;"></i>
+          <h3 style="font-size:1rem;font-weight:700;color:var(--text-warning-dark, #b45309);margin-bottom:0.75rem;">Deployment Cancelled</h3>
+          <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+            <a href="{% url 'lxc_community_scripts_deploy' job.app_slug %}" class="button is-warning is-light" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-redo"></i></span>
+              <span>Try Again</span>
+            </a>
+            <a href="{% url 'lxc_community_scripts' %}" class="button is-light" style="font-weight:600;">
+              <span class="icon"><i class="fas fa-store"></i></span>
+              <span>Back to Community Scripts</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {# ===== Cancel button (only during execution) ===== #}
+    {% if job.stage != 'DONE' and job.stage != 'FAILED' and job.stage != 'CANCELLED' %}
+      <div style="text-align:center;margin-top:1.5rem;">
+        <form method="post" action="{% url 'lxc_community_scripts_cancel' job.id %}"
+              onsubmit="return confirm('Cancel the deployment of {{ job.app_name }}?');">
+          {% csrf_token %}
+          <button type="submit" class="button is-danger is-light is-small" style="font-weight:600;">
+            <span class="icon is-small"><i class="fas fa-times"></i></span>
+            <span>Cancel Deployment</span>
+          </button>
+        </form>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'xterm/xterm.js' %}"></script>
+<script src="{% static 'xterm/addon-fit.js' %}"></script>
+<script src="{% static 'js/community_terminal.js' %}"></script>
+<script>
+  // When the HTMX partial swaps in a terminal state, reload the full page
+  // so the header card and action buttons update.
+  document.addEventListener('htmx:afterSwap', function(evt) {
+    var el = document.getElementById('community-pipeline-status');
+    if (el && el.dataset.terminal === 'true') {
+      location.reload();
+    }
+  });
+</script>
+{% endblock %}

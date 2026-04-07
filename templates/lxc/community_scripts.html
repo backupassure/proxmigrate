@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+{% block title %}Community Scripts — ProxMigrate{% endblock %}
+{% block page_title %}Community Scripts{% endblock %}
+{% block help_slug %}lxc-community-scripts{% endblock %}
+
+
+{% block content %}
+
+<div class="columns">
+
+  {# ===== Left sidebar: category filter ===== #}
+  <div class="column is-2">
+    <div class="proxmigrate-card" style="position:sticky;top:1rem;">
+      <div class="card-header">
+        <i class="fas fa-filter" style="color:var(--text-muted, #7a7a7a);"></i> Categories
+      </div>
+      <div class="card-body" style="padding:0.75rem 1rem;">
+        <a href="{% url 'lxc_community_scripts' %}{% if query %}?q={{ query }}{% endif %}"
+           class="cs-cat-link {% if not selected_category %}is-active{% endif %}"
+           hx-get="{% url 'lxc_community_scripts' %}?{% if query %}q={{ query }}&{% endif %}category="
+           hx-target="#script-grid-wrapper"
+           hx-swap="outerHTML"
+           hx-push-url="true">
+          <i class="fas fa-th" style="width:1.2rem;text-align:center;"></i>
+          <span>All Scripts</span>
+          <span class="cs-cat-count">{{ total_count }}</span>
+        </a>
+
+        {% for cat in categories %}
+          <a href="{% url 'lxc_community_scripts' %}?category={{ cat.slug }}{% if query %}&q={{ query }}{% endif %}"
+             class="cs-cat-link {% if selected_category == cat.slug %}is-active{% endif %}"
+             hx-get="{% url 'lxc_community_scripts' %}?category={{ cat.slug }}{% if query %}&q={{ query }}{% endif %}"
+             hx-target="#script-grid-wrapper"
+             hx-swap="outerHTML"
+             hx-push-url="true">
+            <i class="{{ cat.icon }}" style="width:1.2rem;text-align:center;"></i>
+            <span>{{ cat.name }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {# ===== Main content: search + grid ===== #}
+  <div class="column is-10">
+
+    {# Search bar #}
+    <div class="proxmigrate-card" style="margin-bottom:1.25rem;">
+      <div class="card-body" style="padding:1rem 1.25rem;">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <div style="flex:1;">
+            <div class="control has-icons-left">
+              <input class="input"
+                     type="text"
+                     name="q"
+                     placeholder="Search scripts... (e.g. Docker, Pi-hole, Plex)"
+                     value="{{ query }}"
+                     hx-get="{% url 'lxc_community_scripts' %}{% if selected_category %}?category={{ selected_category }}{% endif %}"
+                     hx-target="#script-grid-wrapper"
+                     hx-swap="outerHTML"
+                     hx-trigger="keyup changed delay:300ms, search"
+                     hx-push-url="true"
+                     hx-include="this"
+                     hx-indicator="#search-spinner">
+              <span class="icon is-left">
+                <i class="fas fa-search"></i>
+              </span>
+            </div>
+          </div>
+          <span id="search-spinner" class="htmx-indicator spinner"></span>
+          <span id="script-count" style="font-size:0.85rem;color:var(--text-muted, #7a7a7a);white-space:nowrap;">
+            {{ total_count }} script{{ total_count|pluralize }}
+          </span>
+          {# Update indicator — loads async, renders nothing if current #}
+          <span id="catalog-update-check"
+                hx-get="{% url 'lxc_community_scripts_check_updates' %}"
+                hx-trigger="load"
+                hx-target="#catalog-update-check"
+                hx-swap="outerHTML"></span>
+        </div>
+      </div>
+    </div>
+
+    {# Script grid (HTMX swap target) #}
+    {% include "lxc/partials/script_grid.html" %}
+
+  </div>
+</div>
+
+{# ===== Script detail modal ===== #}
+<div id="cs-modal" class="cs-modal-overlay" style="display:none;" onclick="if(event.target===this)closeScriptModal()">
+  <div class="cs-modal-card">
+    <button class="cs-modal-close" onclick="closeScriptModal()" aria-label="Close">&times;</button>
+    <div class="cs-modal-body">
+      <div style="display:flex;align-items:flex-start;gap:1.25rem;margin-bottom:1.25rem;">
+        <img id="cs-modal-logo" src="" alt=""
+             style="width:64px;height:64px;object-fit:contain;border-radius:10px;flex-shrink:0;"
+             onerror="this.style.display='none'; document.getElementById('cs-modal-logo-fallback').style.display='flex';">
+        <div id="cs-modal-logo-fallback" style="display:none;width:64px;height:64px;border-radius:10px;background:var(--border-light, #f0f0f0);align-items:center;justify-content:center;flex-shrink:0;color:var(--text-muted, #7a7a7a);font-size:1.5rem;">
+          <i id="cs-modal-fallback-icon" class="fas fa-cube"></i>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <h2 id="cs-modal-name" style="font-size:1.2rem;font-weight:700;color:var(--text-header, #1a1a2e);margin:0 0 0.3rem;"></h2>
+          <div id="cs-modal-categories" style="font-size:0.78rem;color:var(--text-muted, #7a7a7a);"></div>
+        </div>
+      </div>
+
+      <p id="cs-modal-desc" style="font-size:0.88rem;color:var(--text-semi, #4a4a4a);line-height:1.6;margin-bottom:1.5rem;"></p>
+
+      <div style="background:var(--bg-main, #f5f7fa);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.5rem;">
+        <div style="font-weight:700;font-size:0.82rem;color:var(--text-semi, #4a4a4a);margin-bottom:0.6rem;">
+          <i class="fas fa-sliders-h" style="margin-right:0.3rem;color:var(--link-color, #3273dc);"></i> Script Defaults
+        </div>
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:0.85rem;">
+          <div><span style="color:var(--text-muted, #7a7a7a);">CPU</span> <strong id="cs-modal-cpu"></strong></div>
+          <div><span style="color:var(--text-muted, #7a7a7a);">RAM</span> <strong id="cs-modal-ram"></strong></div>
+          <div><span style="color:var(--text-muted, #7a7a7a);">Disk</span> <strong id="cs-modal-disk"></strong></div>
+          <div><span style="color:var(--text-muted, #7a7a7a);">OS</span> <strong id="cs-modal-os"></strong></div>
+          <div id="cs-modal-priv-wrap"><span style="color:var(--text-muted, #7a7a7a);">Mode</span> <strong id="cs-modal-priv"></strong></div>
+        </div>
+      </div>
+
+      <div id="cs-modal-source-wrap" style="margin-bottom:1.5rem;display:none;">
+        <a id="cs-modal-source" href="#" target="_blank" rel="noopener"
+           style="font-size:0.82rem;color:var(--link-color, #3273dc);">
+          <i class="fas fa-external-link-alt" style="margin-right:0.3rem;"></i> <span>Project Website</span>
+        </a>
+      </div>
+
+      <div style="text-align:center;padding-top:0.5rem;border-top:1px solid var(--border-main, #e8ecf0);">
+        <a id="cs-modal-deploy" href="#" class="button is-primary is-medium" style="font-weight:700;min-width:220px;">
+          <span class="icon"><i class="fas fa-rocket"></i></span>
+          <span>Deploy</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Category sidebar links */
+  .cs-cat-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    color: var(--text-semi, #4a4a4a);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+  }
+  .cs-cat-link:hover {
+    background: var(--bg-hover-light, #eef0f3);
+    color: var(--text-header, #1a1a2e);
+  }
+  .cs-cat-link.is-active {
+    background: var(--link-color, #3273dc);
+    color: #fff;
+  }
+  .cs-cat-link.is-active i {
+    color: #fff;
+  }
+  .cs-cat-count {
+    margin-left: auto;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted, #7a7a7a);
+  }
+  .cs-cat-link.is-active .cs-cat-count {
+    color: rgba(255,255,255,0.8);
+  }
+
+  /* App cards — horizontal layout */
+  .cs-app-card {
+    border: 1px solid var(--border-main, #e8ecf0);
+    border-radius: 10px;
+    background: var(--bg-card, #ffffff);
+    padding: 1rem 1.1rem;
+    transition: box-shadow 0.2s, border-color 0.2s;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .cs-app-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: var(--link-color, #3273dc);
+  }
+  .cs-app-logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+  .cs-app-logo-fallback {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: var(--border-light, #f0f0f0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--text-muted, #7a7a7a);
+    font-size: 1.1rem;
+  }
+  .cs-app-name {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-header, #1a1a2e);
+    margin-bottom: 0.2rem;
+    line-height: 1.2;
+  }
+  .cs-app-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted, #7a7a7a);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .cs-app-specs {
+    font-size: 0.72rem;
+    color: var(--text-muted, #7a7a7a);
+    font-weight: 600;
+  }
+
+  /* Update available pill — inline in search bar */
+  .cs-update-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    border: none;
+    background: var(--bg-info-light, #eff6ff);
+    color: var(--link-color, #3273dc);
+    transition: background 0.15s, box-shadow 0.15s;
+    animation: csUpdateFadeIn 0.3s ease;
+  }
+  .cs-update-pill:hover {
+    background: var(--bg-info-light, #eff6ff);
+    box-shadow: 0 1px 4px rgba(50,115,220,0.2);
+  }
+  .cs-update-pill--updating {
+    background: var(--bg-warning-light, #fffbeb);
+    color: var(--text-warning-dark, #b45309);
+    cursor: wait;
+  }
+  @keyframes csUpdateFadeIn {
+    from { opacity: 0; transform: translateY(-2px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Detail modal overlay */
+  .cs-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: csModalFadeIn 0.15s ease;
+  }
+  @keyframes csModalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .cs-modal-card {
+    position: relative;
+    background: var(--bg-card, #ffffff);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    width: 560px;
+    max-width: 92vw;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  .cs-modal-body {
+    padding: 2rem 2rem 1.75rem;
+  }
+  .cs-modal-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.9rem;
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    color: var(--text-muted, #7a7a7a);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0.25rem;
+    transition: color 0.15s;
+    z-index: 1;
+  }
+  .cs-modal-close:hover {
+    color: var(--text-main, #363636);
+  }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  /* ---- Script detail modal ---- */
+  function openScriptModal(el) {
+    var m = document.getElementById('cs-modal');
+    var logo = document.getElementById('cs-modal-logo');
+    var fallback = document.getElementById('cs-modal-logo-fallback');
+
+    logo.src = el.dataset.logo;
+    logo.alt = el.dataset.name;
+    logo.style.display = '';
+    fallback.style.display = 'none';
+
+    // Set category-based fallback icon for modal
+    var catIcon = el.dataset.categoryIcon || 'fas fa-cube';
+    document.getElementById('cs-modal-fallback-icon').className = catIcon;
+
+    document.getElementById('cs-modal-name').textContent = el.dataset.name;
+    document.getElementById('cs-modal-desc').textContent = el.dataset.desc;
+    document.getElementById('cs-modal-categories').textContent = el.dataset.categories || '';
+    document.getElementById('cs-modal-cpu').textContent = el.dataset.cpu + ' Core' + (el.dataset.cpu !== '1' ? 's' : '');
+    document.getElementById('cs-modal-ram').textContent = el.dataset.ram + ' MB';
+    document.getElementById('cs-modal-disk').textContent = el.dataset.disk + ' GB';
+    document.getElementById('cs-modal-os').textContent = el.dataset.os;
+
+    var priv = el.dataset.unprivileged === 'True';
+    document.getElementById('cs-modal-priv').textContent = priv ? 'Unprivileged' : 'Privileged';
+    document.getElementById('cs-modal-priv').style.color = priv ? 'var(--text-success-dark, #257953)' : 'var(--text-danger-dark, #cc0f35)';
+
+    var srcUrl = el.dataset.sourceUrl;
+    var srcWrap = document.getElementById('cs-modal-source-wrap');
+    if (srcUrl) {
+      // Take the first URL if pipe-separated
+      var cleanUrl = srcUrl.split('|')[0].trim();
+      document.getElementById('cs-modal-source').href = cleanUrl;
+      srcWrap.style.display = '';
+    } else {
+      srcWrap.style.display = 'none';
+    }
+
+    document.getElementById('cs-modal-deploy').href = el.dataset.deployUrl;
+    m.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeScriptModal() {
+    document.getElementById('cs-modal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeScriptModal();
+  });
+
+  /* ---- Sync sidebar active state after HTMX navigation ---- */
+  document.body.addEventListener('htmx:afterSettle', function() {
+    var params = new URLSearchParams(window.location.search);
+    var activeCat = params.get('category') || '';
+    document.querySelectorAll('.cs-cat-link').forEach(function(link) {
+      var href = link.getAttribute('hx-get') || link.getAttribute('href') || '';
+      var linkParams = new URLSearchParams(href.split('?')[1] || '');
+      var linkCat = linkParams.get('category') || '';
+      if (linkCat === activeCat) {
+        link.classList.add('is-active');
+      } else {
+        link.classList.remove('is-active');
+      }
+    });
+  });
+
+  function refreshCatalog() {
+    var btn = document.getElementById('refresh-catalog-btn');
+    btn.disabled = true;
+    btn.className = 'cs-update-pill cs-update-pill--updating';
+    btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> <span class="cs-update-pill-text">Updating\u2026</span>';
+
+    fetch('{% url "lxc_community_scripts_refresh" %}', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1],
+        'Content-Type': 'application/json',
+      },
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.task_id) {
+        pollRefreshStatus(data.task_id);
+      }
+    })
+    .catch(function() {
+      btn.disabled = false;
+      btn.className = 'cs-update-pill';
+      btn.innerHTML = '<i class="fas fa-arrow-circle-up"></i> <span class="cs-update-pill-text">Update available</span>';
+    });
+  }
+
+  function pollRefreshStatus(taskId) {
+    var url = '{% url "lxc_community_scripts_refresh_status" "TASK_ID_PLACEHOLDER" %}'.replace('TASK_ID_PLACEHOLDER', taskId);
+    fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.status === 'complete') {
+        if (data.success) {
+          location.reload();
+        } else {
+          var pill = document.getElementById('refresh-catalog-btn');
+          pill.className = 'cs-update-pill';
+          pill.style.background = 'var(--bg-danger-light, #fff5f7)';
+          pill.style.color = 'var(--text-danger-dark, #cc0f35)';
+          pill.disabled = false;
+          pill.innerHTML = '<i class="fas fa-exclamation-circle"></i> <span class="cs-update-pill-text">Retry</span>';
+          pill.title = 'Update failed: ' + (data.error || 'Unknown error') + ' — click to retry';
+        }
+      } else {
+        setTimeout(function() { pollRefreshStatus(taskId); }, 2000);
+      }
+    })
+    .catch(function() {
+      setTimeout(function() { pollRefreshStatus(taskId); }, 3000);
+    });
+  }
+</script>
+{% endblock %}

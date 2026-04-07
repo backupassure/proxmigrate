@@ -24,6 +24,16 @@ urlpatterns = [
     path("new/<int:job_id>/status/", views.lxc_job_status, name="lxc_job_status"),
     path("new/<int:job_id>/cancel/", views.cancel_job, name="lxc_cancel_job"),
 
+    # Community Scripts
+    path("new/community-scripts/", views.community_scripts, name="lxc_community_scripts"),
+    path("new/community-scripts/<slug:slug>/deploy/", views.community_scripts_deploy, name="lxc_community_scripts_deploy"),
+    path("new/community-scripts/<int:job_id>/progress/", views.community_scripts_progress, name="lxc_community_scripts_progress"),
+    path("new/community-scripts/<int:job_id>/status/", views.community_scripts_job_status, name="lxc_community_scripts_job_status"),
+    path("new/community-scripts/<int:job_id>/cancel/", views.community_scripts_cancel, name="lxc_community_scripts_cancel"),
+    path("new/community-scripts/check-updates/", views.community_scripts_check_updates, name="lxc_community_scripts_check_updates"),
+    path("new/community-scripts/refresh/", views.community_scripts_refresh_catalog, name="lxc_community_scripts_refresh"),
+    path("new/community-scripts/refresh/<str:task_id>/status/", views.community_scripts_refresh_status, name="lxc_community_scripts_refresh_status"),
+
     # Clone
     path("<int:vmid>/clone/", views.lxc_clone, name="lxc_clone"),
     path("clone/<int:job_id>/progress/", views.lxc_clone_progress, name="lxc_clone_progress"),

@@ -112,6 +112,25 @@
         </p>
       </div>
     </div>
+
+    {# ===== Community Scripts ===== #}
+    <div class="proxmigrate-card">
+      <div class="card-header">
+        <i class="fas fa-store" style="color:var(--purple-color, #7c3aed);"></i> Or deploy a pre-built app
+      </div>
+      <div class="card-body" style="font-size:0.85rem;color:var(--text-semi, #4a4a4a);line-height:1.7;">
+        <p style="margin-bottom:0.75rem;">
+          Browse <strong>{{ community_script_count }} community scripts</strong> — apps like Docker,
+          Pi-hole, Home Assistant, and Plex, plus base OS containers like Debian
+          and Alpine. One-click deploy with sensible defaults.
+        </p>
+        <a href="{% url 'lxc_community_scripts' %}" class="button is-primary is-outlined is-fullwidth" style="font-weight:600;">
+          <span class="icon"><i class="fas fa-store"></i></span>
+          <span>Browse Community Scripts</span>
+          <span class="icon"><i class="fas fa-arrow-right"></i></span>
+        </a>
+      </div>
+    </div>
   </div>
 </div>
 

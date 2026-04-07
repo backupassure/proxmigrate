@@ -1,0 +1,47 @@
+<div class="column is-4">
+  <div class="cs-app-card"
+       style="cursor:pointer;"
+       onclick="openScriptModal(this)"
+       data-name="{{ script.name }}"
+       data-desc="{{ script.description }}"
+       data-logo="{{ script.logo }}"
+       data-slug="{{ script.slug }}"
+       data-cpu="{{ script.defaults.cpu }}"
+       data-ram="{{ script.defaults.ram }}"
+       data-disk="{{ script.defaults.disk }}"
+       data-os="{{ script.defaults.os }} {{ script.defaults.version }}"
+       data-unprivileged="{{ script.defaults.unprivileged }}"
+       data-categories="{{ script.categories|join:', ' }}"
+       data-source-url="{{ script.source_url|default:'' }}"
+       data-deploy-url="{% url 'lxc_community_scripts_deploy' script.slug %}"
+       data-category-icon="{{ script.category_icon|default:'fas fa-cube' }}">
+    <div style="display:flex;align-items:flex-start;gap:0.85rem;">
+      <img src="{{ script.logo }}"
+           alt="{{ script.name }}"
+           class="cs-app-logo"
+           loading="lazy"
+           onerror="this.style.display='none'; var fb=this.nextElementSibling; fb.style.display='flex'; fb.querySelector('i').className=this.closest('.cs-app-card').dataset.categoryIcon;">
+      <div class="cs-app-logo-fallback" style="display:none;">
+        <i class="{{ script.category_icon|default:'fas fa-cube' }}"></i>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div class="cs-app-name">{{ script.name }}</div>
+        <div class="cs-app-desc">{{ script.description }}</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.75rem;">
+      <div class="cs-app-specs">
+        {{ script.defaults.cpu }}C &nbsp;/&nbsp;
+        {{ script.defaults.ram }}MB &nbsp;/&nbsp;
+        {{ script.defaults.disk }}GB
+      </div>
+      <a href="{% url 'lxc_community_scripts_deploy' script.slug %}"
+         class="button is-primary is-small"
+         style="font-weight:600;"
+         onclick="event.stopPropagation();">
+        <span class="icon is-small"><i class="fas fa-rocket"></i></span>
+        <span>Deploy</span>
+      </a>
+    </div>
+  </div>
+</div>

@@ -1,5 +1,7 @@
 import logging
+import re
 import shlex
+import time
 
 import paramiko
 from paramiko.ssh_exception import AuthenticationException
@@ -101,6 +103,81 @@ class ProxmoxSSH:
 
         logger.debug(
             "SSH exit=%d stdout=%r stderr=%r", exit_code, stdout[:200], stderr[:200]
+        )
+        return stdout, stderr, exit_code
+
+    # Patterns that indicate an interactive prompt waiting for input.
+    _PROMPT_RE = re.compile(
+        r'\[y/N\]|\[Y/n\]|\(y/N\)|\(Y/n\)|<y/N>|<Y/n>'
+    )
+
+    def run_streaming(self, args, on_output=None, chunk_timeout=5,
+                      get_pty=False, auto_respond=False):
+        """Execute a command, reading stdout incrementally.
+
+        Args:
+            args: list of command arguments
+            on_output: callback(text) called with each chunk of stdout
+            chunk_timeout: seconds to wait for data before yielding control
+            get_pty: allocate a PTY (needed for scripts that read /dev/tty)
+            auto_respond: auto-send empty response to [y/N] style prompts
+
+        Returns:
+            (stdout: str, stderr: str, exit_code: int)
+        """
+        if self._client is None:
+            raise SSHException("SSH client is not connected. Call connect() first.")
+
+        cmd_str = shlex.join(args)
+        logger.debug("SSH run_streaming (pty=%s): %s", get_pty, cmd_str)
+
+        if get_pty:
+            transport = self._client.get_transport()
+            channel = transport.open_session()
+            channel.get_pty(term='xterm', width=120, height=40)
+            channel.exec_command(cmd_str)
+        else:
+            _stdin, stdout_ch, stderr_ch = self._client.exec_command(cmd_str)
+            channel = stdout_ch.channel
+
+        stdout_parts = []
+        prompt_buf = ""
+
+        while not channel.exit_status_ready():
+            if channel.recv_ready():
+                data = channel.recv(4096).decode("utf-8", errors="replace")
+                stdout_parts.append(data)
+                if on_output:
+                    on_output(data)
+                if auto_respond:
+                    prompt_buf += data
+                    if self._PROMPT_RE.search(prompt_buf):
+                        channel.sendall(b"\n")
+                        logger.debug("Auto-responded to prompt")
+                        prompt_buf = ""
+                    elif len(prompt_buf) > 500:
+                        prompt_buf = prompt_buf[-200:]
+            else:
+                time.sleep(0.5)
+
+        # Drain remaining data
+        while channel.recv_ready():
+            data = channel.recv(4096).decode("utf-8", errors="replace")
+            stdout_parts.append(data)
+            if on_output:
+                on_output(data)
+
+        exit_code = channel.recv_exit_status()
+        stdout = "".join(stdout_parts)
+
+        if get_pty:
+            stderr = ""  # PTY merges stderr into stdout
+        else:
+            stderr = stderr_ch.read().decode("utf-8", errors="replace")
+
+        logger.debug(
+            "SSH streaming exit=%d stdout_len=%d stderr=%r",
+            exit_code, len(stdout), stderr[:200],
         )
         return stdout, stderr, exit_code
 

@@ -8,11 +8,18 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from django.core.paginator import Paginator
+
 from apps.proxmox.api import ProxmoxAPIError
 from apps.vmcreator.stages import build_stages
 from apps.wizard.models import ProxmoxConfig
 
-from .models import LxcCloneJob, LxcCreateJob, LxcSnapshotLog
+from django.http import HttpResponseNotAllowed
+
+from django.http import JsonResponse
+
+from .catalog import can_refresh, check_for_updates, get_catalog, get_categories, get_script, search_catalog
+from .models import CommunityScriptJob, LxcCloneJob, LxcCreateJob, LxcSnapshotLog
 
 logger = logging.getLogger(__name__)
 
@@ -553,6 +560,7 @@ def lxc_create(request):
         "error": error,
         "storage_pools": storage_pools,
         "help_slug": "lxc",
+        "community_script_count": len(get_catalog()),
     })
 
 
@@ -1138,3 +1146,229 @@ def lxc_snapshot_action(request, vmid, snapname, action):
     ctx["snap_attempt"] = 0
     ctx["snap_action_label"] = action_labels.get(action, "Working…")
     return render(request, "lxc/partials/ct_snapshots.html", ctx)
+
+
+# ─────────────────────────────────────────────────────────────────────
+#  Community Scripts
+# ─────────────────────────────────────────────────────────────────────
+
+COMMUNITY_SCRIPTS_PER_PAGE = 24
+
+
+@login_required
+def community_scripts(request):
+    """Browse, search, and filter the community scripts catalog."""
+    query = request.GET.get("q", "").strip()
+    category = request.GET.get("category", "").strip()
+    page_num = request.GET.get("page", "1")
+
+    scripts = search_catalog(query=query, category=category)
+    categories = get_categories()
+
+    paginator = Paginator(scripts, COMMUNITY_SCRIPTS_PER_PAGE)
+    page = paginator.get_page(page_num)
+
+    # Attach primary category icon to each script for logo fallbacks
+    cat_icon_map = {cat["name"]: cat["icon"] for cat in categories}
+    for script in scripts:
+        first_cat = (script.get("categories") or [""])[0]
+        script["category_icon"] = cat_icon_map.get(first_cat, "fas fa-cube")
+
+    ctx = {
+        "page": page,
+        "categories": categories,
+        "query": query,
+        "selected_category": category,
+        "total_count": len(scripts),
+    }
+
+    # HTMX search/filter requests only need the grid partial
+    if request.headers.get("HX-Request"):
+        return render(request, "lxc/partials/script_grid.html", ctx)
+
+    return render(request, "lxc/community_scripts.html", ctx)
+
+
+@login_required
+def community_scripts_deploy(request, slug):
+    """Configure and deploy a community script."""
+    script = get_script(slug)
+    if not script:
+        messages.error(request, f"Unknown community script: {slug}")
+        return redirect("lxc_community_scripts")
+
+    # Attach primary category icon for logo fallback
+    cat_icon_map = {cat["name"]: cat["icon"] for cat in get_categories()}
+    first_cat = (script.get("categories") or [""])[0]
+    script["category_icon"] = cat_icon_map.get(first_cat, "fas fa-cube")
+
+    config = ProxmoxConfig.get_config()
+
+    if request.method == "POST":
+        # Security: validate the script URL matches the catalog entry
+        deploy_config = {
+            "cpu": int(request.POST.get("cpu", script["defaults"]["cpu"])),
+            "ram": int(request.POST.get("ram", script["defaults"]["ram"])),
+            "disk": int(request.POST.get("disk", script["defaults"]["disk"])),
+            "os": script["defaults"]["os"],
+            "version": script["defaults"]["version"],
+            "unprivileged": script["defaults"]["unprivileged"],
+            "bridge": request.POST.get("bridge", config.default_bridge),
+            "hostname": request.POST.get("hostname", "").strip(),
+            "ip_config": request.POST.get("ip_config", "dhcp"),
+            "ip_address": request.POST.get("ip_address", "").strip(),
+            "gateway": request.POST.get("gateway", "").strip(),
+            "container_storage": request.POST.get("container_storage", ""),
+        }
+
+        node = request.POST.get("node", config.default_node)
+
+        job = CommunityScriptJob.objects.create(
+            app_name=script["name"],
+            app_slug=script["slug"],
+            script_url=script["script_url"],
+            node=node,
+            deploy_config_json=json.dumps(deploy_config),
+            created_by=request.user,
+        )
+
+        # Job stays QUEUED — the WebSocket terminal consumer starts
+        # execution when the browser connects to the progress page.
+
+        return redirect("lxc_community_scripts_progress", job_id=job.pk)
+
+    # GET: render deploy configuration form
+    nodes = []
+    rootfs_pools = []
+    networks = []
+    error = None
+
+    if config and config.is_configured:
+        try:
+            api = config.get_api_client()
+            nodes = [n.get("node") for n in api.get_nodes() if n.get("node")]
+            storage_pools = api.get_storage(config.default_node)
+            rootfs_pools = [
+                s for s in storage_pools
+                if "rootdir" in (s.get("content", "") or "")
+                or "images" in (s.get("content", "") or "")
+            ]
+            networks = api.get_networks(config.default_node)
+        except ProxmoxAPIError as exc:
+            error = f"Could not load Proxmox resources: {exc.message}"
+    else:
+        error = "Proxmox is not yet configured. Please complete the setup wizard."
+
+    return render(request, "lxc/community_scripts_deploy.html", {
+        "script": script,
+        "config": config,
+        "nodes": nodes,
+        "rootfs_pools": rootfs_pools,
+        "networks": networks,
+        "error": error,
+    })
+
+
+# Stage definitions for the community script progress pipeline
+COMMUNITY_SCRIPT_STAGES = [
+    ("DOWNLOADING_SCRIPT", "Downloading Script"),
+    ("RUNNING_SCRIPT", "Running Script"),
+]
+
+
+@login_required
+def community_scripts_progress(request, job_id):
+    """Progress page for a community script deployment."""
+    job = get_object_or_404(CommunityScriptJob, pk=job_id, created_by=request.user)
+    return render(request, "lxc/community_scripts_progress.html", {"job": job})
+
+
+@login_required
+def community_scripts_job_status(request, job_id):
+    """HTMX polling endpoint for community script job status."""
+    job = get_object_or_404(CommunityScriptJob, pk=job_id, created_by=request.user)
+
+    stages, stages_done_count = build_stages(job, COMMUNITY_SCRIPT_STAGES)
+
+    # Elapsed time for the live timer
+    from django.utils import timezone as tz
+    elapsed_seconds = int((tz.now() - job.created_at).total_seconds())
+    elapsed_min, elapsed_sec = divmod(elapsed_seconds, 60)
+
+    return render(request, "lxc/partials/community_job_status.html", {
+        "job": job,
+        "stages": stages,
+        "stages_done_count": stages_done_count,
+        "elapsed_min": elapsed_min,
+        "elapsed_sec": elapsed_sec,
+    })
+
+
+@login_required
+def community_scripts_cancel(request, job_id):
+    """Cancel a running community script deployment."""
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    job = get_object_or_404(CommunityScriptJob, pk=job_id, created_by=request.user)
+
+    if job.stage not in (CommunityScriptJob.STAGE_DONE,
+                         CommunityScriptJob.STAGE_FAILED,
+                         CommunityScriptJob.STAGE_CANCELLED):
+        job.cancelled = True
+        job.stage = CommunityScriptJob.STAGE_CANCELLED
+        job.message = "Cancelled by user."
+        job.save(update_fields=["cancelled", "stage", "message", "updated_at"])
+
+        # Revoke the Celery task if we have a task ID
+        if job.task_id:
+            from celery.result import AsyncResult
+            AsyncResult(job.task_id).revoke(terminate=True)
+
+        logger.info("CommunityScriptJob %d: cancelled by user %s", job.pk, request.user)
+
+    return redirect("lxc_community_scripts_progress", job_id=job.pk)
+
+
+@login_required
+def community_scripts_check_updates(request):
+    """HTMX endpoint: check if the community scripts catalog has updates.
+
+    Returns a small HTML partial — either an update banner or nothing.
+    """
+    result = check_for_updates()
+    return render(request, "lxc/partials/catalog_update_banner.html", {
+        "update_available": result["update_available"],
+        "can_refresh": can_refresh(),
+        "check_error": result["error"],
+    })
+
+
+@login_required
+def community_scripts_refresh_catalog(request):
+    """Trigger a catalog rebuild via Celery and return JSON status."""
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    from apps.lxc.tasks import refresh_community_catalog
+    task = refresh_community_catalog.delay()
+
+    return JsonResponse({"task_id": task.id, "status": "started"})
+
+
+@login_required
+def community_scripts_refresh_status(request, task_id):
+    """Poll the status of a catalog refresh task."""
+    from celery.result import AsyncResult
+    result = AsyncResult(task_id)
+
+    if result.ready():
+        task_result = result.result or {}
+        return JsonResponse({
+            "status": "complete",
+            "success": task_result.get("success", False),
+            "script_count": task_result.get("script_count", 0),
+            "error": task_result.get("error"),
+        })
+
+    return JsonResponse({"status": "running"})

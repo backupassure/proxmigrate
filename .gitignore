@@ -69,3 +69,9 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Node
+node_modules/
+
+# Built frontend assets (npm postinstall copies these)
+static/xterm/

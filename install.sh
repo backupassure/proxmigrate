@@ -153,6 +153,8 @@ case "${PKG_MANAGER}" in
             libsasl2-dev
             libssl-dev
             nginx
+            nodejs
+            npm
             redis-server
             openssl
             openssh-client
@@ -195,6 +197,8 @@ case "${PKG_MANAGER}" in
             cyrus-sasl-devel \
             openssl-devel \
             nginx \
+            nodejs \
+            npm \
             redis \
             openssl \
             openssh-clients \
@@ -221,6 +225,8 @@ case "${PKG_MANAGER}" in
             cyrus-sasl-devel \
             libopenssl-devel \
             nginx \
+            nodejs \
+            npm \
             redis \
             openssl \
             openssh \
@@ -288,6 +294,13 @@ if [[ -d "${SCRIPT_DIR}/vendor" ]] && [[ -n "$(ls -A "${SCRIPT_DIR}/vendor/" 2>/
         -r "${APP_HOME}/requirements.txt"
 else
     sudo -u "${APP_USER}" "${PIP}" install --quiet -r "${APP_HOME}/requirements.txt"
+fi
+
+echo "==> Installing frontend dependencies..."
+if command -v npm &>/dev/null; then
+    sudo -u "${APP_USER}" bash -c "cd ${APP_HOME} && npm install --omit=dev 2>&1 | tail -1"
+else
+    echo "    WARN: npm not found — skipping frontend asset install"
 fi
 
 # ---------------------------------------------------------------------------
@@ -484,9 +497,11 @@ echo "==> Installing systemd service units..."
 
 GUNICORN_SERVICE="/etc/systemd/system/proxmigrate-gunicorn.service"
 CELERY_SERVICE="/etc/systemd/system/proxmigrate-celery.service"
+DAPHNE_SERVICE="/etc/systemd/system/proxmigrate-daphne.service"
 
 cp "${APP_HOME}/deploy/gunicorn.service.template" "${GUNICORN_SERVICE}"
 cp "${APP_HOME}/deploy/celery.service.template" "${CELERY_SERVICE}"
+cp "${APP_HOME}/deploy/daphne.service.template" "${DAPHNE_SERVICE}"
 
 # Create empty ACME challenge config (populated by ACME automation when needed)
 touch "${APP_HOME}/deploy/acme-challenge.conf"
@@ -635,7 +650,7 @@ fi
 echo "==> Enabling and starting services..."
 systemctl daemon-reload
 
-for SVC in "${REDIS_SVC}" nginx proxmigrate-gunicorn proxmigrate-celery; do
+for SVC in "${REDIS_SVC}" nginx proxmigrate-gunicorn proxmigrate-celery proxmigrate-daphne; do
     systemctl enable "${SVC}" 2>/dev/null || true
     systemctl restart "${SVC}" 2>/dev/null || systemctl start "${SVC}" 2>/dev/null || true
     echo "    ${SVC}: $(systemctl is-active "${SVC}" 2>/dev/null || echo 'unknown')"

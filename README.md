@@ -23,6 +23,7 @@ Made by **[Backup Assure](https://backupassure.io)**.
 - **Network management** — connect/disconnect NICs per interface with inline toggle
 - **VM console** — full in-browser VNC console with clipboard support (paste text into any OS including IOS-XE and Linux terminals)
 - **LXC container management** — browse, start/stop/reboot, and view detailed config of existing LXC containers; create new containers from Proxmox templates with full network, storage, and credential configuration
+- **Community Scripts** — browse 460+ pre-built apps (Docker, Pi-hole, Home Assistant, Plex, Grafana, and more) and deploy them as LXC containers with one click using the community-scripts project
 - **Setup wizard** — guided first-run setup for Proxmox API token, SSH key deployment, and environment discovery
 - **Authentication** — local accounts, LDAP, and Microsoft Entra ID (Azure AD); login with username or email address
 - **Password recovery** — self-service password reset via email (requires SMTP or Microsoft Graph API to be configured); local accounts only — LDAP/Entra ID users manage passwords in their directory

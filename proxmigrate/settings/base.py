@@ -33,6 +33,8 @@ SITE_ID = 1
 # ---------------------------------------------------------------------------
 
 INSTALLED_APPS = [
+    # Daphne must be before staticfiles per Channels docs
+    "daphne",
     # Django built-ins
     "django.contrib.admin",
     "django.contrib.auth",
@@ -61,6 +63,8 @@ INSTALLED_APPS = [
     "apps.certificates",
     "apps.vmcreator",
     "apps.lxc",
+    # Django Channels (WebSocket support)
+    "channels",
 ]
 
 # ---------------------------------------------------------------------------
@@ -88,6 +92,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = "proxmigrate.urls"
 
 WSGI_APPLICATION = "proxmigrate.wsgi.application"
+ASGI_APPLICATION = "proxmigrate.asgi.application"
 
 # ---------------------------------------------------------------------------
 # Templates
@@ -185,6 +190,19 @@ CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", "redis://127.0.0
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
+
+# ---------------------------------------------------------------------------
+# Django Channels (WebSocket)
+# ---------------------------------------------------------------------------
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/0")],
+        },
+    },
+}
 
 # ---------------------------------------------------------------------------
 # Encrypted fields

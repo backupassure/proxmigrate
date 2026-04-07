@@ -1,0 +1,137 @@
+[
+  {
+    "slug": "ai-machine-learning",
+    "name": "AI & Machine Learning",
+    "icon": "fa-solid fa-robot"
+  },
+  {
+    "slug": "authentication-identity",
+    "name": "Authentication & Identity",
+    "icon": "fa-solid fa-user-shield"
+  },
+  {
+    "slug": "backup-storage",
+    "name": "Backup & Storage",
+    "icon": "fa-solid fa-box-archive"
+  },
+  {
+    "slug": "cms-blogs",
+    "name": "CMS & Blogs",
+    "icon": "fa-solid fa-pen-nib"
+  },
+  {
+    "slug": "communication",
+    "name": "Communication",
+    "icon": "fa-solid fa-comments"
+  },
+  {
+    "slug": "containers-docker",
+    "name": "Containers & Docker",
+    "icon": "fa-brands fa-docker"
+  },
+  {
+    "slug": "dns-ad-blocking",
+    "name": "DNS & Ad-blocking",
+    "icon": "fa-solid fa-shield-halved"
+  },
+  {
+    "slug": "dashboards",
+    "name": "Dashboards",
+    "icon": "fa-solid fa-gauge-high"
+  },
+  {
+    "slug": "databases",
+    "name": "Databases",
+    "icon": "fa-solid fa-database"
+  },
+  {
+    "slug": "development",
+    "name": "Development",
+    "icon": "fa-solid fa-code"
+  },
+  {
+    "slug": "download-managers",
+    "name": "Download Managers",
+    "icon": "fa-solid fa-download"
+  },
+  {
+    "slug": "email",
+    "name": "Email",
+    "icon": "fa-solid fa-envelope"
+  },
+  {
+    "slug": "file-sharing",
+    "name": "File Sharing",
+    "icon": "fa-solid fa-folder-open"
+  },
+  {
+    "slug": "finance-budgeting",
+    "name": "Finance & Budgeting",
+    "icon": "fa-solid fa-coins"
+  },
+  {
+    "slug": "gaming",
+    "name": "Gaming",
+    "icon": "fa-solid fa-gamepad"
+  },
+  {
+    "slug": "home-automation",
+    "name": "Home Automation",
+    "icon": "fa-solid fa-house-signal"
+  },
+  {
+    "slug": "knowledge-wiki",
+    "name": "Knowledge & Wiki",
+    "icon": "fa-solid fa-book"
+  },
+  {
+    "slug": "media-servers",
+    "name": "Media Servers",
+    "icon": "fa-solid fa-photo-film"
+  },
+  {
+    "slug": "monitoring-analytics",
+    "name": "Monitoring & Analytics",
+    "icon": "fa-solid fa-chart-line"
+  },
+  {
+    "slug": "operating-systems",
+    "name": "Operating Systems",
+    "icon": "fa-brands fa-linux"
+  },
+  {
+    "slug": "other",
+    "name": "Other",
+    "icon": "fa-solid fa-puzzle-piece"
+  },
+  {
+    "slug": "photo-media-management",
+    "name": "Photo & Media Management",
+    "icon": "fa-solid fa-images"
+  },
+  {
+    "slug": "printing-scanning",
+    "name": "Printing & Scanning",
+    "icon": "fa-solid fa-print"
+  },
+  {
+    "slug": "productivity",
+    "name": "Productivity",
+    "icon": "fa-solid fa-list-check"
+  },
+  {
+    "slug": "security",
+    "name": "Security",
+    "icon": "fa-solid fa-lock"
+  },
+  {
+    "slug": "vpn-networking",
+    "name": "VPN & Networking",
+    "icon": "fa-solid fa-network-wired"
+  },
+  {
+    "slug": "web-servers-proxies",
+    "name": "Web Servers & Proxies",
+    "icon": "fa-solid fa-server"
+  }
+]

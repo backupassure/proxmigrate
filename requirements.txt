@@ -14,3 +14,6 @@ cryptography==42.0.2
 pyotp==2.9.0
 qrcode==7.4.2
 Pillow==11.1.0
+channels==4.2.0
+channels_redis==4.2.1
+daphne==4.1.2
