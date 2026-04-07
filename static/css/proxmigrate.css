@@ -170,6 +170,8 @@
 [data-theme='dark'] .notification.is-light { background-color: var(--bg-card) !important; border: 1px solid var(--border-main) !important; }
 [data-theme='dark'] .notification.is-success.is-light { background-color: var(--bg-success-light) !important; color: var(--success-color) !important; }
 [data-theme='dark'] .notification.is-danger.is-light { background-color: var(--bg-danger-light) !important; color: var(--danger-color) !important; }
+[data-theme='dark'] .notification.is-warning { background-color: var(--bg-warning-light) !important; color: var(--text-main) !important; border: 2px solid var(--warning-color) !important; }
+[data-theme='dark'] .notification.is-warning a { color: var(--warning-color) !important; }
 [data-theme='dark'] .notification.is-warning.is-light { background-color: var(--bg-warning-light) !important; color: var(--warning-color) !important; }
 [data-theme='dark'] .notification.is-info.is-light { background-color: var(--bg-info-light) !important; color: var(--info-color) !important; }
 
