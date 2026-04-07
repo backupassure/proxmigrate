@@ -457,6 +457,9 @@ New-ApplicationAccessPolicy `
 .method-card:hover { border-color: #3273dc !important; background: #eff6ff !important; }
 .method-card.is-selected { border-color: #3273dc !important; background: #eff6ff !important; }
 .method-card.is-selected .method-check { display: inline !important; }
+[data-theme='dark'] .method-card { border-color: var(--border-main) !important; background: transparent !important; }
+[data-theme='dark'] .method-card:hover { border-color: var(--success-color) !important; background: rgba(74, 222, 128, 0.05) !important; }
+[data-theme='dark'] .method-card.is-selected { border-color: var(--success-color) !important; border-width: 3px !important; background: rgba(74, 222, 128, 0.08) !important; }
 </style>
 {% endblock %}
 
