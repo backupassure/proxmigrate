@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+import time
 from datetime import datetime, timezone
 
 from django.contrib import messages
@@ -840,6 +841,59 @@ LXC_CLONE_STAGES = [
     ("CONFIGURING", "Configuring"),
     ("STARTING", "Starting Container"),
 ]
+
+
+def _wait_for_task(api, node, upid, timeout=30, interval=2):
+    """Poll a Proxmox task until it finishes or timeout is reached."""
+    if not isinstance(upid, str):
+        return None
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            task = api.get_task_status(node, upid)
+            if task.get("status") == "stopped":
+                return task
+        except ProxmoxAPIError:
+            pass
+        time.sleep(interval)
+    return None
+
+
+@login_required
+@require_POST
+def lxc_delete(request, vmid):
+    """Delete an LXC container. The container must be stopped first."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+
+    try:
+        api = config.get_api_client()
+        status = api.get_lxc_status(node, vmid)
+        ct_name = status.get("name", str(vmid))
+
+        if status.get("status") != "stopped":
+            messages.error(request, f"Container {ct_name} ({vmid}) must be stopped before it can be deleted.")
+            return redirect("lxc_detail", vmid=vmid)
+
+        upid = api.delete_lxc(node, vmid)
+        result = _wait_for_task(api, node, upid)
+
+        if result and result.get("exitstatus") != "OK":
+            exit_msg = result.get("exitstatus", "unknown error")
+            logger.warning("lxc_delete vmid=%d first attempt failed: %s — retrying without disk cleanup", vmid, exit_msg)
+            upid = api.delete_lxc(node, vmid, destroy_unreferenced=False)
+            result = _wait_for_task(api, node, upid)
+
+            if result and result.get("exitstatus") != "OK":
+                messages.error(request, f"Failed to delete container {ct_name} ({vmid}): {result.get('exitstatus', 'unknown error')}")
+                return redirect("lxc_detail", vmid=vmid)
+
+        messages.success(request, f"Container {ct_name} ({vmid}) has been deleted.")
+        return redirect("lxc_list")
+    except ProxmoxAPIError as exc:
+        logger.error("lxc_delete vmid=%d: %s", vmid, exc)
+        messages.error(request, f"Failed to delete container {vmid}: {exc.message}")
+        return redirect("lxc_detail", vmid=vmid)
 
 
 @login_required

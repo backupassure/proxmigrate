@@ -12,6 +12,7 @@ urlpatterns = [
     path("<int:vmid>/detail/", views.lxc_detail, name="lxc_detail"),
     path("<int:vmid>/detail-status/", views.lxc_detail_status, name="lxc_detail_status"),
     path("<int:vmid>/action/<str:action>/", views.lxc_action, name="lxc_action"),
+    path("<int:vmid>/delete/", views.lxc_delete, name="lxc_delete"),
     path("<int:vmid>/status/", views.lxc_row_status, name="lxc_row_status"),
     path("<int:vmid>/ip/", views.lxc_ip, name="lxc_ip"),
     # Creation wizard

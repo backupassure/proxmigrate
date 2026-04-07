@@ -234,6 +234,24 @@ class ProxmoxAPI:
             path = f"{path}?{qs}"
         return self._delete(path, timeout=60)
 
+    def delete_lxc(self, node, vmid, purge=True, destroy_unreferenced=True):
+        """Delete an LXC container and its disks. Returns task UPID string.
+
+        purge: remove from HA and replication configs.
+        destroy_unreferenced: destroy unreferenced disks owned by the container.
+        Container must be stopped first.
+        """
+        params = []
+        if purge:
+            params.append("purge=1")
+        if destroy_unreferenced:
+            params.append("destroy-unreferenced-disks=1")
+        qs = "&".join(params)
+        path = f"/nodes/{node}/lxc/{vmid}"
+        if qs:
+            path = f"{path}?{qs}"
+        return self._delete(path, timeout=60)
+
     def get_task_status(self, node, upid):
         """Return task status dict for a given UPID.
 

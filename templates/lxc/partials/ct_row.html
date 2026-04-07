@@ -95,6 +95,13 @@
             <a class="dropdown-item" href="{% url 'lxc_detail' ct.vmid %}" style="font-size: 0.82rem;">
               <i class="fas fa-info-circle" style="width: 1.2rem;color: var(--text-muted);"></i> Details
             </a>
+            {% if ct.status == 'stopped' %}
+              <hr class="dropdown-divider" style="margin: 0.25rem 0;">
+              <a class="dropdown-item" style="font-size: 0.82rem;color: var(--danger-color);"
+                 onclick="event.preventDefault();toggleKebab(event, this.closest('.ct-kebab'));openDeleteModal('{{ ct.vmid }}', '{{ ct.name|escapejs }}')">
+                <i class="fas fa-trash-alt" style="width: 1.2rem;"></i> Delete
+              </a>
+            {% endif %}
           </div>
         </div>
       </div>
