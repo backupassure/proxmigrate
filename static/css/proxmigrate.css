@@ -176,6 +176,38 @@
 [data-theme='dark'] hr { background-color: var(--border-main) !important; }
 [data-theme='dark'] .field-hint { color: var(--text-muted) !important; }
 
+/* Tags */
+[data-theme='dark'] .tag.is-light { background-color: var(--bg-card) !important; color: var(--text-main) !important; border: 1px solid var(--border-main); }
+[data-theme='dark'] .tag.is-success.is-light { background-color: var(--bg-success-light) !important; color: var(--success-color) !important; border-color: var(--border-success); }
+[data-theme='dark'] .tag.is-danger.is-light { background-color: var(--bg-danger-light) !important; color: var(--danger-color) !important; border-color: var(--border-danger); }
+[data-theme='dark'] .tag.is-warning.is-light { background-color: var(--bg-warning-light) !important; color: var(--warning-color) !important; border-color: var(--border-warning); }
+[data-theme='dark'] .tag.is-info.is-light { background-color: var(--bg-info-light) !important; color: var(--info-color) !important; border-color: var(--border-info); }
+
+/* Buttons */
+[data-theme='dark'] .button.is-light { background-color: rgba(255,255,255,0.08) !important; color: var(--text-main) !important; border-color: var(--border-main) !important; }
+[data-theme='dark'] .button.is-light:hover { background-color: rgba(255,255,255,0.14) !important; }
+[data-theme='dark'] .button.is-success.is-light { background-color: var(--bg-success-light) !important; color: var(--success-color) !important; border-color: var(--border-success) !important; }
+[data-theme='dark'] .button.is-success.is-light:hover { background-color: rgba(74, 222, 128, 0.2) !important; }
+[data-theme='dark'] .button.is-danger.is-light { background-color: var(--bg-danger-light) !important; color: var(--danger-color) !important; border-color: var(--border-danger) !important; }
+[data-theme='dark'] .button.is-danger.is-light:hover { background-color: rgba(251, 113, 133, 0.2) !important; }
+[data-theme='dark'] .button.is-warning.is-light { background-color: var(--bg-warning-light) !important; color: var(--warning-color) !important; border-color: var(--border-warning) !important; }
+[data-theme='dark'] .button.is-warning.is-light:hover { background-color: rgba(251, 191, 36, 0.2) !important; }
+[data-theme='dark'] .button.is-info.is-light { background-color: var(--bg-info-light) !important; color: var(--info-color) !important; border-color: var(--border-info) !important; }
+[data-theme='dark'] .button.is-info.is-light:hover { background-color: rgba(96, 165, 250, 0.2) !important; }
+
+/* Tabs */
+[data-theme='dark'] .tabs a { color: var(--text-muted) !important; }
+[data-theme='dark'] .tabs a:hover { color: var(--text-main) !important; border-bottom-color: var(--text-muted) !important; }
+[data-theme='dark'] .tabs li.is-active a { color: var(--link-color) !important; border-bottom-color: var(--link-color) !important; }
+[data-theme='dark'] .tabs.is-boxed a { border-color: transparent !important; }
+[data-theme='dark'] .tabs.is-boxed a:hover { background-color: rgba(255,255,255,0.05) !important; border-bottom-color: var(--border-main) !important; }
+[data-theme='dark'] .tabs.is-boxed li.is-active a { background-color: var(--bg-card) !important; color: var(--link-color) !important; border-color: var(--border-main) !important; border-bottom-color: transparent !important; }
+[data-theme='dark'] .tabs.is-boxed ul { border-bottom-color: var(--border-main) !important; }
+
+/* File upload component */
+[data-theme='dark'] .file-cta { background-color: var(--bg-main) !important; color: var(--text-main) !important; border-color: var(--border-main) !important; }
+[data-theme='dark'] .file-name { background-color: var(--bg-card) !important; color: var(--text-main) !important; border-color: var(--border-main) !important; }
+
 /* --------------------------------------------------------------------------
    Sidebar Layout
    -------------------------------------------------------------------------- */
