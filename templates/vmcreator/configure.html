@@ -21,7 +21,7 @@
 
     {# Non-field errors #}
     {% if form.non_field_errors %}
-      <div class="notification is-danger is-light" style="margin-bottom:1.5rem;">
+      <div class="notification is-danger is-light" style="margin-bottom: 1.5rem;">
         {% for err in form.non_field_errors %}<p>{{ err }}</p>{% endfor %}
       </div>
     {% endif %}
@@ -29,17 +29,17 @@
     {# ---- SECTION: General ---- #}
     <div class="form-section">
       <div class="form-section-header" id="section-general-header">
-        <div style="display:flex;align-items:center;gap:0.6rem;">
-          <div class="section-icon" style="background:#eff6ff;color:#3273dc;"><i class="fas fa-tag"></i></div>
+        <div style="display: flex;align-items: center;gap: 0.6rem;">
+          <div class="section-icon" style="background: var(--bg-info-light);color: var(--link-color);"><i class="fas fa-tag"></i></div>
           General
         </div>
-        <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+        <i class="fas fa-chevron-up section-toggle-icon" style="color: var(--text-muted);font-size: 0.8rem;"></i>
       </div>
       <div class="form-section-body is-open">
         <div class="columns">
           <div class="column">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">VM Name <span style="color:#f14668;">*</span></label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">VM Name <span style="color: var(--danger-color);">*</span></label>
               <div class="control">
                 <input class="input {% if form.vm_name.errors %}is-danger{% endif %}"
                   type="text" name="vm_name" value="{{ form.vm_name.value|default:'' }}"
@@ -51,7 +51,7 @@
           </div>
           <div class="column is-3">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">VMID</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">VMID</label>
               <div class="control">
                 <input class="input {% if form.vmid.errors %}is-danger{% endif %}"
                   type="number" name="vmid" value="{{ form.vmid.value|default:'' }}"
@@ -63,12 +63,12 @@
               </div>
               {% for e in form.vmid.errors %}<p class="help is-danger">{{ e }}</p>{% endfor %}
               <p class="field-hint">Leave blank to auto-assign next available.</p>
-              <div id="vmid-feedback" style="margin-top:0.25rem;"></div>
+              <div id="vmid-feedback" style="margin-top: 0.25rem;"></div>
             </div>
           </div>
           <div class="column is-3">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">Target Node</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">Target Node</label>
               <div class="control">
                 <div class="select is-fullwidth">
                   <select name="node">
@@ -82,7 +82,7 @@
           </div>
         </div>
         <div class="field">
-          <label class="label" style="font-size:0.875rem;font-weight:600;">Description</label>
+          <label class="label" style="font-size: 0.875rem;font-weight: 600;">Description</label>
           <div class="control">
             <textarea class="textarea is-small" name="description" rows="2"
               placeholder="Optional notes about this VM">{{ form.description.value|default:'' }}</textarea>
@@ -91,7 +91,7 @@
         <div class="columns">
           <div class="column">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">OS Type</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">OS Type</label>
               <div class="control">
                 <div class="select is-fullwidth">
                   <select name="os_type">
@@ -104,7 +104,7 @@
             </div>
           </div>
           <div class="column">
-            <div class="field" style="margin-top:2rem;">
+            <div class="field" style="margin-top: 2rem;">
               <label class="checkbox">
                 <input type="checkbox" name="start_on_boot" {% if form.start_on_boot.value %}checked{% endif %}>
                 &nbsp;Start on boot
@@ -121,18 +121,18 @@
             </div>
           </div>
         </div>
-        <div id="virtio-iso-row" style="display:none;">
-          <div style="border:1px solid #e5e7eb;border-radius:8px;padding:0.9rem 1rem;background:#fafafa;">
-            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.65rem;">
-              <i class="fas fa-compact-disc" style="color:#10b981;"></i>
-              <strong style="font-size:0.9rem;">VirtIO Windows Drivers ISO</strong>
-              <span style="font-size:0.75rem;color:#6b7280;">— attached as ide3 so drivers are ready on first boot</span>
+        <div id="virtio-iso-row" style="display: none;">
+          <div style="border: 1px solid var(--border-main);border-radius: 8px;padding: 0.9rem 1rem;background: var(--bg-main);">
+            <div style="display: flex;align-items: center;gap: 0.5rem;margin-bottom: 0.65rem;">
+              <i class="fas fa-compact-disc" style="color: var(--success-color);"></i>
+              <strong style="font-size: 0.9rem;">VirtIO Windows Drivers ISO</strong>
+              <span style="font-size: 0.75rem;color: var(--text-muted);">— attached as ide3 so drivers are ready on first boot</span>
             </div>
             <div id="virtio-iso-picker"
                  hx-get="/wizard/iso-list/?default={{ virtio_iso|urlencode }}"
                  hx-trigger="revealed"
                  hx-swap="innerHTML">
-              <div style="color:#9ca3af;font-size:0.8rem;"><i class="fas fa-spinner fa-spin" style="margin-right:0.4rem;"></i>Loading ISO list…</div>
+              <div style="color: var(--text-muted);font-size: 0.8rem;"><i class="fas fa-spinner fa-spin" style="margin-right: 0.4rem;"></i>Loading ISO list…</div>
             </div>
           </div>
         </div>
@@ -141,7 +141,7 @@
             <input type="checkbox" name="start_after_create" {% if form.start_after_create.value %}checked{% endif %}>
             &nbsp;<strong>Start VM after creation</strong>
           </label>
-          <p class="field-hint" style="margin-left:1.5rem;">
+          <p class="field-hint" style="margin-left: 1.5rem;">
             Powers on the VM immediately once ProxMigrate finishes creating it — independent of the "Start on boot" setting above.
             {% if job.source_type == 'iso' or job.source_type == 'iso_proxmox' %}
             The VM will boot from the ISO so you can connect via the Proxmox console and begin installation.
@@ -155,17 +155,17 @@
     {# ---- SECTION: Firmware & Boot ---- #}
     <div class="form-section">
       <div class="form-section-header">
-        <div style="display:flex;align-items:center;gap:0.6rem;">
-          <div class="section-icon" style="background:#f5f0ff;color:#7c3aed;"><i class="fas fa-microchip"></i></div>
+        <div style="display: flex;align-items: center;gap: 0.6rem;">
+          <div class="section-icon" style="background: var(--bg-purple-light);color: var(--purple-color);"><i class="fas fa-microchip"></i></div>
           Firmware &amp; Boot
         </div>
-        <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+        <i class="fas fa-chevron-up section-toggle-icon" style="color: var(--text-muted);font-size: 0.8rem;"></i>
       </div>
       <div class="form-section-body is-open">
         <div class="columns">
           <div class="column">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">Machine Type</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">Machine Type</label>
               <div class="control">
                 <div class="select is-fullwidth">
                   <select name="machine">
@@ -180,7 +180,7 @@
           </div>
           <div class="column">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">BIOS Type</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">BIOS Type</label>
               <div class="control">
                 <div class="select is-fullwidth">
                   <select name="bios" id="bios-select" onchange="handleBiosChange(this.value)">
@@ -193,8 +193,8 @@
               <p class="field-hint">Use <strong>OVMF (UEFI)</strong> for Windows 11, Secure Boot, or modern Linux.</p>
             </div>
           </div>
-          <div class="column" id="efi-disk-field" style="display:none;">
-            <div class="field" style="margin-top:2rem;">
+          <div class="column" id="efi-disk-field" style="display: none;">
+            <div class="field" style="margin-top: 2rem;">
               <label class="checkbox">
                 <input type="checkbox" name="efi_disk" id="efi-disk-check"
                   {% if form.efi_disk.value %}checked{% endif %}>
@@ -204,7 +204,7 @@
             </div>
           </div>
         </div>
-        <div class="columns" id="uefi-options" style="display:none;">
+        <div class="columns" id="uefi-options" style="display: none;">
           <div class="column">
             <div class="field">
               <label class="checkbox">
@@ -231,17 +231,17 @@
     {# ---- SECTION: CPU ---- #}
     <div class="form-section">
       <div class="form-section-header">
-        <div style="display:flex;align-items:center;gap:0.6rem;">
-          <div class="section-icon" style="background:#f0fdf4;color:#48c78e;"><i class="fas fa-microchip"></i></div>
+        <div style="display: flex;align-items: center;gap: 0.6rem;">
+          <div class="section-icon" style="background: var(--bg-success-light);color: var(--success-color);"><i class="fas fa-microchip"></i></div>
           CPU
         </div>
-        <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+        <i class="fas fa-chevron-up section-toggle-icon" style="color: var(--text-muted);font-size: 0.8rem;"></i>
       </div>
       <div class="form-section-body is-open">
         <div class="columns">
           <div class="column is-5">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">CPU Type</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">CPU Type</label>
               <div class="control">
                 <div class="select is-fullwidth">
                   <select name="cpu_type">
@@ -256,7 +256,7 @@
           </div>
           <div class="column is-3">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">Sockets</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">Sockets</label>
               <div class="control">
                 <input class="input" type="number" name="sockets"
                   value="{{ form.sockets.value|default:1 }}" min="1" max="4">
@@ -265,7 +265,7 @@
           </div>
           <div class="column is-4">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">Cores per Socket</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">Cores per Socket</label>
               <div class="control">
                 <input class="input" type="number" name="cores"
                   value="{{ form.cores.value|default:2 }}" min="1" max="128">
@@ -285,44 +285,44 @@
     {# ---- SECTION: Memory ---- #}
     <div class="form-section">
       <div class="form-section-header">
-        <div style="display:flex;align-items:center;gap:0.6rem;">
-          <div class="section-icon" style="background:#fff8f0;color:#f59e0b;"><i class="fas fa-memory"></i></div>
+        <div style="display: flex;align-items: center;gap: 0.6rem;">
+          <div class="section-icon" style="background: var(--bg-warning-badge);color: var(--warning-color);"><i class="fas fa-memory"></i></div>
           Memory
         </div>
-        <i class="fas fa-chevron-down section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+        <i class="fas fa-chevron-down section-toggle-icon" style="color: var(--text-muted);font-size: 0.8rem;"></i>
       </div>
       <div class="form-section-body">
         <div class="columns">
           <div class="column">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">RAM</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">RAM</label>
               <div class="control has-icons-right">
                 <input class="input" type="number" id="memory-gb-input"
                   value="{{ form.memory_mb.value|default:2048 }}"
-                  min="1" step="1" style="padding-right:3rem;"
+                  min="1" step="1" style="padding-right: 3rem;"
                   oninput="document.getElementById('memory-mb-hidden').value = Math.round(this.value * 1024);">
-                <span class="icon is-right" style="color:#b5b5b5;width:3rem;pointer-events:none;">GB</span>
+                <span class="icon is-right" style="color: var(--text-muted);width: 3rem;pointer-events: none;">GB</span>
                 <input type="hidden" name="memory_mb" id="memory-mb-hidden"
                   value="{{ form.memory_mb.value|default:2048 }}">
               </div>
-              <div style="display:flex;gap:0.35rem;flex-wrap:wrap;margin-top:0.4rem;">
-                <button type="button" class="button is-small is-light" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="setMemoryGb(2)">2 GB</button>
-                <button type="button" class="button is-small is-light" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="setMemoryGb(4)">4 GB</button>
-                <button type="button" class="button is-small is-light" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="setMemoryGb(8)">8 GB</button>
-                <button type="button" class="button is-small is-light" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="setMemoryGb(16)">16 GB</button>
-                <button type="button" class="button is-small is-light" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="setMemoryGb(24)">24 GB</button>
-                <button type="button" class="button is-small is-light" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="setMemoryGb(32)">32 GB</button>
-                <button type="button" class="button is-small is-light" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="setMemoryGb(48)">48 GB</button>
-                <button type="button" class="button is-small is-light" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="setMemoryGb(64)">64 GB</button>
-                <button type="button" class="button is-small is-light" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="setMemoryGb(96)">96 GB</button>
-                <button type="button" class="button is-small is-light" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="setMemoryGb(128)">128 GB</button>
+              <div style="display: flex;gap: 0.35rem;flex-wrap: wrap;margin-top: 0.4rem;">
+                <button type="button" class="button is-small is-light" style="font-size: 0.72rem;padding: 0.2rem 0.5rem;" onclick="setMemoryGb(2)">2 GB</button>
+                <button type="button" class="button is-small is-light" style="font-size: 0.72rem;padding: 0.2rem 0.5rem;" onclick="setMemoryGb(4)">4 GB</button>
+                <button type="button" class="button is-small is-light" style="font-size: 0.72rem;padding: 0.2rem 0.5rem;" onclick="setMemoryGb(8)">8 GB</button>
+                <button type="button" class="button is-small is-light" style="font-size: 0.72rem;padding: 0.2rem 0.5rem;" onclick="setMemoryGb(16)">16 GB</button>
+                <button type="button" class="button is-small is-light" style="font-size: 0.72rem;padding: 0.2rem 0.5rem;" onclick="setMemoryGb(24)">24 GB</button>
+                <button type="button" class="button is-small is-light" style="font-size: 0.72rem;padding: 0.2rem 0.5rem;" onclick="setMemoryGb(32)">32 GB</button>
+                <button type="button" class="button is-small is-light" style="font-size: 0.72rem;padding: 0.2rem 0.5rem;" onclick="setMemoryGb(48)">48 GB</button>
+                <button type="button" class="button is-small is-light" style="font-size: 0.72rem;padding: 0.2rem 0.5rem;" onclick="setMemoryGb(64)">64 GB</button>
+                <button type="button" class="button is-small is-light" style="font-size: 0.72rem;padding: 0.2rem 0.5rem;" onclick="setMemoryGb(96)">96 GB</button>
+                <button type="button" class="button is-small is-light" style="font-size: 0.72rem;padding: 0.2rem 0.5rem;" onclick="setMemoryGb(128)">128 GB</button>
               </div>
             </div>
           </div>
           <div class="column">
-            <div id="balloon-min-field" {% if not form.ballooning.value %}style="display:none;"{% endif %}>
+            <div id="balloon-min-field" {% if not form.ballooning.value %}style="display: none;"{% endif %}>
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Balloon Minimum (MB)</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Balloon Minimum (MB)</label>
                 <div class="control">
                   <input class="input" type="number" name="balloon_min_mb"
                     value="{{ form.balloon_min_mb.value|default:0 }}" min="0">
@@ -339,7 +339,7 @@
                   onchange="document.getElementById('balloon-min-field').style.display = this.checked ? '' : 'none'">
                 &nbsp;<strong>Enable Memory Ballooning</strong>
               </label>
-              <p class="field-hint" style="margin-left:1.5rem;">
+              <p class="field-hint" style="margin-left: 1.5rem;">
                 Lets Proxmox dynamically shrink/grow the VM's memory between a minimum and its configured max.
                 Leave off for appliances and production servers that need predictable, stable memory.
               </p>
@@ -352,11 +352,11 @@
     {# ---- SECTION: Disk ---- #}
     <div class="form-section">
       <div class="form-section-header">
-        <div style="display:flex;align-items:center;gap:0.6rem;">
-          <div class="section-icon" style="background:#f0fdf4;color:#48c78e;"><i class="fas fa-hdd"></i></div>
+        <div style="display: flex;align-items: center;gap: 0.6rem;">
+          <div class="section-icon" style="background: var(--bg-success-light);color: var(--success-color);"><i class="fas fa-hdd"></i></div>
           Disk
         </div>
-        <i class="fas fa-chevron-down section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+        <i class="fas fa-chevron-down section-toggle-icon" style="color: var(--text-muted);font-size: 0.8rem;"></i>
       </div>
       <div class="form-section-body">
 
@@ -364,12 +364,12 @@
         <div class="columns">
           <div class="column is-4">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">Primary Disk Size (GB) <span style="color:#f14668;">*</span></label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">Primary Disk Size (GB) <span style="color: var(--danger-color);">*</span></label>
               <div class="control has-icons-right">
                 <input class="input {% if form.primary_disk_size.errors %}is-danger{% endif %}"
                   type="number" name="primary_disk_size"
                   value="{{ form.primary_disk_size.value|default:32 }}" min="1" max="65536">
-                <span class="icon is-right" style="color:#b5b5b5;width:3rem;">GB</span>
+                <span class="icon is-right" style="color: var(--text-muted);width: 3rem;">GB</span>
               </div>
               {% for e in form.primary_disk_size.errors %}<p class="help is-danger">{{ e }}</p>{% endfor %}
               <p class="field-hint">New empty disk. Thin-provisioned if the storage backend supports it.</p>
@@ -377,7 +377,7 @@
           </div>
           <div class="column">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">Storage Pool</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">Storage Pool</label>
               <div class="control">
                 <div class="select is-fullwidth">
                   <select name="storage_pool">
@@ -397,7 +397,7 @@
         <div class="columns">
           <div class="column">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">Disk Bus</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">Disk Bus</label>
               <div class="control">
                 <div class="select is-fullwidth">
                   <select name="disk_bus" id="disk-bus-select">
@@ -408,7 +408,7 @@
                 </div>
               </div>
               <p class="field-hint">VirtIO-SCSI recommended for best performance.</p>
-              <p id="virtio-windows-warning" class="help is-warning" style="display:none;">
+              <p id="virtio-windows-warning" class="help is-warning" style="display: none;">
                 <i class="fas fa-exclamation-triangle"></i>
                 The Windows installer has no VirtIO drivers — it won't see the disk.
                 ProxMigrate will automatically use <strong>SATA</strong> during installation.
@@ -418,7 +418,7 @@
           </div>
           <div class="column">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">Disk Cache</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">Disk Cache</label>
               <div class="control">
                 <div class="select is-fullwidth">
                   <select name="disk_cache">
@@ -430,7 +430,7 @@
               </div>
             </div>
           </div>
-          <div class="column is-3" style="display:flex;align-items:flex-end;padding-bottom:1.5rem;">
+          <div class="column is-3" style="display: flex;align-items: flex-end;padding-bottom: 1.5rem;">
             <div class="field">
               <label class="checkbox">
                 <input type="checkbox" name="disk_iothread" {% if form.disk_iothread.value %}checked{% endif %}>
@@ -454,16 +454,16 @@
         </div>
 
         {# ---- Additional Disks ---- #}
-        <div style="border-top:1px solid #e8ecf0;margin-top:1.25rem;padding-top:1.25rem;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
-            <span style="font-size:0.875rem;font-weight:600;color:#363636;">Additional Disks</span>
+        <div style="border-top: 1px solid var(--border-main);margin-top: 1.25rem;padding-top: 1.25rem;">
+          <div style="display: flex;justify-content: space-between;align-items: center;margin-bottom: 0.75rem;">
+            <span style="font-size: 0.875rem;font-weight: 600;color: var(--text-main);">Additional Disks</span>
             <button type="button" class="button is-info is-small is-light" id="btn-add-disk">
               <span class="icon is-small"><i class="fas fa-plus"></i></span>
               <span>Add Disk</span>
             </button>
           </div>
           <div id="extra-disks-list"></div>
-          <p style="font-size:0.78rem;color:#888;margin-top:0.5rem;">
+          <p style="font-size: 0.78rem;color: var(--text-muted);margin-top: 0.5rem;">
             Extra disks are created as new empty volumes attached after the primary disk (slot 1+). Same bus and cache as the primary disk.
           </p>
           <input type="hidden" name="extra_disks" id="extra-disks-data" value="">
@@ -474,17 +474,17 @@
     {# ---- SECTION: Network ---- #}
     <div class="form-section">
       <div class="form-section-header">
-        <div style="display:flex;align-items:center;gap:0.6rem;">
-          <div class="section-icon" style="background:#f0f9ff;color:#0369a1;"><i class="fas fa-ethernet"></i></div>
+        <div style="display: flex;align-items: center;gap: 0.6rem;">
+          <div class="section-icon" style="background: var(--bg-info-light);color: var(--link-color);"><i class="fas fa-ethernet"></i></div>
           Network
         </div>
-        <i class="fas fa-chevron-down section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+        <i class="fas fa-chevron-down section-toggle-icon" style="color: var(--text-muted);font-size: 0.8rem;"></i>
       </div>
       <div class="form-section-body">
         <div class="columns">
           <div class="column">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">Network Bridge</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">Network Bridge</label>
               <div class="control">
                 <div class="select is-fullwidth">
                   <select name="net_bridge">
@@ -498,7 +498,7 @@
           </div>
           <div class="column">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">Network Model</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">Network Model</label>
               <div class="control">
                 <div class="select is-fullwidth">
                   <select name="net_model">
@@ -513,7 +513,7 @@
           </div>
           <div class="column is-3">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">VLAN Tag</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">VLAN Tag</label>
               <div class="control">
                 <input class="input" type="number" name="net_vlan"
                   value="{{ form.net_vlan.value|default:'' }}"
@@ -525,17 +525,17 @@
         <div class="columns">
           <div class="column">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">MAC Address</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">MAC Address</label>
               <div class="control has-icons-left">
                 <input class="input is-monospace" type="text" name="net_mac"
                   value="{{ form.net_mac.value|default:'' }}"
                   placeholder="auto-generated" pattern="([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}">
-                <span class="icon is-left"><i class="fas fa-network-wired" style="color:#b5b5b5;"></i></span>
+                <span class="icon is-left"><i class="fas fa-network-wired" style="color: var(--text-muted);"></i></span>
               </div>
               <p class="field-hint">Leave blank for auto-generated MAC address.</p>
             </div>
           </div>
-          <div class="column is-4" style="display:flex;align-items:flex-end;padding-bottom:1.5rem;">
+          <div class="column is-4" style="display: flex;align-items: flex-end;padding-bottom: 1.5rem;">
             <div class="field">
               <label class="checkbox">
                 <input type="checkbox" name="net_firewall" {% if form.net_firewall.value %}checked{% endif %}>
@@ -550,17 +550,17 @@
     {# ---- SECTION: Display & Agent ---- #}
     <div class="form-section">
       <div class="form-section-header">
-        <div style="display:flex;align-items:center;gap:0.6rem;">
+        <div style="display: flex;align-items: center;gap: 0.6rem;">
           <div class="section-icon"><i class="fas fa-desktop"></i></div>
           Display &amp; Agent
         </div>
-        <i class="fas fa-chevron-up section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+        <i class="fas fa-chevron-up section-toggle-icon" style="color: var(--text-muted);font-size: 0.8rem;"></i>
       </div>
       <div class="form-section-body is-open">
         <div class="columns">
           <div class="column">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">VGA Type</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">VGA Type</label>
               <div class="control">
                 <div class="select is-fullwidth">
                   <select name="vga_type">
@@ -574,7 +574,7 @@
           </div>
           <div class="column">
             <div class="field">
-              <label class="label" style="font-size:0.875rem;font-weight:600;">Display Memory (MB)</label>
+              <label class="label" style="font-size: 0.875rem;font-weight: 600;">Display Memory (MB)</label>
               <div class="control">
                 <input class="input" type="number" name="vga_memory"
                   value="{{ form.vga_memory.value|default:16 }}" min="4" max="512">
@@ -589,7 +589,7 @@
                 <input type="checkbox" name="qemu_agent" {% if form.qemu_agent.value %}checked{% endif %}>
                 &nbsp;<strong>Enable QEMU Guest Agent</strong>
               </label>
-              <p class="field-hint" style="margin-left:1.5rem;">Requires guest agent installed in the VM.</p>
+              <p class="field-hint" style="margin-left: 1.5rem;">Requires guest agent installed in the VM.</p>
             </div>
           </div>
           <div class="column">
@@ -598,7 +598,7 @@
                 <input type="checkbox" name="tablet" {% if form.tablet.value %}checked{% endif %}>
                 &nbsp;Enable USB Tablet
               </label>
-              <p class="field-hint" style="margin-left:1.5rem;">Improves VNC pointer sync.</p>
+              <p class="field-hint" style="margin-left: 1.5rem;">Improves VNC pointer sync.</p>
             </div>
           </div>
         </div>
@@ -608,30 +608,30 @@
     {# ---- SECTION: Cloud-Init ---- #}
     <div class="form-section">
       <div class="form-section-header">
-        <div style="display:flex;align-items:center;gap:0.6rem;">
+        <div style="display: flex;align-items: center;gap: 0.6rem;">
           <div class="section-icon"><i class="fas fa-cloud"></i></div>
           Cloud-Init
         </div>
-        <i class="fas fa-chevron-down section-toggle-icon" style="color:#b5b5b5;font-size:0.8rem;"></i>
+        <i class="fas fa-chevron-down section-toggle-icon" style="color: var(--text-muted);font-size: 0.8rem;"></i>
       </div>
       <div class="form-section-body" id="cloud-init-body">
-        <div class="field" style="margin-bottom:1rem;">
+        <div class="field" style="margin-bottom: 1rem;">
           <label class="checkbox">
             <input type="checkbox" name="cloud_init_enabled" id="ci-enabled-check"
               {% if form.cloud_init_enabled.value %}checked{% endif %}
               onchange="toggleCloudInit(this.checked)">
             &nbsp;<strong>Enable Proxmox Cloud-Init</strong>
           </label>
-          <p class="field-hint" style="margin-left:1.5rem;">
+          <p class="field-hint" style="margin-left: 1.5rem;">
             Injects configuration (user, SSH keys, IP, user-data) on first boot. Requires a cloud-init-capable image.
           </p>
         </div>
 
-        <div id="cloud-init-fields" style="display:none;">
+        <div id="cloud-init-fields" style="display: none;">
           <div class="columns">
             <div class="column is-6">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Cloud-Init Storage</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Cloud-Init Storage</label>
                 <div class="control">
                   <div class="select is-fullwidth">
                     <select name="ci_storage">
@@ -646,7 +646,7 @@
             </div>
             <div class="column is-6">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">IP Configuration</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">IP Configuration</label>
                 <div class="control">
                   <div class="select is-fullwidth">
                     <select name="ci_ip_config" id="ci-ip-config-select" onchange="toggleCiIpFields(this.value)">
@@ -660,11 +660,11 @@
             </div>
           </div>
 
-          <div id="ci-static-fields" style="display:none;">
+          <div id="ci-static-fields" style="display: none;">
             <div class="columns">
               <div class="column">
                 <div class="field">
-                  <label class="label" style="font-size:0.875rem;font-weight:600;">IP Address / CIDR</label>
+                  <label class="label" style="font-size: 0.875rem;font-weight: 600;">IP Address / CIDR</label>
                   <div class="control">
                     <input class="input" type="text" name="ci_ip_address"
                       value="{{ form.ci_ip_address.value|default:'' }}"
@@ -674,7 +674,7 @@
               </div>
               <div class="column">
                 <div class="field">
-                  <label class="label" style="font-size:0.875rem;font-weight:600;">Gateway</label>
+                  <label class="label" style="font-size: 0.875rem;font-weight: 600;">Gateway</label>
                   <div class="control">
                     <input class="input" type="text" name="ci_gateway"
                       value="{{ form.ci_gateway.value|default:'' }}"
@@ -688,7 +688,7 @@
           <div class="columns">
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Default User</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Default User</label>
                 <div class="control">
                   <input class="input" type="text" name="ci_user"
                     value="{{ form.ci_user.value|default:'' }}"
@@ -698,7 +698,7 @@
             </div>
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Password</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Password</label>
                 <div class="control">
                   <input class="input" type="password" name="ci_password"
                     value="{{ form.ci_password.value|default:'' }}"
@@ -711,7 +711,7 @@
           <div class="columns">
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">DNS Nameserver</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">DNS Nameserver</label>
                 <div class="control">
                   <input class="input" type="text" name="ci_nameserver"
                     value="{{ form.ci_nameserver.value|default:'' }}"
@@ -721,7 +721,7 @@
             </div>
             <div class="column">
               <div class="field">
-                <label class="label" style="font-size:0.875rem;font-weight:600;">Search Domain</label>
+                <label class="label" style="font-size: 0.875rem;font-weight: 600;">Search Domain</label>
                 <div class="control">
                   <input class="input" type="text" name="ci_search_domain"
                     value="{{ form.ci_search_domain.value|default:'' }}"
@@ -732,7 +732,7 @@
           </div>
 
           <div class="field">
-            <label class="label" style="font-size:0.875rem;font-weight:600;">SSH Public Keys</label>
+            <label class="label" style="font-size: 0.875rem;font-weight: 600;">SSH Public Keys</label>
             <div class="control">
               <textarea class="textarea is-small" name="ci_ssh_keys" rows="3"
                 placeholder="ssh-rsa AAAA... user@host&#10;ssh-ed25519 AAAA... user@host">{{ form.ci_ssh_keys.value|default:'' }}</textarea>
@@ -741,7 +741,7 @@
           </div>
 
           <div class="field">
-            <label class="label" style="font-size:0.875rem;font-weight:600;">Custom User-Data <span style="font-weight:400;color:#888;">(optional YAML)</span></label>
+            <label class="label" style="font-size: 0.875rem;font-weight: 600;">Custom User-Data <span style="font-weight: 400;color: var(--text-muted);">(optional YAML)</span></label>
             <div class="control">
               <textarea class="textarea is-family-monospace is-small" name="ci_user_data" rows="8"
                 placeholder="#cloud-config&#10;packages:&#10;  - nginx&#10;runcmd:&#10;  - systemctl enable nginx">{{ form.ci_user_data.value|default:'' }}</textarea>
@@ -759,74 +759,74 @@
   {# ===== RIGHT: Summary + Tips ===== #}
   <div class="column is-4">
 
-    <div class="proxmigrate-card" style="position:sticky;top:70px;">
+    <div class="proxmigrate-card" style="position: sticky;top: 70px;">
 
       {# Source summary card #}
       <div class="card-header">
         {% if job.source_type == 'iso' %}
-          <i class="fas fa-compact-disc" style="color:#3273dc;"></i> ISO Install
+          <i class="fas fa-compact-disc" style="color: var(--link-color);"></i> ISO Install
         {% else %}
-          <i class="fas fa-server" style="color:#7a7a7a;"></i> Blank VM
+          <i class="fas fa-server" style="color: var(--text-muted);"></i> Blank VM
         {% endif %}
       </div>
-      <div class="card-body" style="padding:1.25rem 1.5rem;">
+      <div class="card-body" style="padding: 1.25rem 1.5rem;">
         {% if job.source_type == 'iso' %}
-          <div style="word-break:break-all;font-family:monospace;font-size:0.82rem;color:#1a1a2e;font-weight:600;margin-bottom:0.5rem;">
+          <div style="word-break: break-all;font-family: monospace;font-size: 0.82rem;color: var(--text-header);font-weight: 600;margin-bottom: 0.5rem;">
             {{ job.iso_filename }}
           </div>
-          <div style="margin-bottom:0.75rem;">
-            <span class="tag" style="background:#eff6ff;color:#3273dc;border:1px solid #c8d8ff;font-weight:600;">
+          <div style="margin-bottom: 0.75rem;">
+            <span class="tag" style="background: var(--bg-info-light);color: var(--link-color);border: 1px solid var(--border-main);font-weight: 600;">
               ISO storage: {{ job.iso_storage }}
             </span>
           </div>
-          <div class="info-box" style="font-size:0.78rem;padding:0.65rem 0.85rem;">
-            <div class="info-box-icon" style="font-size:0.85rem;"><i class="fas fa-info-circle"></i></div>
+          <div class="info-box" style="font-size: 0.78rem;padding: 0.65rem 0.85rem;">
+            <div class="info-box-icon" style="font-size: 0.85rem;"><i class="fas fa-info-circle"></i></div>
             <div>ISO will be uploaded to Proxmox storage, the VM created, and the CD-ROM attached. Boot into the installer via the Proxmox console.</div>
           </div>
         {% else %}
-          <div style="font-size:0.85rem;color:#555;line-height:1.6;">
+          <div style="font-size: 0.85rem;color: var(--text-semi);line-height: 1.6;">
             A blank VM shell will be created with no media attached. You can attach an ISO or existing disk from the Proxmox web UI after creation.
           </div>
         {% endif %}
       </div>
 
-      <div class="card-header" style="border-top:1px solid #f0f0f0;border-radius:0;">
-        <i class="fas fa-lightbulb" style="color:#f59e0b;"></i> Configuration Tips
+      <div class="card-header" style="border-top: 1px solid var(--border-light);border-radius: 0;">
+        <i class="fas fa-lightbulb" style="color: var(--warning-color);"></i> Configuration Tips
       </div>
-      <div class="card-body" style="padding:1.25rem 1.5rem;">
-        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0.75rem;">
-          <li style="font-size:0.82rem;color:#4a4a4a;display:flex;gap:0.5rem;">
-            <i class="fas fa-circle" style="color:#3273dc;font-size:0.4rem;margin-top:0.45rem;flex-shrink:0;"></i>
+      <div class="card-body" style="padding: 1.25rem 1.5rem;">
+        <ul style="list-style: none;margin: 0;padding: 0;display: flex;flex-direction: column;gap: 0.75rem;">
+          <li style="font-size: 0.82rem;color: var(--text-semi);display: flex;gap: 0.5rem;">
+            <i class="fas fa-circle" style="color: var(--link-color);font-size: 0.4rem;margin-top: 0.45rem;flex-shrink: 0;"></i>
             Use <strong>OVMF (UEFI)</strong> for Windows 11, Secure Boot, or modern Linux installs.
           </li>
-          <li style="font-size:0.82rem;color:#4a4a4a;display:flex;gap:0.5rem;">
-            <i class="fas fa-circle" style="color:#3273dc;font-size:0.4rem;margin-top:0.45rem;flex-shrink:0;"></i>
+          <li style="font-size: 0.82rem;color: var(--text-semi);display: flex;gap: 0.5rem;">
+            <i class="fas fa-circle" style="color: var(--link-color);font-size: 0.4rem;margin-top: 0.45rem;flex-shrink: 0;"></i>
             VirtIO network &amp; SCSI gives best performance but requires drivers in the guest.
           </li>
-          <li style="font-size:0.82rem;color:#4a4a4a;display:flex;gap:0.5rem;">
-            <i class="fas fa-circle" style="color:#3273dc;font-size:0.4rem;margin-top:0.45rem;flex-shrink:0;"></i>
+          <li style="font-size: 0.82rem;color: var(--text-semi);display: flex;gap: 0.5rem;">
+            <i class="fas fa-circle" style="color: var(--link-color);font-size: 0.4rem;margin-top: 0.45rem;flex-shrink: 0;"></i>
             Windows 11 requires <strong>UEFI + Secure Boot + TPM 2.0</strong>.
           </li>
           {% if job.source_type == 'iso' %}
-          <li style="font-size:0.82rem;color:#4a4a4a;display:flex;gap:0.5rem;">
-            <i class="fas fa-circle" style="color:#3273dc;font-size:0.4rem;margin-top:0.45rem;flex-shrink:0;"></i>
+          <li style="font-size: 0.82rem;color: var(--text-semi);display: flex;gap: 0.5rem;">
+            <i class="fas fa-circle" style="color: var(--link-color);font-size: 0.4rem;margin-top: 0.45rem;flex-shrink: 0;"></i>
             For Windows guests, add the <strong>VirtIO drivers ISO</strong> as a second CD-ROM in Proxmox after creation.
           </li>
           {% endif %}
-          <li style="font-size:0.82rem;color:#4a4a4a;display:flex;gap:0.5rem;">
-            <i class="fas fa-circle" style="color:#3273dc;font-size:0.4rem;margin-top:0.45rem;flex-shrink:0;"></i>
+          <li style="font-size: 0.82rem;color: var(--text-semi);display: flex;gap: 0.5rem;">
+            <i class="fas fa-circle" style="color: var(--link-color);font-size: 0.4rem;margin-top: 0.45rem;flex-shrink: 0;"></i>
             Enable <strong>QEMU Guest Agent</strong> after installing it in the VM for better integration.
           </li>
         </ul>
       </div>
 
-      <div style="padding:1rem 1.5rem;border-top:1px solid #f0f0f0;">
-        <button type="submit" form="configure-form" class="button is-success is-fullwidth is-medium" style="font-weight:700;">
+      <div style="padding: 1rem 1.5rem;border-top: 1px solid var(--border-light);">
+        <button type="submit" form="configure-form" class="button is-success is-fullwidth is-medium" style="font-weight: 700;">
           <span class="icon"><i class="fas fa-plus-circle"></i></span>
           <span>Create VM</span>
           <span class="icon"><i class="fas fa-arrow-right"></i></span>
         </button>
-        <p style="text-align:center;font-size:0.75rem;color:#b5b5b5;margin-top:0.65rem;">
+        <p style="text-align: center;font-size: 0.75rem;color: var(--text-muted);margin-top: 0.65rem;">
           {% if job.source_type == 'iso' %}
           This will upload the ISO and create the VM
           {% else %}
@@ -914,7 +914,7 @@
     let opts = STORAGE_OPTIONS.map(s =>
       `<option value="${s.value}" ${s.value === selectedValue ? 'selected' : ''}>${s.label}</option>`
     ).join('');
-    return `<select class="select" style="width:100%;" data-role="disk-storage">${opts}</select>`;
+    return `<select class="select" style="width: 100%;" data-role="disk-storage">${opts}</select>`;
   }
 
   function addExtraDisk() {
@@ -925,14 +925,14 @@
     row.dataset.idx = idx;
     row.style.cssText = 'display:flex;gap:0.75rem;align-items:center;margin-bottom:0.6rem;background:#f9fafb;border:1px solid #e8ecf0;border-radius:6px;padding:0.6rem 0.75rem;';
     row.innerHTML = `
-      <span style="font-size:0.78rem;color:#888;white-space:nowrap;min-width:3rem;">Disk ${idx}</span>
-      <div class="control" style="flex:1;">${buildStorageSelect(defaultStorage)}</div>
-      <div class="control" style="width:130px;">
+      <span style="font-size: 0.78rem;color: var(--text-muted);white-space: nowrap;min-width: 3rem;">Disk ${idx}</span>
+      <div class="control" style="flex: 1;">${buildStorageSelect(defaultStorage)}</div>
+      <div class="control" style="width: 130px;">
         <input class="input" type="number" min="1" max="65536" value="50"
           placeholder="Size (GB)" data-role="disk-size"
-          style="text-align:right;">
+          style="text-align: right;">
       </div>
-      <span style="font-size:0.78rem;color:#888;">GB</span>
+      <span style="font-size: 0.78rem;color: var(--text-muted);">GB</span>
       <button type="button" class="button is-danger is-small is-light" onclick="removeExtraDisk(this)" title="Remove">
         <span class="icon is-small"><i class="fas fa-times"></i></span>
       </button>`;

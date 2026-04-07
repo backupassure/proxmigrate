@@ -8,63 +8,63 @@
 
   {# ===== Local Upload Storage ===== #}
   <div class="column is-7">
-    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
+    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
       <div class="card-header">
-        <i class="fas fa-hdd" style="color:#3273dc;"></i> Local Upload Storage
-        <span style="margin-left:auto;font-size:0.78rem;color:#7a7a7a;">{{ upload_root }}</span>
+        <i class="fas fa-hdd" style="color: var(--link-color);"></i> Local Upload Storage
+        <span style="margin-left: auto;font-size: 0.78rem;color: var(--text-muted);">{{ upload_root }}</span>
       </div>
       <div class="card-body">
 
         {# Disk usage bar #}
-        <div style="margin-bottom:1.25rem;">
-          <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#666;margin-bottom:0.4rem;">
+        <div style="margin-bottom: 1.25rem;">
+          <div style="display: flex;justify-content: space-between;font-size: 0.8rem;color: var(--text-muted);margin-bottom: 0.4rem;">
             <span>{{ local_used }} used</span>
             <span>{{ local_free }} free of {{ local_total }}</span>
           </div>
-          <div style="background:#e8ecf0;border-radius:4px;height:8px;overflow:hidden;">
-            <div style="background:{% if local_pct > 90 %}#f14668{% elif local_pct > 70 %}#f59e0b{% else %}#48c78e{% endif %};width:{{ local_pct }}%;height:100%;border-radius:4px;transition:width 0.3s;"></div>
+          <div style="background: var(--border-main);border-radius: 4px;height: 8px;overflow: hidden;">
+            <div style="background: {% if local_pct > 90 %}var(--danger-color){% elif local_pct > 70 %}var(--warning-color){% else %}var(--success-color){% endif %};width: {{ local_pct }}%;height: 100%;border-radius: 4px;transition: width 0.3s;"></div>
           </div>
         </div>
 
         {% if local_files %}
-          <div style="margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:0.85rem;color:#555;">{{ local_files|length }} file{{ local_files|length|pluralize }} on disk</span>
-            <button class="button is-warning is-small" id="btn-clean-orphans" style="font-weight:600;">
+          <div style="margin-bottom: 0.75rem;display: flex;justify-content: space-between;align-items: center;">
+            <span style="font-size: 0.85rem;color: var(--text-semi);">{{ local_files|length }} file{{ local_files|length|pluralize }} on disk</span>
+            <button class="button is-warning is-small" id="btn-clean-orphans" style="font-weight: 600;">
               <span class="icon is-small"><i class="fas fa-broom"></i></span>
               <span>Clean Up Completed &amp; Failed</span>
             </button>
           </div>
 
-          <div style="border:1px solid #e8ecf0;border-radius:8px;overflow:hidden;">
-            <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+          <div style="border: 1px solid var(--border-main);border-radius: 8px;overflow: hidden;">
+            <table style="width: 100%;border-collapse: collapse;font-size: 0.82rem;">
               <thead>
-                <tr style="background:#f5f7fa;border-bottom:1px solid #e8ecf0;">
-                  <th style="padding:0.6rem 1rem;text-align:left;font-weight:600;color:#4a4a4a;">File</th>
-                  <th style="padding:0.6rem 0.5rem;text-align:right;font-weight:600;color:#4a4a4a;">Size</th>
-                  <th style="padding:0.6rem 0.75rem;text-align:left;font-weight:600;color:#4a4a4a;">Job</th>
-                  <th style="padding:0.6rem 0.75rem;"></th>
+                <tr style="background: var(--bg-main);border-bottom: 1px solid var(--border-main);">
+                  <th style="padding: 0.6rem 1rem;text-align: left;font-weight: 600;color: var(--text-semi);">File</th>
+                  <th style="padding: 0.6rem 0.5rem;text-align: right;font-weight: 600;color: var(--text-semi);">Size</th>
+                  <th style="padding: 0.6rem 0.75rem;text-align: left;font-weight: 600;color: var(--text-semi);">Job</th>
+                  <th style="padding: 0.6rem 0.75rem;"></th>
                 </tr>
               </thead>
               <tbody>
                 {% for f in local_files %}
-                <tr style="border-bottom:1px solid #f0f0f0;" id="local-row-{{ forloop.counter }}">
-                  <td style="padding:0.55rem 1rem;word-break:break-all;font-family:monospace;color:#1a1a2e;">{{ f.name }}</td>
-                  <td style="padding:0.55rem 0.5rem;text-align:right;white-space:nowrap;color:#555;">{{ f.size_human }}</td>
-                  <td style="padding:0.55rem 0.75rem;">
+                <tr style="border-bottom: 1px solid var(--border-light);" id="local-row-{{ forloop.counter }}">
+                  <td style="padding: 0.55rem 1rem;word-break: break-all;font-family: monospace;color: var(--text-header);">{{ f.name }}</td>
+                  <td style="padding: 0.55rem 0.5rem;text-align: right;white-space: nowrap;color: var(--text-semi);">{{ f.size_human }}</td>
+                  <td style="padding: 0.55rem 0.75rem;">
                     {% if f.job %}
                       <span class="tag is-small {% if f.job.stage == 'DONE' %}is-success is-light{% elif f.job.stage == 'FAILED' %}is-danger is-light{% else %}is-info is-light{% endif %}">
                         {{ f.job.stage }}
                       </span>
-                      <span style="color:#888;font-size:0.78rem;margin-left:0.3rem;">{{ f.job.vm_name }}</span>
+                      <span style="color: var(--text-muted);font-size: 0.78rem;margin-left: 0.3rem;">{{ f.job.vm_name }}</span>
                     {% else %}
                       <span class="tag is-small is-warning is-light">No job</span>
                     {% endif %}
                   </td>
-                  <td style="padding:0.55rem 0.75rem;text-align:right;white-space:nowrap;">
+                  <td style="padding: 0.55rem 0.75rem;text-align: right;white-space: nowrap;">
                     <button class="button is-primary is-small is-light btn-create-vm"
                       data-path="{{ f.path }}"
                       title="Create a VM from this file"
-                      style="margin-right:0.3rem;">
+                      style="margin-right: 0.3rem;">
                       <span class="icon is-small"><i class="fas fa-plus-circle"></i></span>
                       <span>Create VM</span>
                     </button>
@@ -80,8 +80,8 @@
             </table>
           </div>
         {% else %}
-          <div style="text-align:center;padding:2rem;color:#b5b5b5;">
-            <i class="fas fa-check-circle" style="font-size:2rem;margin-bottom:0.5rem;display:block;color:#48c78e;"></i>
+          <div style="text-align: center;padding: 2rem;color: var(--text-muted);">
+            <i class="fas fa-check-circle" style="font-size: 2rem;margin-bottom: 0.5rem;display: block;color: var(--success-color);"></i>
             No uploaded files on disk. All clean.
           </div>
         {% endif %}
@@ -92,56 +92,56 @@
     {# ===== Proxmox Temp Dir ===== #}
     <div class="proxmigrate-card">
       <div class="card-header">
-        <i class="fas fa-server" style="color:#9b59b6;"></i> Proxmox Temp Directory
-        <span style="margin-left:auto;font-size:0.78rem;color:#7a7a7a;">{{ proxmox_temp_dir|default:"Not configured" }}</span>
+        <i class="fas fa-server" style="color: var(--purple-color);"></i> Proxmox Temp Directory
+        <span style="margin-left: auto;font-size: 0.78rem;color: var(--text-muted);">{{ proxmox_temp_dir|default:"Not configured" }}</span>
       </div>
       <div class="card-body">
 
         {% if proxmox_error %}
-          <div class="notification is-warning is-light" style="font-size:0.85rem;">
-            <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
+          <div class="notification is-warning is-light" style="font-size: 0.85rem;">
+            <i class="fas fa-exclamation-triangle" style="margin-right: 0.4rem;"></i>
             {{ proxmox_error }}
           </div>
         {% else %}
 
           {% if proxmox_dir_info %}
-          <div style="margin-bottom:1.25rem;">
-            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#666;margin-bottom:0.4rem;">
+          <div style="margin-bottom: 1.25rem;">
+            <div style="display: flex;justify-content: space-between;font-size: 0.8rem;color: var(--text-muted);margin-bottom: 0.4rem;">
               <span>{{ proxmox_dir_info.used_human }} used on Proxmox filesystem</span>
               <span>{{ proxmox_dir_info.free_human }} free</span>
             </div>
-            <div style="background:#e8ecf0;border-radius:4px;height:8px;overflow:hidden;">
+            <div style="background: var(--border-main);border-radius: 4px;height: 8px;overflow: hidden;">
               {% with pct=proxmox_dir_info.used|floatformat:0 %}
-              <div style="background:#9b59b6;width:{% widthratio proxmox_dir_info.used proxmox_dir_info.total 100 %}%;height:100%;border-radius:4px;"></div>
+              <div style="background: var(--purple-color);width: {% widthratio proxmox_dir_info.used proxmox_dir_info.total 100 %}%;height: 100%;border-radius: 4px;"></div>
               {% endwith %}
             </div>
           </div>
           {% endif %}
 
           {% if proxmox_files %}
-            <p style="font-size:0.8rem;color:#666;margin-bottom:0.75rem;">
+            <p style="font-size: 0.8rem;color: var(--text-muted);margin-bottom: 0.75rem;">
               These are temporary files in the Proxmox staging directory. The import pipeline cleans them up automatically on success or failure. Files listed here may be from interrupted jobs.
             </p>
-            <div style="border:1px solid #e8ecf0;border-radius:8px;overflow:hidden;">
-              <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+            <div style="border: 1px solid var(--border-main);border-radius: 8px;overflow: hidden;">
+              <table style="width: 100%;border-collapse: collapse;font-size: 0.82rem;">
                 <thead>
-                  <tr style="background:#f5f7fa;border-bottom:1px solid #e8ecf0;">
-                    <th style="padding:0.6rem 1rem;text-align:left;font-weight:600;color:#4a4a4a;">File</th>
-                    <th style="padding:0.6rem 0.5rem;text-align:right;font-weight:600;color:#4a4a4a;">Size</th>
-                    <th style="padding:0.6rem 0.75rem;"></th>
+                  <tr style="background: var(--bg-main);border-bottom: 1px solid var(--border-main);">
+                    <th style="padding: 0.6rem 1rem;text-align: left;font-weight: 600;color: var(--text-semi);">File</th>
+                    <th style="padding: 0.6rem 0.5rem;text-align: right;font-weight: 600;color: var(--text-semi);">Size</th>
+                    <th style="padding: 0.6rem 0.75rem;"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {% for f in proxmox_files %}
-                  <tr style="border-bottom:1px solid #f0f0f0;" id="prox-row-{{ forloop.counter }}">
-                    <td style="padding:0.55rem 1rem;word-break:break-all;font-family:monospace;color:#1a1a2e;">{{ f.name }}</td>
-                    <td style="padding:0.55rem 0.5rem;text-align:right;white-space:nowrap;color:#555;">{{ f.size_human }}</td>
-                    <td style="padding:0.55rem 0.75rem;text-align:right;white-space:nowrap;">
+                  <tr style="border-bottom: 1px solid var(--border-light);" id="prox-row-{{ forloop.counter }}">
+                    <td style="padding: 0.55rem 1rem;word-break: break-all;font-family: monospace;color: var(--text-header);">{{ f.name }}</td>
+                    <td style="padding: 0.55rem 0.5rem;text-align: right;white-space: nowrap;color: var(--text-semi);">{{ f.size_human }}</td>
+                    <td style="padding: 0.55rem 0.75rem;text-align: right;white-space: nowrap;">
                       {% if f.is_disk %}
                       <button class="button is-primary is-small is-light btn-create-vm-proxmox"
                         data-path="{{ f.path }}"
                         title="Create a VM from this file"
-                        style="margin-right:0.3rem;">
+                        style="margin-right: 0.3rem;">
                         <span class="icon is-small"><i class="fas fa-plus-circle"></i></span>
                         <span>Create VM</span>
                       </button>
@@ -158,8 +158,8 @@
               </table>
             </div>
           {% else %}
-            <div style="text-align:center;padding:2rem;color:#b5b5b5;">
-              <i class="fas fa-check-circle" style="font-size:2rem;margin-bottom:0.5rem;display:block;color:#48c78e;"></i>
+            <div style="text-align: center;padding: 2rem;color: var(--text-muted);">
+              <i class="fas fa-check-circle" style="font-size: 2rem;margin-bottom: 0.5rem;display: block;color: var(--success-color);"></i>
               No temp files on Proxmox. All clean.
             </div>
           {% endif %}
@@ -173,18 +173,18 @@
   {# ===== Right column: info ===== #}
   <div class="column is-5">
 
-    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
+    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
       <div class="card-header">
-        <i class="fas fa-info-circle" style="color:#3273dc;"></i> How Cleanup Works
+        <i class="fas fa-info-circle" style="color: var(--link-color);"></i> How Cleanup Works
       </div>
-      <div class="card-body" style="font-size:0.85rem;color:#555;line-height:1.7;">
-        <p style="margin-bottom:0.75rem;">
+      <div class="card-body" style="font-size: 0.85rem;color: var(--text-semi);line-height: 1.7;">
+        <p style="margin-bottom: 0.75rem;">
           <strong>Automatic cleanup:</strong> When an import job completes successfully or fails, ProxMigrate automatically deletes the local upload file and any temporary files on the Proxmox staging directory.
         </p>
-        <p style="margin-bottom:0.75rem;">
+        <p style="margin-bottom: 0.75rem;">
           <strong>What can remain on disk:</strong>
         </p>
-        <ul style="list-style:disc;padding-left:1.25rem;margin-bottom:0.75rem;">
+        <ul style="list-style: disc;padding-left: 1.25rem;margin-bottom: 0.75rem;">
           <li>Jobs that were interrupted (e.g. server restarted mid-transfer)</li>
           <li>Jobs still in progress</li>
           <li>Files uploaded but never configured/submitted</li>
@@ -197,24 +197,24 @@
 
     <div class="proxmigrate-card">
       <div class="card-header">
-        <i class="fas fa-cog" style="color:#7a7a7a;"></i> Storage Paths
+        <i class="fas fa-cog" style="color: var(--text-muted);"></i> Storage Paths
       </div>
-      <div class="card-body" style="font-size:0.82rem;">
+      <div class="card-body" style="font-size: 0.82rem;">
         <div class="cert-detail-row">
           <div class="cert-detail-label">Local upload store</div>
-          <div class="cert-detail-value is-monospace" style="font-size:0.78rem;word-break:break-all;">{{ upload_root }}</div>
+          <div class="cert-detail-value is-monospace" style="font-size: 0.78rem;word-break: break-all;">{{ upload_root }}</div>
         </div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">Proxmox temp dir</div>
-          <div class="cert-detail-value is-monospace" style="font-size:0.78rem;word-break:break-all;">{{ proxmox_temp_dir|default:"—" }}</div>
+          <div class="cert-detail-value is-monospace" style="font-size: 0.78rem;word-break: break-all;">{{ proxmox_temp_dir|default:"—" }}</div>
         </div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">Upload temp dir</div>
-          <div class="cert-detail-value is-monospace" style="font-size:0.78rem;word-break:break-all;">
+          <div class="cert-detail-value is-monospace" style="font-size: 0.78rem;word-break: break-all;">
             {% if config.upload_temp_dir %}{{ config.upload_temp_dir }}{% else %}OS default (/tmp){% endif %}
           </div>
         </div>
-        <div style="margin-top:1rem;">
+        <div style="margin-top: 1rem;">
           <a href="{% url 'proxmox_settings' %}" class="button is-light is-small is-fullwidth">
             <span class="icon is-small"><i class="fas fa-cog"></i></span>
             <span>Change storage paths in Settings</span>
@@ -228,7 +228,7 @@
 </div>
 
 {# Toast #}
-<div id="storage-toast" style="position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(60px);background:rgba(30,30,50,0.95);border:1px solid #3a3a5a;border-radius:8px;padding:0.5rem 1.25rem;font-size:0.82rem;color:#48c78e;z-index:100;transition:transform 0.25s,opacity 0.25s;opacity:0;pointer-events:none;white-space:nowrap;"></div>
+<div id="storage-toast" style="position: fixed;bottom: 1.5rem;left: 50%;transform: translateX(-50%) translateY(60px);background: var(--bg-sidebar);border: 1px solid var(--border-main);border-radius: 8px;padding: 0.5rem 1.25rem;font-size: 0.82rem;color: var(--success-color);z-index: 100;transition: transform 0.25s,opacity 0.25s;opacity: 0;pointer-events: none;white-space: nowrap;"></div>
 
 <script>
   const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';

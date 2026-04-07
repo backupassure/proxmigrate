@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="/static/css/proxmigrate.css">
 </head>
-<body style="background:linear-gradient(135deg,#f5f7fa 0%,#e8ecf0 100%);min-height:100vh;">
+<body style="background: linear-gradient(135deg,var(--bg-main) 0%,var(--border-main) 100%);min-height: 100vh;">
 
 {# ===== Wizard Top Bar ===== #}
 <div class="wizard-topbar">
@@ -18,11 +18,11 @@
   </div>
   <div class="wizard-topbar-divider"></div>
   <div class="wizard-title">
-    <i class="fas fa-magic" style="margin-right:0.4rem;opacity:0.6;"></i>
+    <i class="fas fa-magic" style="margin-right: 0.4rem;opacity: 0.6;"></i>
     Setup Wizard
   </div>
-  <div style="flex:1;"></div>
-  <div style="color:rgba(255,255,255,0.35);font-size:0.78rem;">
+  <div style="flex: 1;"></div>
+  <div style="color: rgba(255,255,255,0.35);font-size: 0.78rem;">
     Step {% block current_step_display %}1{% endblock %} of 6
   </div>
 </div>
@@ -35,37 +35,37 @@
 
   {% comment %}Hardcode all 6 steps{% endcomment %}
   <div class="wizard-step {% if cs > 1 %}is-done{% elif cs == 1 %}is-active{% endif %}">
-    <div class="wizard-step-number">{% if cs > 1 %}<i class="fas fa-check" style="font-size:0.75rem;"></i>{% else %}1{% endif %}</div>
+    <div class="wizard-step-number">{% if cs > 1 %}<i class="fas fa-check" style="font-size: 0.75rem;"></i>{% else %}1{% endif %}</div>
     <div class="wizard-step-label">Proxmox Host</div>
   </div>
 
   <div class="wizard-connector {% if cs > 2 %}is-done{% endif %}"></div>
   <div class="wizard-step {% if cs > 2 %}is-done{% elif cs == 2 %}is-active{% endif %}">
-    <div class="wizard-step-number">{% if cs > 2 %}<i class="fas fa-check" style="font-size:0.75rem;"></i>{% else %}2{% endif %}</div>
+    <div class="wizard-step-number">{% if cs > 2 %}<i class="fas fa-check" style="font-size: 0.75rem;"></i>{% else %}2{% endif %}</div>
     <div class="wizard-step-label">SSH Key</div>
   </div>
 
   <div class="wizard-connector {% if cs > 3 %}is-done{% endif %}"></div>
   <div class="wizard-step {% if cs > 3 %}is-done{% elif cs == 3 %}is-active{% endif %}">
-    <div class="wizard-step-number">{% if cs > 3 %}<i class="fas fa-check" style="font-size:0.75rem;"></i>{% else %}3{% endif %}</div>
+    <div class="wizard-step-number">{% if cs > 3 %}<i class="fas fa-check" style="font-size: 0.75rem;"></i>{% else %}3{% endif %}</div>
     <div class="wizard-step-label">API Token</div>
   </div>
 
   <div class="wizard-connector {% if cs > 4 %}is-done{% endif %}"></div>
   <div class="wizard-step {% if cs > 4 %}is-done{% elif cs == 4 %}is-active{% endif %}">
-    <div class="wizard-step-number">{% if cs > 4 %}<i class="fas fa-check" style="font-size:0.75rem;"></i>{% else %}4{% endif %}</div>
+    <div class="wizard-step-number">{% if cs > 4 %}<i class="fas fa-check" style="font-size: 0.75rem;"></i>{% else %}4{% endif %}</div>
     <div class="wizard-step-label">Discover</div>
   </div>
 
   <div class="wizard-connector {% if cs > 5 %}is-done{% endif %}"></div>
   <div class="wizard-step {% if cs > 5 %}is-done{% elif cs == 5 %}is-active{% endif %}">
-    <div class="wizard-step-number">{% if cs > 5 %}<i class="fas fa-check" style="font-size:0.75rem;"></i>{% else %}5{% endif %}</div>
+    <div class="wizard-step-number">{% if cs > 5 %}<i class="fas fa-check" style="font-size: 0.75rem;"></i>{% else %}5{% endif %}</div>
     <div class="wizard-step-label">Configure</div>
   </div>
 
   <div class="wizard-connector {% if cs >= 6 %}is-done{% endif %}"></div>
   <div class="wizard-step {% if cs == 6 %}is-active{% endif %}">
-    <div class="wizard-step-number">{% if cs > 6 %}<i class="fas fa-check" style="font-size:0.75rem;"></i>{% else %}6{% endif %}</div>
+    <div class="wizard-step-number">{% if cs > 6 %}<i class="fas fa-check" style="font-size: 0.75rem;"></i>{% else %}6{% endif %}</div>
     <div class="wizard-step-label">Complete</div>
   </div>
 
@@ -76,7 +76,7 @@
 <div class="wizard-content">
   {# Messages #}
   {% if messages %}
-    <div style="width:100%;max-width:680px;margin-bottom:1rem;">
+    <div style="width: 100%;max-width: 680px;margin-bottom: 1rem;">
       {% for message in messages %}
         <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% elif message.tags == 'warning' %}is-warning{% else %}is-info{% endif %} is-light">
           <button class="delete" onclick="this.parentElement.remove()"></button>
@@ -90,7 +90,7 @@
 </div>
 
 {# ===== Footer ===== #}
-<div class="footer-bar" style="margin-top:auto;">
+<div class="footer-bar" style="margin-top: auto;">
   ProxMigrate &mdash; by Backup Assure &mdash; Free &amp; Open Source
 </div>
 

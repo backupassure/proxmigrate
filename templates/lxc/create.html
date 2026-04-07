@@ -14,7 +14,7 @@
 
 {% if error %}
   <div class="notification is-danger is-light">
-    <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i> {{ error }}
+    <i class="fas fa-exclamation-triangle" style="margin-right: 0.4rem;"></i> {{ error }}
   </div>
 {% endif %}
 
@@ -23,13 +23,13 @@
 
     <div class="proxmigrate-card">
       <div class="card-header">
-        <i class="fas fa-cube" style="color:#3273dc;"></i> Select Container Template
+        <i class="fas fa-cube" style="color: var(--link-color);"></i> Select Container Template
       </div>
-      <div class="card-body" style="padding:1.5rem;">
+      <div class="card-body" style="padding: 1.5rem;">
 
         {# Storage selector #}
         <div class="field">
-          <label class="label" style="font-size:0.875rem;font-weight:600;">Template Storage</label>
+          <label class="label" style="font-size: 0.875rem;font-weight: 600;">Template Storage</label>
           <div class="control">
             <div class="select is-fullwidth">
               <select id="template-storage"
@@ -49,7 +49,7 @@
         </div>
 
         {# Tab toggle: Downloaded vs Available #}
-        <div class="tabs is-small" style="margin-bottom:0;">
+        <div class="tabs is-small" style="margin-bottom: 0;">
           <ul>
             <li class="is-active" id="tab-downloaded">
               <a hx-get="{% url 'lxc_template_browser' %}"
@@ -77,8 +77,8 @@
 
         {# Template list (HTMX target) #}
         <div id="template-list">
-          <div style="padding:2rem;text-align:center;color:#7a7a7a;font-size:0.875rem;">
-            <i class="fas fa-arrow-up" style="margin-right:0.4rem;"></i>
+          <div style="padding: 2rem;text-align: center;color: var(--text-muted);font-size: 0.875rem;">
+            <i class="fas fa-arrow-up" style="margin-right: 0.4rem;"></i>
             Select a storage pool to browse templates.
           </div>
         </div>
@@ -92,21 +92,21 @@
   <div class="column is-5">
     <div class="proxmigrate-card">
       <div class="card-header">
-        <i class="fas fa-info-circle" style="color:#3273dc;"></i> About New LXC Container
+        <i class="fas fa-info-circle" style="color: var(--link-color);"></i> About New LXC Container
       </div>
-      <div class="card-body" style="font-size:0.85rem;color:#555;line-height:1.7;">
-        <p style="margin-bottom:0.75rem;">
+      <div class="card-body" style="font-size: 0.85rem;color: var(--text-semi);line-height: 1.7;">
+        <p style="margin-bottom: 0.75rem;">
           <strong>Downloaded Templates</strong> — choose from templates already stored on your Proxmox node. These are ready to use immediately with no download required.
         </p>
-        <p style="margin-bottom:0.75rem;">
+        <p style="margin-bottom: 0.75rem;">
           <strong>Available to Download</strong> — browse the official Proxmox template catalogue. Selecting a template will download it to your storage before creating the container.
         </p>
-        <p style="margin-bottom:0.75rem;">
+        <p style="margin-bottom: 0.75rem;">
           <strong>After selecting a template</strong> you'll configure the container — hostname, resources (CPU, RAM, swap), storage, networking, and authentication — before creation begins.
         </p>
-        <hr style="border:none;border-top:1px solid #e8ecf0;margin:0.75rem 0;">
-        <p style="font-size:0.78rem;color:#888;">
-          <i class="fas fa-hdd" style="margin-right:0.3rem;"></i>
+        <hr style="border: none;border-top: 1px solid var(--border-main);margin: 0.75rem 0;">
+        <p style="font-size: 0.78rem;color: var(--text-muted);">
+          <i class="fas fa-hdd" style="margin-right: 0.3rem;"></i>
           Template storage must have the <strong>vztmpl</strong> content type enabled in Proxmox.
           Go to Datacenter &rarr; Storage &rarr; select pool &rarr; Edit &rarr; Content.
         </p>

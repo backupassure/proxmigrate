@@ -9,8 +9,8 @@
   <div class="column is-6">
 
     {% if already_enabled %}
-      <div class="notification is-success is-light" style="margin-bottom:1.5rem;">
-        <i class="fas fa-check-circle" style="margin-right:0.4rem;"></i>
+      <div class="notification is-success is-light" style="margin-bottom: 1.5rem;">
+        <i class="fas fa-check-circle" style="margin-right: 0.4rem;"></i>
         <strong>MFA is enabled</strong> for your account.
         {% if not enforced %}
           You can disable it below or re-scan the QR code to set up a new device.
@@ -18,34 +18,34 @@
       </div>
     {% endif %}
 
-    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
+    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
       <div class="card-header">
-        <i class="fas fa-shield-alt" style="color:#3273dc;"></i>
+        <i class="fas fa-shield-alt" style="color: var(--link-color);"></i>
         {% if already_enabled %}Re-configure MFA{% else %}Set Up MFA{% endif %}
       </div>
-      <div class="card-body" style="text-align:center;">
+      <div class="card-body" style="text-align: center;">
 
-        <p style="color:#4a4a4a;font-size:0.9rem;margin-bottom:1.5rem;line-height:1.6;">
+        <p style="color: var(--text-semi);font-size: 0.9rem;margin-bottom: 1.5rem;line-height: 1.6;">
           Scan the QR code below with your authenticator app
           (Google Authenticator, Authy, Microsoft Authenticator, etc.)
         </p>
 
-        <div style="margin-bottom:1.5rem;">
-          <img src="{{ qr_data_uri }}" alt="MFA QR Code" style="border-radius:8px;border:1px solid #e8ecf0;">
+        <div style="margin-bottom: 1.5rem;">
+          <img src="{{ qr_data_uri }}" alt="MFA QR Code" style="border-radius: 8px;border: 1px solid var(--border-main);">
         </div>
 
-        <div style="background:#f5f7fa;border:1px solid #e8ecf0;border-radius:8px;padding:0.75rem 1rem;margin-bottom:1.5rem;">
-          <p style="font-size:0.78rem;color:#7a7a7a;margin-bottom:0.3rem;">Can't scan? Enter this key manually:</p>
-          <code style="font-size:0.95rem;color:#1a1a2e;font-weight:600;letter-spacing:0.15rem;word-break:break-all;">{{ secret }}</code>
+        <div style="background: var(--bg-main);border: 1px solid var(--border-main);border-radius: 8px;padding: 0.75rem 1rem;margin-bottom: 1.5rem;">
+          <p style="font-size: 0.78rem;color: var(--text-muted);margin-bottom: 0.3rem;">Can't scan? Enter this key manually:</p>
+          <code style="font-size: 0.95rem;color: var(--text-header);font-weight: 600;letter-spacing: 0.15rem;word-break: break-all;">{{ secret }}</code>
         </div>
 
         <form method="post" action="{% url 'mfa_setup_confirm' %}">
           {% csrf_token %}
-          <div class="field" style="margin-bottom:1.25rem;">
-            <label class="label" style="font-size:0.85rem;color:#4a4a4a;font-weight:600;">
+          <div class="field" style="margin-bottom: 1.25rem;">
+            <label class="label" style="font-size: 0.85rem;color: var(--text-semi);font-weight: 600;">
               Enter the 6-digit code from your app to verify
             </label>
-            <div class="control" style="max-width:250px;margin:0 auto;">
+            <div class="control" style="max-width: 250px;margin: 0 auto;">
               <input
                 class="input is-medium"
                 type="text"
@@ -55,11 +55,11 @@
                 autocomplete="one-time-code"
                 inputmode="numeric"
                 maxlength="6"
-                style="text-align:center;letter-spacing:0.3rem;font-size:1.3rem;font-weight:600;"
+                style="text-align: center;letter-spacing: 0.3rem;font-size: 1.3rem;font-weight: 600;"
               >
             </div>
           </div>
-          <button type="submit" class="button is-primary" style="font-weight:600;">
+          <button type="submit" class="button is-primary" style="font-weight: 600;">
             <span class="icon"><i class="fas fa-check"></i></span>
             <span>Verify &amp; Enable MFA</span>
           </button>
@@ -70,20 +70,20 @@
     {% if already_enabled and not enforced %}
       <div class="proxmigrate-card">
         <div class="card-header">
-          <i class="fas fa-times-circle" style="color:#f14668;"></i> Disable MFA
+          <i class="fas fa-times-circle" style="color: var(--danger-color);"></i> Disable MFA
         </div>
         <div class="card-body">
-          <p style="color:#7a7a7a;font-size:0.85rem;margin-bottom:1rem;">
+          <p style="color: var(--text-muted);font-size: 0.85rem;margin-bottom: 1rem;">
             Enter your password to confirm disabling MFA. You will no longer need an authenticator code to sign in.
           </p>
           <form method="post" action="{% url 'mfa_disable' %}">
             {% csrf_token %}
-            <div class="field" style="margin-bottom:1rem;">
-              <div class="control" style="max-width:300px;">
+            <div class="field" style="margin-bottom: 1rem;">
+              <div class="control" style="max-width: 300px;">
                 <input class="input" type="password" name="password" placeholder="Enter your password" required>
               </div>
             </div>
-            <button type="submit" class="button is-danger is-light" style="font-weight:600;"
+            <button type="submit" class="button is-danger is-light" style="font-weight: 600;"
                     onclick="return confirm('Are you sure you want to disable MFA?')">
               <span class="icon"><i class="fas fa-times"></i></span>
               <span>Disable MFA</span>

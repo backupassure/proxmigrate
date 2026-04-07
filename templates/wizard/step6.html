@@ -3,8 +3,8 @@
 {% block current_step_display %}6{% endblock %}
 
 {% block wizard_content %}
-<div class="wizard-card" style="max-width:600px;">
-  <div class="wizard-card-body" style="padding:2.5rem 2rem;">
+<div class="wizard-card" style="max-width: 600px;">
+  <div class="wizard-card-body" style="padding: 2.5rem 2rem;">
 
     {# Success icon #}
     <div class="success-screen">
@@ -12,65 +12,65 @@
         <i class="fas fa-check"></i>
       </div>
 
-      <h2 style="font-size:1.6rem;font-weight:800;color:#1a1a2e;margin-bottom:0.5rem;">Setup Complete!</h2>
-      <p style="color:#7a7a7a;font-size:0.95rem;margin-bottom:2rem;max-width:400px;margin-left:auto;margin-right:auto;line-height:1.6;">
+      <h2 style="font-size: 1.6rem;font-weight: 800;color: var(--text-header);margin-bottom: 0.5rem;">Setup Complete!</h2>
+      <p style="color: var(--text-muted);font-size: 0.95rem;margin-bottom: 2rem;max-width: 400px;margin-left: auto;margin-right: auto;line-height: 1.6;">
         ProxMigrate is connected to your Proxmox server and ready to import VMs. Here's a summary of your configuration.
       </p>
 
       {# Summary grid #}
       <div class="summary-grid">
         <div class="summary-item">
-          <div class="summary-item-label"><i class="fas fa-server" style="margin-right:0.3rem;"></i>Proxmox Host</div>
+          <div class="summary-item-label"><i class="fas fa-server" style="margin-right: 0.3rem;"></i>Proxmox Host</div>
           <div class="summary-item-value">{{ config.host }}:{{ config.api_port }}</div>
         </div>
         <div class="summary-item">
-          <div class="summary-item-label"><i class="fas fa-project-diagram" style="margin-right:0.3rem;"></i>Default Node</div>
+          <div class="summary-item-label"><i class="fas fa-project-diagram" style="margin-right: 0.3rem;"></i>Default Node</div>
           <div class="summary-item-value">{{ config.default_node }}</div>
         </div>
         <div class="summary-item">
-          <div class="summary-item-label"><i class="fas fa-database" style="margin-right:0.3rem;"></i>Default Storage</div>
+          <div class="summary-item-label"><i class="fas fa-database" style="margin-right: 0.3rem;"></i>Default Storage</div>
           <div class="summary-item-value">{{ config.default_storage }}</div>
         </div>
         <div class="summary-item">
-          <div class="summary-item-label"><i class="fas fa-ethernet" style="margin-right:0.3rem;"></i>Default Bridge</div>
+          <div class="summary-item-label"><i class="fas fa-ethernet" style="margin-right: 0.3rem;"></i>Default Bridge</div>
           <div class="summary-item-value">{{ config.default_bridge }}</div>
         </div>
         <div class="summary-item">
-          <div class="summary-item-label"><i class="fas fa-key" style="margin-right:0.3rem;"></i>API Token</div>
-          <div class="summary-item-value" style="font-family:monospace;font-size:0.8rem;">{{ config.api_token_id }}</div>
+          <div class="summary-item-label"><i class="fas fa-key" style="margin-right: 0.3rem;"></i>API Token</div>
+          <div class="summary-item-value" style="font-family: monospace;font-size: 0.8rem;">{{ config.api_token_id }}</div>
         </div>
         <div class="summary-item">
-          <div class="summary-item-label"><i class="fas fa-hashtag" style="margin-right:0.3rem;"></i>VMID Pool</div>
+          <div class="summary-item-label"><i class="fas fa-hashtag" style="margin-right: 0.3rem;"></i>VMID Pool</div>
           <div class="summary-item-value">{{ config.vmid_min }} &ndash; {{ config.vmid_max }}</div>
         </div>
       </div>
 
       {# Success connection statuses #}
-      <div style="display:flex;gap:1.5rem;justify-content:center;margin:1.5rem 0;">
-        <div style="text-align:center;">
+      <div style="display: flex;gap: 1.5rem;justify-content: center;margin: 1.5rem 0;">
+        <div style="text-align: center;">
           <span class="status-dot is-online"></span>
-          <span style="font-size:0.82rem;color:#257953;font-weight:600;">SSH Connected</span>
+          <span style="font-size: 0.82rem;color: var(--text-success-dark);font-weight: 600;">SSH Connected</span>
         </div>
-        <div style="text-align:center;">
+        <div style="text-align: center;">
           <span class="status-dot is-online"></span>
-          <span style="font-size:0.82rem;color:#257953;font-weight:600;">API Verified</span>
+          <span style="font-size: 0.82rem;color: var(--text-success-dark);font-weight: 600;">API Verified</span>
         </div>
-        <div style="text-align:center;">
+        <div style="text-align: center;">
           <span class="status-dot is-online"></span>
-          <span style="font-size:0.82rem;color:#257953;font-weight:600;">Key Installed</span>
+          <span style="font-size: 0.82rem;color: var(--text-success-dark);font-weight: 600;">Key Installed</span>
         </div>
       </div>
 
       {# CTA button #}
-      <a href="{% url 'dashboard' %}" class="button is-primary is-large" style="font-weight:700;min-width:260px;font-size:1rem;margin-top:0.5rem;">
+      <a href="{% url 'dashboard' %}" class="button is-primary is-large" style="font-weight: 700;min-width: 260px;font-size: 1rem;margin-top: 0.5rem;">
         <span class="icon"><i class="fas fa-tachometer-alt"></i></span>
         <span>Go to Dashboard</span>
         <span class="icon"><i class="fas fa-arrow-right"></i></span>
       </a>
 
-      <p style="margin-top:1.25rem;font-size:0.8rem;color:#b5b5b5;">
+      <p style="margin-top: 1.25rem;font-size: 0.8rem;color: var(--text-muted);">
         You can change any of these settings later under
-        <a href="{% url 'auth_settings' %}" style="color:#7a7a7a;">Settings</a>.
+        <a href="{% url 'auth_settings' %}" style="color: var(--text-muted);">Settings</a>.
       </p>
     </div>
 

@@ -2,30 +2,30 @@
 {% block title %}Email Recovery — ProxMigrate{% endblock %}
 
 {% block public_content %}
-<div style="min-height:100vh;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;">
+<div style="min-height: 100vh;background: linear-gradient(135deg,var(--bg-sidebar) 0%,var(--auth-gradient-mid) 50%,var(--auth-gradient-end) 100%);display: flex;flex-direction: column;align-items: center;justify-content: center;padding: 2rem;">
 
-  <div style="text-align:center;margin-bottom:2rem;">
-    <div style="font-size:2.5rem;color:#fff;font-weight:800;letter-spacing:-0.5px;margin-bottom:0.35rem;">
+  <div style="text-align: center;margin-bottom: 2rem;">
+    <div style="font-size: 2.5rem;color: var(--bg-card);font-weight: 800;letter-spacing: -0.5px;margin-bottom: 0.35rem;">
       &#9889; ProxMigrate
     </div>
-    <div style="color:rgba(255,255,255,0.45);font-size:0.8rem;text-transform:uppercase;letter-spacing:2px;">
+    <div style="color: rgba(255,255,255,0.45);font-size: 0.8rem;text-transform: uppercase;letter-spacing: 2px;">
       MFA Email Recovery
     </div>
   </div>
 
-  <div style="background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.4);width:100%;max-width:420px;overflow:hidden;">
+  <div style="background: var(--bg-card);border-radius: 14px;box-shadow: 0 20px 60px rgba(0,0,0,0.4);width: 100%;max-width: 420px;overflow: hidden;">
 
-    <div style="background:#f5f7fa;border-bottom:1px solid #e8ecf0;padding:1.25rem 2rem;text-align:center;">
-      <p style="color:#7a7a7a;font-size:0.85rem;font-weight:500;">
-        <i class="fas fa-envelope" style="color:#3273dc;margin-right:0.3rem;"></i>
+    <div style="background: var(--bg-main);border-bottom: 1px solid var(--border-main);padding: 1.25rem 2rem;text-align: center;">
+      <p style="color: var(--text-muted);font-size: 0.85rem;font-weight: 500;">
+        <i class="fas fa-envelope" style="color: var(--link-color);margin-right: 0.3rem;"></i>
         Recover access via email
       </p>
     </div>
 
-    <div style="padding:2rem;">
+    <div style="padding: 2rem;">
       {% if messages %}
         {% for message in messages %}
-          <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% else %}is-warning{% endif %} is-light" style="margin-bottom:1.25rem;padding:0.75rem 1rem;font-size:0.875rem;">
+          <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% else %}is-warning{% endif %} is-light" style="margin-bottom: 1.25rem;padding: 0.75rem 1rem;font-size: 0.875rem;">
             <button class="delete is-small" onclick="this.parentElement.remove()"></button>
             {{ message }}
           </div>
@@ -33,27 +33,27 @@
       {% endif %}
 
       {% if error %}
-        <div class="notification is-danger is-light" style="margin-bottom:1.25rem;padding:0.75rem 1rem;font-size:0.875rem;">
+        <div class="notification is-danger is-light" style="margin-bottom: 1.25rem;padding: 0.75rem 1rem;font-size: 0.875rem;">
           {{ error }}
         </div>
       {% endif %}
 
       {% if not email_enabled %}
-        <div class="notification is-warning is-light" style="margin-bottom:1.25rem;padding:0.75rem 1rem;font-size:0.875rem;">
-          <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>
+        <div class="notification is-warning is-light" style="margin-bottom: 1.25rem;padding: 0.75rem 1rem;font-size: 0.875rem;">
+          <i class="fas fa-exclamation-triangle" style="margin-right: 0.4rem;"></i>
           <strong>Email is not configured.</strong><br>
           Email recovery is unavailable. Please use a recovery code or contact your administrator.
         </div>
       {% else %}
-        <p style="color:#7a7a7a;font-size:0.85rem;margin-bottom:1.5rem;line-height:1.6;">
+        <p style="color: var(--text-muted);font-size: 0.85rem;margin-bottom: 1.5rem;line-height: 1.6;">
           We'll send a one-time code to <strong>{{ user_email }}</strong>.
           Click below to send the code, then enter it to sign in.
         </p>
 
         {# Send code button #}
-        <form method="post" action="{% url 'mfa_email_recovery' %}" style="margin-bottom:1.25rem;">
+        <form method="post" action="{% url 'mfa_email_recovery' %}" style="margin-bottom: 1.25rem;">
           {% csrf_token %}
-          <button type="submit" class="button is-info is-medium is-fullwidth" style="font-weight:600;">
+          <button type="submit" class="button is-info is-medium is-fullwidth" style="font-weight: 600;">
             <span class="icon"><i class="fas fa-paper-plane"></i></span>
             <span>Send Recovery Code</span>
           </button>
@@ -62,8 +62,8 @@
         {# Enter code form #}
         <form method="post" action="{% url 'mfa_email_recovery' %}">
           {% csrf_token %}
-          <div class="field" style="margin-bottom:1.25rem;">
-            <label class="label" style="font-size:0.85rem;color:#4a4a4a;font-weight:600;">Enter the code from your email</label>
+          <div class="field" style="margin-bottom: 1.25rem;">
+            <label class="label" style="font-size: 0.85rem;color: var(--text-semi);font-weight: 600;">Enter the code from your email</label>
             <div class="control has-icons-left">
               <input
                 class="input is-medium"
@@ -73,29 +73,29 @@
                 autocomplete="one-time-code"
                 inputmode="numeric"
                 maxlength="6"
-                style="text-align:center;letter-spacing:0.3rem;font-size:1.3rem;font-weight:600;"
+                style="text-align: center;letter-spacing: 0.3rem;font-size: 1.3rem;font-weight: 600;"
               >
-              <span class="icon is-left" style="color:#b5b5b5;">
+              <span class="icon is-left" style="color: var(--text-muted);">
                 <i class="fas fa-key"></i>
               </span>
             </div>
           </div>
-          <button type="submit" class="button is-primary is-medium is-fullwidth" style="font-weight:600;">
+          <button type="submit" class="button is-primary is-medium is-fullwidth" style="font-weight: 600;">
             <span class="icon"><i class="fas fa-check-circle"></i></span>
             <span>Verify Code</span>
           </button>
         </form>
       {% endif %}
 
-      <div style="text-align:center;margin-top:1.5rem;">
-        <a href="{% url 'mfa_verify' %}" style="color:#3273dc;font-size:0.82rem;">
-          <i class="fas fa-arrow-left" style="margin-right:0.3rem;"></i> Back to authenticator code
+      <div style="text-align: center;margin-top: 1.5rem;">
+        <a href="{% url 'mfa_verify' %}" style="color: var(--link-color);font-size: 0.82rem;">
+          <i class="fas fa-arrow-left" style="margin-right: 0.3rem;"></i> Back to authenticator code
         </a>
       </div>
     </div>
   </div>
 
-  <div style="margin-top:2rem;text-align:center;color:rgba(255,255,255,0.25);font-size:0.75rem;">
+  <div style="margin-top: 2rem;text-align: center;color: rgba(255,255,255,0.25);font-size: 0.75rem;">
     ProxMigrate &mdash; by Backup Assure &mdash; Free &amp; Open Source
   </div>
 

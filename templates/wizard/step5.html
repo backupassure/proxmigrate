@@ -3,11 +3,11 @@
 {% block current_step_display %}5{% endblock %}
 
 {% block wizard_content %}
-<div class="wizard-card" style="max-width:760px;">
+<div class="wizard-card" style="max-width: 760px;">
   <div class="wizard-card-header">
-    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
-      <div style="width:40px;height:40px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i class="fas fa-sliders-h" style="color:#48c78e;font-size:1.1rem;"></i>
+    <div style="display: flex;align-items: center;gap: 0.75rem;margin-bottom: 0.5rem;">
+      <div style="width: 40px;height: 40px;border-radius: 10px;background: var(--bg-success-light);display: flex;align-items: center;justify-content: center;flex-shrink: 0;">
+        <i class="fas fa-sliders-h" style="color: var(--success-color);font-size: 1.1rem;"></i>
       </div>
       <h2>Configure Defaults</h2>
     </div>
@@ -19,16 +19,16 @@
   <div class="wizard-card-body">
 
     {% if error %}
-      <div class="notification is-danger is-light" style="font-size:0.875rem;margin-bottom:1.25rem;">
+      <div class="notification is-danger is-light" style="font-size: 0.875rem;margin-bottom: 1.25rem;">
         <button class="delete" onclick="this.parentElement.remove()"></button>
         {{ error }}
       </div>
     {% endif %}
 
     {# Disk flow info box #}
-    <div class="info-box" style="margin-bottom:1.5rem;">
+    <div class="info-box" style="margin-bottom: 1.5rem;">
       <div class="info-box-icon"><i class="fas fa-route"></i></div>
-      <div style="font-size:0.85rem;">
+      <div style="font-size: 0.85rem;">
         <strong>Disk import flow:</strong>
         Browser upload &rarr; <strong>this server's disk</strong> (convert with qemu-img)
         &rarr; SFTP &rarr; <strong>Proxmox temp dir</strong>
@@ -45,13 +45,13 @@
 
         {# LEFT COLUMN — Proxmox resources #}
         <div class="column">
-          <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;font-weight:600;margin-bottom:1rem;">
+          <div style="font-size: 0.78rem;text-transform: uppercase;letter-spacing: 1px;color: var(--text-muted);font-weight: 600;margin-bottom: 1rem;">
             Proxmox Resources
           </div>
 
           {# Default Node #}
-          <div class="field" style="margin-bottom:1.25rem;">
-            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">Default Node</label>
+          <div class="field" style="margin-bottom: 1.25rem;">
+            <label class="label" style="font-weight: 600;color: var(--text-header);font-size: 0.9rem;">Default Node</label>
             <div class="control">
               <div class="select is-fullwidth">
                 <select name="default_node" id="id_default_node">
@@ -70,8 +70,8 @@
           </div>
 
           {# Default Storage #}
-          <div class="field" style="margin-bottom:1.25rem;">
-            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">Default Storage</label>
+          <div class="field" style="margin-bottom: 1.25rem;">
+            <label class="label" style="font-weight: 600;color: var(--text-header);font-size: 0.9rem;">Default Storage</label>
             <div class="control">
               <div class="select is-fullwidth">
                 <select name="default_storage" id="id_default_storage">
@@ -90,8 +90,8 @@
           </div>
 
           {# Default Bridge #}
-          <div class="field" style="margin-bottom:1.25rem;">
-            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">Default Network Bridge</label>
+          <div class="field" style="margin-bottom: 1.25rem;">
+            <label class="label" style="font-weight: 600;color: var(--text-header);font-size: 0.9rem;">Default Network Bridge</label>
             <div class="control">
               <div class="select is-fullwidth">
                 <select name="default_bridge" id="id_default_bridge">
@@ -111,11 +111,11 @@
 
           {# Proxmox Temp Directory #}
           <div class="field">
-            <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">
+            <label class="label" style="font-weight: 600;color: var(--text-header);font-size: 0.9rem;">
               Proxmox Temp Directory
             </label>
-            <div class="control" style="display:flex;gap:0.5rem;">
-              <div class="control has-icons-left" style="flex:1;">
+            <div class="control" style="display: flex;gap: 0.5rem;">
+              <div class="control has-icons-left" style="flex: 1;">
                 <input
                   class="input is-monospace"
                   type="text"
@@ -124,7 +124,7 @@
                   value="{{ form.proxmox_temp_dir.value|default:'/var/tmp/proxmigrate/' }}"
                   placeholder="/var/tmp/proxmigrate/"
                 >
-                <span class="icon is-left"><i class="fas fa-folder" style="color:#b5b5b5;"></i></span>
+                <span class="icon is-left"><i class="fas fa-folder" style="color: var(--text-muted);"></i></span>
               </div>
               <button type="button" class="button" onclick="openDirBrowser()" title="Browse directories on Proxmox">
                 <span class="icon"><i class="fas fa-folder-open"></i></span>
@@ -140,42 +140,42 @@
 
         {# RIGHT COLUMN — VM defaults & VMID pool #}
         <div class="column">
-          <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;font-weight:600;margin-bottom:1rem;">
+          <div style="font-size: 0.78rem;text-transform: uppercase;letter-spacing: 1px;color: var(--text-muted);font-weight: 600;margin-bottom: 1rem;">
             VM Defaults
           </div>
 
-          <div class="columns is-gapless" style="margin-bottom:0;">
-            <div class="column" style="padding-right:0.5rem;">
-              <div class="field" style="margin-bottom:1.25rem;">
-                <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">CPU Cores</label>
+          <div class="columns is-gapless" style="margin-bottom: 0;">
+            <div class="column" style="padding-right: 0.5rem;">
+              <div class="field" style="margin-bottom: 1.25rem;">
+                <label class="label" style="font-weight: 600;color: var(--text-header);font-size: 0.9rem;">CPU Cores</label>
                 <div class="control has-icons-left">
                   <input class="input" type="number" name="default_cores"
                     value="{{ form.default_cores.value|default:2 }}" min="1" max="128">
-                  <span class="icon is-left"><i class="fas fa-microchip" style="color:#b5b5b5;"></i></span>
+                  <span class="icon is-left"><i class="fas fa-microchip" style="color: var(--text-muted);"></i></span>
                 </div>
               </div>
             </div>
-            <div class="column" style="padding-left:0.5rem;">
-              <div class="field" style="margin-bottom:1.25rem;">
-                <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">RAM (MB)</label>
+            <div class="column" style="padding-left: 0.5rem;">
+              <div class="field" style="margin-bottom: 1.25rem;">
+                <label class="label" style="font-weight: 600;color: var(--text-header);font-size: 0.9rem;">RAM (MB)</label>
                 <div class="control has-icons-left">
                   <input class="input" type="number" name="default_memory_mb"
                     value="{{ form.default_memory_mb.value|default:2048 }}" min="256" step="256">
-                  <span class="icon is-left"><i class="fas fa-memory" style="color:#b5b5b5;"></i></span>
+                  <span class="icon is-left"><i class="fas fa-memory" style="color: var(--text-muted);"></i></span>
                 </div>
               </div>
             </div>
           </div>
 
           {# VMID Pool #}
-          <div style="background:#f5f7fa;border:1px solid #e8ecf0;border-radius:8px;padding:1rem;margin-bottom:1.25rem;">
-            <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#7a7a7a;font-weight:600;margin-bottom:0.75rem;">
+          <div style="background: var(--bg-main);border: 1px solid var(--border-main);border-radius: 8px;padding: 1rem;margin-bottom: 1.25rem;">
+            <div style="font-size: 0.78rem;text-transform: uppercase;letter-spacing: 1px;color: var(--text-muted);font-weight: 600;margin-bottom: 0.75rem;">
               VMID Pool Range
             </div>
 
             {% if existing_vmids %}
-              <div style="font-size:0.78rem;color:#7a7a7a;margin-bottom:0.75rem;">
-                <i class="fas fa-info-circle" style="color:#3273dc;margin-right:0.3rem;"></i>
+              <div style="font-size: 0.78rem;color: var(--text-muted);margin-bottom: 0.75rem;">
+                <i class="fas fa-info-circle" style="color: var(--link-color);margin-right: 0.3rem;"></i>
                 Existing VMIDs on cluster:
                 <strong>{{ existing_vmids|join:", " }}</strong>
                 — avoid overlapping your pool range.
@@ -183,18 +183,18 @@
             {% endif %}
 
             <div class="columns is-gapless">
-              <div class="column" style="padding-right:0.5rem;">
+              <div class="column" style="padding-right: 0.5rem;">
                 <div class="field">
-                  <label class="label" style="font-size:0.85rem;font-weight:600;color:#4a4a4a;">Pool Min</label>
+                  <label class="label" style="font-size: 0.85rem;font-weight: 600;color: var(--text-semi);">Pool Min</label>
                   <div class="control">
                     <input class="input" type="number" name="vmid_min"
                       value="{{ form.vmid_min.value|default:100 }}" min="100" max="999999999">
                   </div>
                 </div>
               </div>
-              <div class="column" style="padding-left:0.5rem;">
+              <div class="column" style="padding-left: 0.5rem;">
                 <div class="field">
-                  <label class="label" style="font-size:0.85rem;font-weight:600;color:#4a4a4a;">Pool Max</label>
+                  <label class="label" style="font-size: 0.85rem;font-weight: 600;color: var(--text-semi);">Pool Max</label>
                   <div class="control">
                     <input class="input" type="number" name="vmid_max"
                       value="{{ form.vmid_max.value|default:999 }}" min="100" max="999999999">
@@ -202,7 +202,7 @@
                 </div>
               </div>
             </div>
-            <p class="field-hint" style="margin-top:0.25rem;">
+            <p class="field-hint" style="margin-top: 0.25rem;">
               ProxMigrate auto-selects VMIDs within this range. Proxmox reserves 100–999 by
               convention; 900–999 or 1000+ is a safe starting range if those are free.
             </p>
@@ -211,13 +211,13 @@
         </div>
       </div>
       {# VirtIO Windows Drivers ISO #}
-      <div class="field" style="margin-top:0.75rem;padding-top:1.25rem;border-top:1px solid #e8ecf0;">
-        <label class="label" style="font-weight:600;color:#1a1a2e;font-size:0.9rem;">
+      <div class="field" style="margin-top: 0.75rem;padding-top: 1.25rem;border-top: 1px solid var(--border-main);">
+        <label class="label" style="font-weight: 600;color: var(--text-header);font-size: 0.9rem;">
           VirtIO Windows Drivers ISO
-          <span style="font-weight:400;color:#7a7a7a;"> — optional</span>
+          <span style="font-weight: 400;color: var(--text-muted);"> — optional</span>
         </label>
-        <div class="control" style="display:flex;gap:0.5rem;align-items:center;">
-          <div class="control has-icons-left" style="flex:1;">
+        <div class="control" style="display: flex;gap: 0.5rem;align-items: center;">
+          <div class="control has-icons-left" style="flex: 1;">
             <input
               class="input is-monospace"
               type="text"
@@ -226,7 +226,7 @@
               value="{{ form.virtio_iso.value|default:'' }}"
               placeholder="data:iso/virtio-win-0.1.285.iso"
             >
-            <span class="icon is-left"><i class="fas fa-compact-disc" style="color:#b5b5b5;"></i></span>
+            <span class="icon is-left"><i class="fas fa-compact-disc" style="color: var(--text-muted);"></i></span>
           </div>
           <button type="button" class="button is-light" id="virtio-scan-btn" onclick="scanVirtioIso()">
             <span class="icon"><i class="fas fa-search"></i></span>
@@ -238,17 +238,17 @@
           auto-detect it from your storage pools. When set, Windows VMs get this disc automatically
           attached so drivers are ready at first boot.
         </p>
-        <div id="virtio-scan-result" style="margin-top:0.4rem;"></div>
+        <div id="virtio-scan-result" style="margin-top: 0.4rem;"></div>
       </div>
     </form>
   </div>
 
   <div class="wizard-card-footer">
-    <a href="{% url 'wizard_step4' %}" class="button is-light" style="font-weight:500;">
+    <a href="{% url 'wizard_step4' %}" class="button is-light" style="font-weight: 500;">
       <span class="icon"><i class="fas fa-arrow-left"></i></span>
       <span>Back</span>
     </a>
-    <button type="submit" form="step5-form" class="button is-success is-medium" style="font-weight:600;min-width:200px;">
+    <button type="submit" form="step5-form" class="button is-success is-medium" style="font-weight: 600;min-width: 200px;">
       <span class="icon"><i class="fas fa-save"></i></span>
       <span>Save &amp; Continue</span>
       <span class="icon"><i class="fas fa-arrow-right"></i></span>
@@ -259,21 +259,21 @@
 
 {# Directory browser modal #}
 {% block extra_scripts %}
-<div id="dir-browser-modal" style="display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center;">
-  <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);" onclick="closeDirBrowser()"></div>
-  <div style="position:relative;background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.3);width:100%;max-width:520px;overflow:hidden;">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:0.875rem 1.25rem;background:#1a1a2e;color:#fff;">
-      <span style="font-weight:600;font-size:0.95rem;">
-        <i class="fas fa-folder-open" style="margin-right:0.5rem;color:#f59e0b;"></i>
+<div id="dir-browser-modal" style="display: none;position: fixed;inset: 0;z-index: 1000;align-items: center;justify-content: center;">
+  <div style="position: absolute;inset: 0;background: rgba(0,0,0,0.5);" onclick="closeDirBrowser()"></div>
+  <div style="position: relative;background: var(--bg-card);border-radius: 12px;box-shadow: 0 20px 60px rgba(0,0,0,0.3);width: 100%;max-width: 520px;overflow: hidden;">
+    <div style="display: flex;align-items: center;justify-content: space-between;padding: 0.875rem 1.25rem;background: var(--bg-sidebar);color: var(--bg-card);">
+      <span style="font-weight: 600;font-size: 0.95rem;">
+        <i class="fas fa-folder-open" style="margin-right: 0.5rem;color: var(--warning-color);"></i>
         Browse Proxmox Directories
       </span>
-      <button type="button" onclick="closeDirBrowser()" style="background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;font-size:1.1rem;line-height:1;">
+      <button type="button" onclick="closeDirBrowser()" style="background: none;border: none;color: rgba(255,255,255,0.6);cursor: pointer;font-size: 1.1rem;line-height: 1;">
         <i class="fas fa-times"></i>
       </button>
     </div>
-    <div id="dir-browser-body" style="min-height:160px;">
-      <div style="padding:2rem;text-align:center;color:#b5b5b5;">
-        <span class="spinner" style="display:inline-block;"></span>
+    <div id="dir-browser-body" style="min-height: 160px;">
+      <div style="padding: 2rem;text-align: center;color: var(--text-muted);">
+        <span class="spinner" style="display: inline-block;"></span>
       </div>
     </div>
   </div>
@@ -307,7 +307,7 @@
     modal.style.display = 'flex';
     const currentPath = document.getElementById('id_proxmox_temp_dir').value.replace(/\/$/, '') || '/var/tmp';
     document.getElementById('dir-browser-body').innerHTML =
-      '<div style="padding:2rem;text-align:center;color:#b5b5b5;"><span class="spinner" style="display:inline-block;"></span></div>';
+      '<div style="padding: 2rem;text-align: center;color: var(--text-muted);"><span class="spinner" style="display: inline-block;"></span></div>';
     htmx.ajax('GET', '{% url "wizard_step5_browse" %}?path=' + encodeURIComponent(currentPath), {
       target: '#dir-browser-body',
       swap: 'innerHTML'

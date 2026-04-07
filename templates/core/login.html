@@ -2,31 +2,31 @@
 {% block title %}Sign In — ProxMigrate{% endblock %}
 
 {% block public_content %}
-<div style="min-height:100vh;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;">
+<div style="min-height: 100vh;background: linear-gradient(135deg,var(--bg-sidebar) 0%,var(--auth-gradient-mid) 50%,var(--auth-gradient-end) 100%);display: flex;flex-direction: column;align-items: center;justify-content: center;padding: 2rem;">
 
   {# Logo area above card #}
-  <div style="text-align:center;margin-bottom:2rem;">
-    <div style="font-size:2.5rem;color:#fff;font-weight:800;letter-spacing:-0.5px;margin-bottom:0.35rem;">
+  <div style="text-align: center;margin-bottom: 2rem;">
+    <div style="font-size: 2.5rem;color: var(--bg-card);font-weight: 800;letter-spacing: -0.5px;margin-bottom: 0.35rem;">
       &#9889; ProxMigrate
     </div>
-    <div style="color:rgba(255,255,255,0.45);font-size:0.8rem;text-transform:uppercase;letter-spacing:2px;">
+    <div style="color: rgba(255,255,255,0.45);font-size: 0.8rem;text-transform: uppercase;letter-spacing: 2px;">
       Self-hosted Proxmox VM Manager
     </div>
   </div>
 
   {# Login card #}
-  <div style="background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.4);width:100%;max-width:420px;overflow:hidden;">
+  <div style="background: var(--bg-card);border-radius: 14px;box-shadow: 0 20px 60px rgba(0,0,0,0.4);width: 100%;max-width: 420px;overflow: hidden;">
 
     {# Card header #}
-    <div style="background:#f5f7fa;border-bottom:1px solid #e8ecf0;padding:1.25rem 2rem;text-align:center;">
-      <p style="color:#7a7a7a;font-size:0.85rem;font-weight:500;">Sign in to your account</p>
+    <div style="background: var(--bg-main);border-bottom: 1px solid var(--border-main);padding: 1.25rem 2rem;text-align: center;">
+      <p style="color: var(--text-muted);font-size: 0.85rem;font-weight: 500;">Sign in to your account</p>
     </div>
 
-    <div style="padding:2rem;">
+    <div style="padding: 2rem;">
       {# Messages #}
       {% if messages %}
         {% for message in messages %}
-          <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% else %}is-warning{% endif %} is-light" style="margin-bottom:1.25rem;padding:0.75rem 1rem;font-size:0.875rem;">
+          <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% else %}is-warning{% endif %} is-light" style="margin-bottom: 1.25rem;padding: 0.75rem 1rem;font-size: 0.875rem;">
             <button class="delete is-small" onclick="this.parentElement.remove()"></button>
             {{ message }}
           </div>
@@ -35,7 +35,7 @@
 
       {# Non-field errors from Django form #}
       {% if form.non_field_errors %}
-        <div class="notification is-danger is-light" style="margin-bottom:1.25rem;padding:0.75rem 1rem;font-size:0.875rem;">
+        <div class="notification is-danger is-light" style="margin-bottom: 1.25rem;padding: 0.75rem 1rem;font-size: 0.875rem;">
           {% for error in form.non_field_errors %}
             <p>{{ error }}</p>
           {% endfor %}
@@ -49,8 +49,8 @@
         {% endif %}
 
         {# Username #}
-        <div class="field" style="margin-bottom:1.25rem;">
-          <label class="label" style="font-size:0.85rem;color:#4a4a4a;font-weight:600;">Username or Email</label>
+        <div class="field" style="margin-bottom: 1.25rem;">
+          <label class="label" style="font-size: 0.85rem;color: var(--text-semi);font-weight: 600;">Username or Email</label>
           <div class="control has-icons-left">
             <input
               class="input is-medium {% if form.username.errors %}is-danger{% endif %}"
@@ -62,7 +62,7 @@
               autofocus
               autocomplete="username"
             >
-            <span class="icon is-left" style="color:#b5b5b5;">
+            <span class="icon is-left" style="color: var(--text-muted);">
               <i class="fas fa-user"></i>
             </span>
           </div>
@@ -72,8 +72,8 @@
         </div>
 
         {# Password #}
-        <div class="field" style="margin-bottom:1.75rem;">
-          <label class="label" style="font-size:0.85rem;color:#4a4a4a;font-weight:600;">Password</label>
+        <div class="field" style="margin-bottom: 1.75rem;">
+          <label class="label" style="font-size: 0.85rem;color: var(--text-semi);font-weight: 600;">Password</label>
           <div class="control has-icons-left">
             <input
               class="input is-medium {% if form.password.errors %}is-danger{% endif %}"
@@ -83,7 +83,7 @@
               placeholder="Enter your password"
               autocomplete="current-password"
             >
-            <span class="icon is-left" style="color:#b5b5b5;">
+            <span class="icon is-left" style="color: var(--text-muted);">
               <i class="fas fa-lock"></i>
             </span>
           </div>
@@ -95,15 +95,15 @@
         {# Sign in button #}
         <div class="field">
           <div class="control">
-            <button type="submit" class="button is-primary is-medium is-fullwidth" style="font-weight:600;letter-spacing:0.3px;">
+            <button type="submit" class="button is-primary is-medium is-fullwidth" style="font-weight: 600;letter-spacing: 0.3px;">
               <span class="icon"><i class="fas fa-sign-in-alt"></i></span>
               <span>Sign In</span>
             </button>
           </div>
         </div>
 
-        <div style="text-align:center;margin-top:1rem;">
-          <a href="{% url 'password_reset_request' %}" style="color:#3273dc;font-size:0.82rem;">
+        <div style="text-align: center;margin-top: 1rem;">
+          <a href="{% url 'password_reset_request' %}" style="color: var(--link-color);font-size: 0.82rem;">
             Forgot your password?
           </a>
         </div>
@@ -111,19 +111,19 @@
 
       {# Entra ID (Microsoft) SSO — only shown if configured #}
       {% if entra_enabled %}
-        <div style="display:flex;align-items:center;gap:1rem;margin:1.5rem 0;">
-          <div style="flex:1;height:1px;background:#e8ecf0;"></div>
-          <span style="color:#b5b5b5;font-size:0.8rem;white-space:nowrap;">or</span>
-          <div style="flex:1;height:1px;background:#e8ecf0;"></div>
+        <div style="display: flex;align-items: center;gap: 1rem;margin: 1.5rem 0;">
+          <div style="flex: 1;height: 1px;background: var(--border-main);"></div>
+          <span style="color: var(--text-muted);font-size: 0.8rem;white-space: nowrap;">or</span>
+          <div style="flex: 1;height: 1px;background: var(--border-main);"></div>
         </div>
 
-        <form method="post" action="{% url 'microsoft_login' %}" style="margin:0;">
+        <form method="post" action="{% url 'microsoft_login' %}" style="margin: 0;">
           {% csrf_token %}
           {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
           <button type="submit"
-             style="display:flex;align-items:center;width:100%;border:1px solid #8c8c8c;background:#fff;padding:0;border-radius:0;cursor:pointer;font-family:'Segoe UI',Frutiger,Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;color:#5e5e5e;transition:background 0.15s;"
+             style="display: flex;align-items: center;width: 100%;border: 1px solid var(--text-muted);background: var(--bg-card);padding: 0;border-radius: 0;cursor: pointer;font-family: 'Segoe UI',Frutiger,Helvetica,Arial,sans-serif;font-size: 15px;font-weight: 600;color: var(--text-semi);transition: background 0.15s;"
              onmouseover="this.style.background='#f3f3f3'" onmouseout="this.style.background='#fff'">
-            <span style="display:flex;align-items:center;justify-content:center;padding:10px 12px;border-right:1px solid #8c8c8c;background:#fff;flex-shrink:0;">
+            <span style="display: flex;align-items: center;justify-content: center;padding: 10px 12px;border-right: 1px solid var(--text-muted);background: var(--bg-card);flex-shrink: 0;">
               <svg width="21" height="21" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
                 <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
                 <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
@@ -131,15 +131,15 @@
                 <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
               </svg>
             </span>
-            <span style="flex:1;text-align:center;padding:10px 12px;">Sign in with Microsoft</span>
+            <span style="flex: 1;text-align: center;padding: 10px 12px;">Sign in with Microsoft</span>
           </button>
         </form>
       {% endif %}
 
       {# LDAP note if configured #}
       {% if ldap_enabled %}
-        <p style="text-align:center;color:#b5b5b5;font-size:0.78rem;margin-top:1rem;">
-          <i class="fas fa-building" style="margin-right:0.3rem;"></i>
+        <p style="text-align: center;color: var(--text-muted);font-size: 0.78rem;margin-top: 1rem;">
+          <i class="fas fa-building" style="margin-right: 0.3rem;"></i>
           LDAP authentication is enabled — use your directory credentials.
         </p>
       {% endif %}
@@ -147,7 +147,7 @@
   </div>
 
   {# Footer tagline #}
-  <div style="margin-top:2rem;text-align:center;color:rgba(255,255,255,0.25);font-size:0.75rem;">
+  <div style="margin-top: 2rem;text-align: center;color: rgba(255,255,255,0.25);font-size: 0.75rem;">
     ProxMigrate &mdash; by Backup Assure &mdash; Free &amp; Open Source
   </div>
 

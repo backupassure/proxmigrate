@@ -1,30 +1,30 @@
 {% if error %}
-  <div style="padding:1rem;color:#cc0f35;font-size:0.875rem;">
-    <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i> {{ error }}
+  <div style="padding: 1rem;color: var(--danger-color);font-size: 0.875rem;">
+    <i class="fas fa-exclamation-triangle" style="margin-right: 0.4rem;"></i> {{ error }}
   </div>
 
 {% elif templates %}
-  <div style="max-height:400px;overflow-y:auto;">
-    <table class="table is-fullwidth is-hoverable" style="margin:0;">
+  <div style="max-height: 400px;overflow-y: auto;">
+    <table class="table is-fullwidth is-hoverable" style="margin: 0;">
       <thead>
         <tr>
           <th>Template</th>
-          <th style="width:200px;text-align:right;">Action</th>
+          <th style="width: 200px;text-align: right;">Action</th>
         </tr>
       </thead>
       <tbody>
         {% for t in templates %}
         <tr>
-          <td style="vertical-align:middle;font-size:0.875rem;">
+          <td style="vertical-align: middle;font-size: 0.875rem;">
             {% if t.downloaded %}
-              <i class="fas fa-check-circle" style="color:#48c78e;margin-right:0.4rem;" title="Downloaded"></i>
+              <i class="fas fa-check-circle" style="color: var(--success-color);margin-right: 0.4rem;" title="Downloaded"></i>
             {% else %}
-              <i class="fas fa-cloud" style="color:#3273dc;margin-right:0.4rem;" title="Available to download"></i>
+              <i class="fas fa-cloud" style="color: var(--link-color);margin-right: 0.4rem;" title="Available to download"></i>
             {% endif %}
             {{ t.name }}
           </td>
-          <td style="vertical-align:middle;text-align:right;white-space:nowrap;">
-            <form method="post" action="{% url 'lxc_create_submit' %}" style="display:inline;">
+          <td style="vertical-align: middle;text-align: right;white-space: nowrap;">
+            <form method="post" action="{% url 'lxc_create_submit' %}" style="display: inline;">
               {% csrf_token %}
               <input type="hidden" name="template" value="{{ t.name }}">
               <input type="hidden" name="storage" value="{{ storage }}">
@@ -35,7 +35,7 @@
             </form>
             {% if t.downloaded %}
             <button class="button is-danger is-small is-outlined"
-                    style="margin-left:0.4rem;"
+                    style="margin-left: 0.4rem;"
                     hx-post="{% url 'lxc_template_delete' %}"
                     hx-vals='{"template": "{{ t.name }}", "storage": "{{ storage }}"}'
                     hx-target="#template-list"
@@ -54,8 +54,8 @@
   </div>
 
 {% else %}
-  <div style="padding:2rem;text-align:center;color:#7a7a7a;font-size:0.875rem;">
-    <i class="fas fa-inbox" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;color:#dbdbdb;"></i>
+  <div style="padding: 2rem;text-align: center;color: var(--text-muted);font-size: 0.875rem;">
+    <i class="fas fa-inbox" style="font-size: 1.5rem;display: block;margin-bottom: 0.5rem;color: var(--border-light);"></i>
     {% if section == 'available' %}
       No templates available. Check your Proxmox internet connection.
     {% else %}

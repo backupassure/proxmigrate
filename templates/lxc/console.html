@@ -237,8 +237,8 @@
       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f14668" stroke-width="2">
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
-      <div style="color:#f14668;font-size:0.9rem;">{{ error }}</div>
-      <a class="toolbar-btn" href="{% url 'lxc_detail' vmid %}" style="margin-top:0.5rem;">Back to Container</a>
+      <div style="color: var(--danger-color);font-size: 0.9rem;">{{ error }}</div>
+      <a class="toolbar-btn" href="{% url 'lxc_detail' vmid %}" style="margin-top: 0.5rem;">Back to Container</a>
     {% else %}
       <div class="status-spinner"></div>
       <div class="status-text" id="status-text">Connecting to console…</div>
@@ -263,7 +263,7 @@
         <button class="clipboard-btn primary" id="btn-send-to-vm">Send to Container</button>
       </div>
     </div>
-    <div class="clipboard-body" id="pane-copy" style="display:none;">
+    <div class="clipboard-body" id="pane-copy" style="display: none;">
       <textarea class="clipboard-textarea" id="copy-text" placeholder="Text copied by the container will appear here automatically…" readonly></textarea>
       <div class="clipboard-hint">When you copy text inside the container, it syncs here. Click Copy to put it on your local clipboard.</div>
       <div class="clipboard-actions">
@@ -314,11 +314,11 @@
       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
-      <div style="color:#f59e0b;font-size:0.9rem;">
+      <div style="color: var(--warning-color);font-size: 0.9rem;">
         Disconnected${e.detail.clean ? '' : ' unexpectedly'}.
       </div>
       <a href="/lxc/${d.vmid}/console/"
-         style="margin-top:0.5rem;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#d0d0d0;font-size:0.78rem;padding:0.3rem 0.75rem;border-radius:6px;text-decoration:none;">
+         style="margin-top: 0.5rem;background: rgba(255,255,255,0.08);border: 1px solid rgba(255,255,255,0.12);color: #d0d0d0;font-size: 0.78rem;padding: 0.3rem 0.75rem;border-radius: 6px;text-decoration: none;">
         Reconnect
       </a>`;
     overlay.style.display = 'flex';

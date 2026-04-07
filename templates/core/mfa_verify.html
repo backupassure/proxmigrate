@@ -2,30 +2,30 @@
 {% block title %}MFA Verification — ProxMigrate{% endblock %}
 
 {% block public_content %}
-<div style="min-height:100vh;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;">
+<div style="min-height: 100vh;background: linear-gradient(135deg,var(--bg-sidebar) 0%,var(--auth-gradient-mid) 50%,var(--auth-gradient-end) 100%);display: flex;flex-direction: column;align-items: center;justify-content: center;padding: 2rem;">
 
-  <div style="text-align:center;margin-bottom:2rem;">
-    <div style="font-size:2.5rem;color:#fff;font-weight:800;letter-spacing:-0.5px;margin-bottom:0.35rem;">
+  <div style="text-align: center;margin-bottom: 2rem;">
+    <div style="font-size: 2.5rem;color: var(--bg-card);font-weight: 800;letter-spacing: -0.5px;margin-bottom: 0.35rem;">
       &#9889; ProxMigrate
     </div>
-    <div style="color:rgba(255,255,255,0.45);font-size:0.8rem;text-transform:uppercase;letter-spacing:2px;">
+    <div style="color: rgba(255,255,255,0.45);font-size: 0.8rem;text-transform: uppercase;letter-spacing: 2px;">
       Two-Factor Authentication
     </div>
   </div>
 
-  <div style="background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.4);width:100%;max-width:420px;overflow:hidden;">
+  <div style="background: var(--bg-card);border-radius: 14px;box-shadow: 0 20px 60px rgba(0,0,0,0.4);width: 100%;max-width: 420px;overflow: hidden;">
 
-    <div style="background:#f5f7fa;border-bottom:1px solid #e8ecf0;padding:1.25rem 2rem;text-align:center;">
-      <p style="color:#7a7a7a;font-size:0.85rem;font-weight:500;">
-        <i class="fas fa-shield-alt" style="color:#3273dc;margin-right:0.3rem;"></i>
+    <div style="background: var(--bg-main);border-bottom: 1px solid var(--border-main);padding: 1.25rem 2rem;text-align: center;">
+      <p style="color: var(--text-muted);font-size: 0.85rem;font-weight: 500;">
+        <i class="fas fa-shield-alt" style="color: var(--link-color);margin-right: 0.3rem;"></i>
         Enter your authenticator code
       </p>
     </div>
 
-    <div style="padding:2rem;">
+    <div style="padding: 2rem;">
       {% if messages %}
         {% for message in messages %}
-          <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% else %}is-warning{% endif %} is-light" style="margin-bottom:1.25rem;padding:0.75rem 1rem;font-size:0.875rem;">
+          <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% else %}is-warning{% endif %} is-light" style="margin-bottom: 1.25rem;padding: 0.75rem 1rem;font-size: 0.875rem;">
             <button class="delete is-small" onclick="this.parentElement.remove()"></button>
             {{ message }}
           </div>
@@ -33,12 +33,12 @@
       {% endif %}
 
       {% if error %}
-        <div class="notification is-danger is-light" style="margin-bottom:1.25rem;padding:0.75rem 1rem;font-size:0.875rem;">
+        <div class="notification is-danger is-light" style="margin-bottom: 1.25rem;padding: 0.75rem 1rem;font-size: 0.875rem;">
           {{ error }}
         </div>
       {% endif %}
 
-      <p style="color:#7a7a7a;font-size:0.85rem;margin-bottom:1.5rem;line-height:1.6;">
+      <p style="color: var(--text-muted);font-size: 0.85rem;margin-bottom: 1.5rem;line-height: 1.6;">
         Open your authenticator app and enter the 6-digit code.
         You can also use a recovery code.
       </p>
@@ -46,7 +46,7 @@
       <form method="post" action="{% url 'mfa_verify' %}">
         {% csrf_token %}
 
-        <div class="field" style="margin-bottom:1.5rem;">
+        <div class="field" style="margin-bottom: 1.5rem;">
           <div class="control has-icons-left">
             <input
               class="input is-medium"
@@ -58,9 +58,9 @@
               autocomplete="one-time-code"
               inputmode="numeric"
               maxlength="8"
-              style="text-align:center;letter-spacing:0.3rem;font-size:1.3rem;font-weight:600;"
+              style="text-align: center;letter-spacing: 0.3rem;font-size: 1.3rem;font-weight: 600;"
             >
-            <span class="icon is-left" style="color:#b5b5b5;">
+            <span class="icon is-left" style="color: var(--text-muted);">
               <i class="fas fa-key"></i>
             </span>
           </div>
@@ -68,7 +68,7 @@
 
         <div class="field">
           <div class="control">
-            <button type="submit" class="button is-primary is-medium is-fullwidth" style="font-weight:600;">
+            <button type="submit" class="button is-primary is-medium is-fullwidth" style="font-weight: 600;">
               <span class="icon"><i class="fas fa-check-circle"></i></span>
               <span>Verify</span>
             </button>
@@ -76,20 +76,20 @@
         </div>
       </form>
 
-      <div style="text-align:center;margin-top:1.5rem;display:flex;flex-direction:column;gap:0.5rem;">
+      <div style="text-align: center;margin-top: 1.5rem;display: flex;flex-direction: column;gap: 0.5rem;">
         {% if allow_email_recovery %}
-          <a href="{% url 'mfa_email_recovery' %}" style="color:#3273dc;font-size:0.82rem;">
-            <i class="fas fa-envelope" style="margin-right:0.3rem;"></i> Email me a recovery code
+          <a href="{% url 'mfa_email_recovery' %}" style="color: var(--link-color);font-size: 0.82rem;">
+            <i class="fas fa-envelope" style="margin-right: 0.3rem;"></i> Email me a recovery code
           </a>
         {% endif %}
-        <a href="{% url 'login' %}" style="color:#7a7a7a;font-size:0.78rem;">
-          <i class="fas fa-arrow-left" style="margin-right:0.3rem;"></i> Back to Sign In
+        <a href="{% url 'login' %}" style="color: var(--text-muted);font-size: 0.78rem;">
+          <i class="fas fa-arrow-left" style="margin-right: 0.3rem;"></i> Back to Sign In
         </a>
       </div>
     </div>
   </div>
 
-  <div style="margin-top:2rem;text-align:center;color:rgba(255,255,255,0.25);font-size:0.75rem;">
+  <div style="margin-top: 2rem;text-align: center;color: rgba(255,255,255,0.25);font-size: 0.75rem;">
     ProxMigrate &mdash; by Backup Assure &mdash; Free &amp; Open Source
   </div>
 

@@ -7,37 +7,37 @@
      {% endif %}>
 
   {% if snap_error %}
-    <div class="notification is-warning is-light" style="margin-bottom:1rem;padding:0.75rem 1rem;font-size:0.85rem;">
-      <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i> {{ snap_error }}
+    <div class="notification is-warning is-light" style="margin-bottom: 1rem;padding: 0.75rem 1rem;font-size: 0.85rem;">
+      <i class="fas fa-exclamation-triangle" style="margin-right: 0.4rem;"></i> {{ snap_error }}
     </div>
   {% endif %}
 
   {% if snap_transitioning %}
-    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem;padding:0.65rem 1rem;background:#f0f4ff;border-radius:6px;font-size:0.85rem;color:#3273dc;font-weight:600;">
-      <span class="spinner" style="width:14px;height:14px;border-width:2px;"></span>
+    <div style="display: flex;align-items: center;gap: 0.6rem;margin-bottom: 1rem;padding: 0.65rem 1rem;background: var(--bg-info-light);border-radius: 6px;font-size: 0.85rem;color: var(--link-color);font-weight: 600;">
+      <span class="spinner" style="width: 14px;height: 14px;border-width: 2px;"></span>
       {{ snap_action_label|default:"Working…" }}
     </div>
   {% endif %}
 
   {# ── Create snapshot form ── #}
   {% if not snap_transitioning %}
-  <div style="display:flex;align-items:flex-end;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;">
-    <div style="flex:1;min-width:140px;max-width:220px;">
-      <label style="font-size:0.75rem;font-weight:600;color:#7a7a7a;display:block;margin-bottom:0.25rem;">Name</label>
+  <div style="display: flex;align-items: flex-end;gap: 0.75rem;margin-bottom: 1rem;flex-wrap: wrap;">
+    <div style="flex: 1;min-width: 140px;max-width: 220px;">
+      <label style="font-size: 0.75rem;font-weight: 600;color: var(--text-muted);display: block;margin-bottom: 0.25rem;">Name</label>
       <input class="input is-small" type="text" name="snapname" placeholder="my-snapshot" form="snap-create-form" required
              pattern="[a-zA-Z0-9][a-zA-Z0-9_\-]{0,39}" title="Alphanumeric, hyphens, underscores (max 40 chars)">
     </div>
-    <div style="flex:2;min-width:180px;">
-      <label style="font-size:0.75rem;font-weight:600;color:#7a7a7a;display:block;margin-bottom:0.25rem;">Description <span style="font-weight:400;">(optional)</span></label>
+    <div style="flex: 2;min-width: 180px;">
+      <label style="font-size: 0.75rem;font-weight: 600;color: var(--text-muted);display: block;margin-bottom: 0.25rem;">Description <span style="font-weight: 400;">(optional)</span></label>
       <input class="input is-small" type="text" name="description" placeholder="Before config change..." form="snap-create-form">
     </div>
     <form id="snap-create-form" method="post"
           hx-post="{% url 'lxc_snapshot_create' vmid %}"
           hx-target="#snapshot-table"
           hx-swap="outerHTML"
-          style="margin:0;">
+          style="margin: 0;">
       {% csrf_token %}
-      <button type="submit" class="button is-small is-primary" style="font-weight:600;">
+      <button type="submit" class="button is-small is-primary" style="font-weight: 600;">
         <span class="icon is-small"><i class="fas fa-camera"></i></span>
         <span>Take Snapshot</span>
       </button>
@@ -47,30 +47,30 @@
 
   {# ── Snapshot table ── #}
   {% if snapshots %}
-    <table class="table is-fullwidth is-hoverable" style="font-size:0.85rem;">
+    <table class="table is-fullwidth is-hoverable" style="font-size: 0.85rem;">
       <thead>
         <tr>
-          <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;padding-left:1.5rem;">Name</th>
-          <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Description</th>
-          <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;">Date</th>
-          <th style="font-size:0.75rem;color:#7a7a7a;font-weight:600;text-align:right;padding-right:1.5rem;">Actions</th>
+          <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;padding-left: 1.5rem;">Name</th>
+          <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;">Description</th>
+          <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;">Date</th>
+          <th style="font-size: 0.75rem;color: var(--text-muted);font-weight: 600;text-align: right;padding-right: 1.5rem;">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for snap in snapshots %}
         <tr>
-          <td style="font-family:monospace;font-size:0.82rem;padding-left:1.5rem;font-weight:600;">{{ snap.name }}</td>
-          <td style="color:#555;">{{ snap.description|default:"—" }}</td>
-          <td style="white-space:nowrap;color:#7a7a7a;">
+          <td style="font-family: monospace;font-size: 0.82rem;padding-left: 1.5rem;font-weight: 600;">{{ snap.name }}</td>
+          <td style="color: var(--text-semi);">{{ snap.description|default:"—" }}</td>
+          <td style="white-space: nowrap;color: var(--text-muted);">
             {% if snap.snaptime %}
               {{ snap.snaptime|date:"M j, Y H:i" }}
             {% else %}
               —
             {% endif %}
           </td>
-          <td style="text-align:right;padding-right:1.5rem;white-space:nowrap;">
+          <td style="text-align: right;padding-right: 1.5rem;white-space: nowrap;">
             {% if not snap_transitioning %}
-            <button class="button is-small is-warning is-light" style="font-weight:600;"
+            <button class="button is-small is-warning is-light" style="font-weight: 600;"
                     hx-post="{% url 'lxc_snapshot_action' vmid snap.name 'rollback' %}"
                     hx-target="#snapshot-table"
                     hx-swap="outerHTML"
@@ -79,7 +79,7 @@
               <span class="icon is-small"><i class="fas fa-undo"></i></span>
               <span>Rollback</span>
             </button>
-            <button class="button is-small is-danger is-light" style="font-weight:600;"
+            <button class="button is-small is-danger is-light" style="font-weight: 600;"
                     hx-post="{% url 'lxc_snapshot_action' vmid snap.name 'delete' %}"
                     hx-target="#snapshot-table"
                     hx-swap="outerHTML"
@@ -95,8 +95,8 @@
     </table>
   {% else %}
     {% if not snap_transitioning %}
-    <div style="padding:1.5rem;color:#7a7a7a;font-size:0.875rem;text-align:center;">
-      <i class="fas fa-camera" style="margin-right:0.4rem;opacity:0.5;"></i>
+    <div style="padding: 1.5rem;color: var(--text-muted);font-size: 0.875rem;text-align: center;">
+      <i class="fas fa-camera" style="margin-right: 0.4rem;opacity: 0.5;"></i>
       No snapshots yet. Create one using the form above.
     </div>
     {% endif %}

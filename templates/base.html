@@ -8,6 +8,32 @@
   <link rel="stylesheet" href="/static/vendor/css/bulma.min.css">
   <link rel="stylesheet" href="/static/vendor/css/all.min.css">
   <link rel="stylesheet" href="/static/css/proxmigrate.css">
+  <script>
+    window.applyTheme = function(theme) {
+      theme = theme || localStorage.getItem('proxmigrate_theme') || 'system';
+      const darkMode = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+      var cb = document.getElementById('theme-toggle-cb');
+      if (cb) { cb.checked = darkMode; }
+      var sel = document.getElementById('theme-selector');
+      if (sel) { sel.value = theme; }
+    };
+    window.toggleTheme = function() {
+      var current = document.documentElement.getAttribute('data-theme');
+      var next = current === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('proxmigrate_theme', next);
+      window.applyTheme(next);
+    };
+    (function() {
+      try {
+        window.applyTheme();
+        document.addEventListener('DOMContentLoaded', function() { window.applyTheme(); });
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+          if ((localStorage.getItem('proxmigrate_theme') || 'system') === 'system') window.applyTheme();
+        });
+      } catch (e) { console.error('Theme detection failed', e); }
+    })();
+  </script>
   {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -18,9 +44,9 @@
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="logo-title">&#9889; ProxMigrate</div>
-      <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.25rem;">
-        <img src="/static/images/backup_assure_logo.png" alt="Backup Assure" style="width:22px;height:22px;border-radius:50%;opacity:0.7;flex-shrink:0;">
-        <div class="logo-subtitle" style="margin-top:0;">by Backup Assure</div>
+      <div style="display: flex;align-items: center;gap: 0.5rem;margin-top: 0.25rem;">
+        <img src="/static/images/backup_assure_logo.png" alt="Backup Assure" style="width: 22px;height: 22px;border-radius: 50%;opacity: 0.7;flex-shrink: 0;">
+        <div class="logo-subtitle" style="margin-top: 0;">by Backup Assure</div>
       </div>
     </div>
     <nav class="sidebar-nav">
@@ -75,13 +101,22 @@
       <a href="{% url 'user_list' %}"><i class="fas fa-users"></i> Users</a>
       <a href="{% url 'mfa_setup' %}"><i class="fas fa-shield-alt"></i> MFA</a>
     </nav>
-    <div style="padding: 1rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.1);">
-      <div style="color: rgba(255,255,255,0.5); font-size: 0.75rem;">
-        <i class="fas fa-user-circle" style="margin-right:0.3rem;"></i>{{ request.user.username }}
+    <div style="padding: 1rem 1.5rem;border-top: 1px solid var(--border-sidebar);">
+      <div style="display: flex;align-items: center;justify-content: space-between;">
+        <div style="color: var(--text-sidebar);font-size: 0.75rem;">
+          <i class="fas fa-user-circle" style="margin-right: 0.3rem;"></i>{{ request.user.username }}
+        </div>
+        <label class="theme-switch" title="Toggle dark mode">
+          <input type="checkbox" id="theme-toggle-cb" onchange="toggleTheme()">
+          <span class="theme-slider">
+            <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+            <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          </span>
+        </label>
       </div>
       <form method="post" action="{% url 'logout' %}">
         {% csrf_token %}
-        <button type="submit" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:0.75rem;cursor:pointer;padding:0;margin-top:0.35rem;">
+        <button type="submit" style="background: none;border: none;color: var(--text-sidebar);font-size: 0.75rem;cursor: pointer;padding: 0;margin-top: 0.35rem;">
           <i class="fas fa-sign-out-alt"></i> Sign out
         </button>
       </form>
@@ -92,7 +127,7 @@
   <div class="main-content">
     <div class="page-header">
       <h1>{% block page_title %}Dashboard{% endblock %}</h1>
-      <div style="display:flex;gap:0.75rem;align-items:center;">
+      <div style="display: flex;gap: 0.75rem;align-items: center;">
         {% block page_actions %}{% endblock %}
         <button class="button is-light is-small" onclick="openHelp()">
           <span class="icon is-small"><i class="fas fa-question-circle"></i></span>
@@ -105,7 +140,7 @@
       {# Django messages #}
       {% if messages %}
         {% for message in messages %}
-          <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% elif message.tags == 'warning' %}is-warning{% else %}is-info{% endif %} is-light" style="margin-bottom:1rem;">
+          <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% elif message.tags == 'warning' %}is-warning{% else %}is-info{% endif %} is-light" style="margin-bottom: 1rem;">
             <button class="delete" onclick="this.parentElement.remove()"></button>
             {{ message }}
           </div>
@@ -124,13 +159,13 @@
   <div id="help-overlay" onclick="closeHelp()"></div>
   <div id="help-panel">
     <div id="help-panel-header">
-      <span><i class="fas fa-question-circle" style="margin-right:0.5rem;"></i>Help</span>
-      <button onclick="closeHelp()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:1.1rem;line-height:1;">
+      <span><i class="fas fa-question-circle" style="margin-right: 0.5rem;"></i>Help</span>
+      <button onclick="closeHelp()" style="background: none;border: none;color:  var(--bg-card);cursor: pointer;font-size: 1.1rem;line-height: 1;">
         <i class="fas fa-times"></i>
       </button>
     </div>
     <div id="help-panel-body">
-      <p style="color:#b5b5b5;font-style:italic;">Click Help to load content for this page.</p>
+      <p style="color: var(--text-muted);font-style: italic;">Click Help to load content for this page.</p>
     </div>
   </div>
 

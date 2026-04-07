@@ -1,31 +1,31 @@
 {% if not storage %}
-<div style="color:#9ca3af;font-size:0.83rem;padding:0.4rem 0;">
+<div style="color: var(--text-muted);font-size: 0.83rem;padding: 0.4rem 0;">
   Select a storage pool above to browse ISOs.
 </div>
 {% elif error %}
-<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:0.75rem 1rem;font-size:0.82rem;color:#991b1b;margin-top:0.5rem;">
-  <i class="fas fa-exclamation-circle" style="margin-right:0.4rem;"></i>
+<div style="background: var(--bg-danger-light);border: 1px solid var(--danger-color);border-radius: 6px;padding: 0.75rem 1rem;font-size: 0.82rem;color: var(--danger-color);margin-top: 0.5rem;">
+  <i class="fas fa-exclamation-circle" style="margin-right: 0.4rem;"></i>
   <strong>Could not load ISOs:</strong> {{ error }}
 </div>
 {% elif not isos %}
-<div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:0.75rem 1rem;font-size:0.82rem;color:#92400e;margin-top:0.5rem;">
-  <i class="fas fa-exclamation-triangle" style="color:#d97706;margin-right:0.4rem;"></i>
+<div style="background: var(--bg-warning-light);border: 1px solid var(--warning-color);border-radius: 6px;padding: 0.75rem 1rem;font-size: 0.82rem;color: var(--warning-color);margin-top: 0.5rem;">
+  <i class="fas fa-exclamation-triangle" style="color: var(--warning-color);margin-right: 0.4rem;"></i>
   No ISO files found in <strong>{{ storage }}</strong>.
 </div>
 {% else %}
-<div style="font-size:0.8rem;color:#6b7280;margin:0.5rem 0 0.4rem;">
+<div style="font-size: 0.8rem;color: var(--text-muted);margin: 0.5rem 0 0.4rem;">
   {{ isos|length }} ISO{{ isos|length|pluralize }} found — select one:
 </div>
-<div style="max-height:220px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;background:#fff;">
+<div style="max-height: 220px;overflow-y: auto;border: 1px solid var(--border-main);border-radius: 6px;background: var(--bg-card);">
   {% for iso in isos %}
-  <label style="display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.75rem;cursor:pointer;{% if not forloop.last %}border-bottom:1px solid #f3f4f6;{% endif %}">
-    <input type="radio" name="iso_proxmox_ref" value="{{ iso.vol_id }}" style="margin:0;flex-shrink:0;">
-    <span style="display:flex;flex-direction:column;min-width:0;">
-      <span style="font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-        <i class="fas fa-compact-disc" style="color:#9ca3af;margin-right:0.3rem;font-size:0.75rem;"></i>
+  <label style="display: flex;align-items: center;gap: 0.6rem;padding: 0.55rem 0.75rem;cursor: pointer;{% if not forloop.last %}border-bottom: 1px solid var(--border-light);{% endif %}">
+    <input type="radio" name="iso_proxmox_ref" value="{{ iso.vol_id }}" style="margin: 0;flex-shrink: 0;">
+    <span style="display: flex;flex-direction: column;min-width: 0;">
+      <span style="font-size: 0.82rem;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">
+        <i class="fas fa-compact-disc" style="color: var(--text-muted);margin-right: 0.3rem;font-size: 0.75rem;"></i>
         {{ iso.filename }}
       </span>
-      <span style="font-size:0.72rem;color:#9ca3af;font-family:monospace;">{{ iso.vol_id }}</span>
+      <span style="font-size: 0.72rem;color: var(--text-muted);font-family: monospace;">{{ iso.vol_id }}</span>
     </span>
   </label>
   {% endfor %}

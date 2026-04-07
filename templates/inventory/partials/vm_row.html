@@ -2,12 +2,12 @@
 {% load humanize %}
 <tr id="vm-row-{{ vm.vmid }}">
   <td class="vmid-col">{{ vm.vmid }}</td>
-  <td style="vertical-align:middle;">
-    <a href="{% url 'vm_detail' vm.vmid %}" style="font-weight:600;color:#1a1a2e;">
+  <td style="vertical-align: middle;">
+    <a href="{% url 'vm_detail' vm.vmid %}" style="font-weight: 600;color: var(--text-header);">
       {{ vm.name }}
     </a>
   </td>
-  <td style="vertical-align:middle;">
+  <td style="vertical-align: middle;">
     {% if vm.status == 'running' %}
       <span class="status-badge vm-status-running">Running</span>
     {% elif vm.status == 'stopped' %}
@@ -18,19 +18,19 @@
       <span class="status-badge vm-status-unknown">{{ vm.status }}</span>
     {% endif %}
   </td>
-  <td style="vertical-align:middle;">
+  <td style="vertical-align: middle;">
     {% if vm.status == 'running' %}
-      <span style="font-size:0.82rem;color:#4a4a4a;"
+      <span style="font-size: 0.82rem;color: var(--text-semi);"
             hx-get="/inventory/{{ vm.vmid }}/ip/"
             hx-trigger="load"
             hx-swap="innerHTML"
             hx-select="unset">—</span>
     {% else %}
-      <span style="font-size:0.82rem;color:#b5b5b5;">—</span>
+      <span style="font-size: 0.82rem;color: var(--text-muted);">—</span>
     {% endif %}
   </td>
-  <td style="vertical-align:middle;">
-    <span style="font-size:0.875rem;color:#4a4a4a;">
+  <td style="vertical-align: middle;">
+    <span style="font-size: 0.875rem;color: var(--text-semi);">
       {% if vm.status == 'running' %}
         {{ vm.cpu_pct }}%
       {% else %}
@@ -38,84 +38,84 @@
       {% endif %}
     </span>
   </td>
-  <td style="vertical-align:middle;">
-    <span style="font-size:0.875rem;color:#4a4a4a;">
+  <td style="vertical-align: middle;">
+    <span style="font-size: 0.875rem;color: var(--text-semi);">
       {% if vm.maxmem %}{{ vm.maxmem|filesizeformat }}{% else %}—{% endif %}
     </span>
   </td>
-  <td style="vertical-align:middle;">
-    <span style="font-size:0.82rem;color:#7a7a7a;">
+  <td style="vertical-align: middle;">
+    <span style="font-size: 0.82rem;color: var(--text-muted);">
       {% if vm.status == 'running' and vm.uptime %}{{ vm.uptime_human }}{% else %}—{% endif %}
     </span>
   </td>
-  <td style="vertical-align:middle;">
-    <span style="font-size:0.82rem;color:#7a7a7a;">{{ vm.node }}</span>
+  <td style="vertical-align: middle;">
+    <span style="font-size: 0.82rem;color: var(--text-muted);">{{ vm.node }}</span>
   </td>
-  <td style="vertical-align:middle;">
-    <div class="vm-actions" style="justify-content:flex-end;">
+  <td style="vertical-align: middle;">
+    <div class="vm-actions" style="justify-content: flex-end;">
       <div class="dropdown is-right vm-kebab" onclick="toggleKebab(event, this)">
         <div class="dropdown-trigger">
-          <button class="button is-small is-light" aria-haspopup="true" style="padding:0 0.6rem;">
+          <button class="button is-small is-light" aria-haspopup="true" style="padding: 0 0.6rem;">
             <i class="fas fa-ellipsis-v"></i>
           </button>
         </div>
-        <div class="dropdown-menu" role="menu" style="min-width:180px;">
-          <div class="dropdown-content" style="padding:0.35rem 0;">
+        <div class="dropdown-menu" role="menu" style="min-width: 180px;">
+          <div class="dropdown-content" style="padding: 0.35rem 0;">
             {% if vm.status == 'running' %}
-              <a class="dropdown-item" style="font-size:0.82rem;"
+              <a class="dropdown-item" style="font-size: 0.82rem;"
                  hx-post="/inventory/{{ vm.vmid }}/action/shutdown/"
                  hx-target="#vm-row-{{ vm.vmid }}"
                  hx-swap="outerHTML"
                  hx-confirm="Gracefully shut down {{ vm.name }}?">
-                <i class="fas fa-power-off" style="width:1.2rem;color:#f59e0b;"></i> Shutdown
+                <i class="fas fa-power-off" style="width: 1.2rem;color: var(--warning-color);"></i> Shutdown
               </a>
-              <a class="dropdown-item" style="font-size:0.82rem;"
+              <a class="dropdown-item" style="font-size: 0.82rem;"
                  hx-post="/inventory/{{ vm.vmid }}/action/stop/"
                  hx-target="#vm-row-{{ vm.vmid }}"
                  hx-swap="outerHTML"
                  hx-confirm="Force stop {{ vm.name }}? Unsaved data may be lost.">
-                <i class="fas fa-stop" style="width:1.2rem;color:var(--danger-color, #f14668);"></i> Force Stop
+                <i class="fas fa-stop" style="width: 1.2rem;color: var(--danger-color);"></i> Force Stop
               </a>
-              <a class="dropdown-item" style="font-size:0.82rem;"
+              <a class="dropdown-item" style="font-size: 0.82rem;"
                  hx-post="/inventory/{{ vm.vmid }}/action/reboot/"
                  hx-target="#vm-row-{{ vm.vmid }}"
                  hx-swap="outerHTML"
                  hx-confirm="Reboot {{ vm.name }}?">
-                <i class="fas fa-redo" style="width:1.2rem;color:var(--info-color, #3273dc);"></i> Reboot
+                <i class="fas fa-redo" style="width: 1.2rem;color: var(--link-color);"></i> Reboot
               </a>
-              <a class="dropdown-item" href="{% url 'vm_console' vm.vmid %}" target="_blank" style="font-size:0.82rem;">
-                <i class="fas fa-terminal" style="width:1.2rem;color:#1a1a2e;"></i> Console
+              <a class="dropdown-item" href="{% url 'vm_console' vm.vmid %}" target="_blank" style="font-size: 0.82rem;">
+                <i class="fas fa-terminal" style="width: 1.2rem;color: var(--text-header);"></i> Console
               </a>
             {% elif vm.status == 'stopped' %}
-              <a class="dropdown-item" style="font-size:0.82rem;"
+              <a class="dropdown-item" style="font-size: 0.82rem;"
                  hx-post="/inventory/{{ vm.vmid }}/action/start/"
                  hx-target="#vm-row-{{ vm.vmid }}"
                  hx-swap="outerHTML">
-                <i class="fas fa-play" style="width:1.2rem;color:var(--success-color, #48c78e);"></i> Start
+                <i class="fas fa-play" style="width: 1.2rem;color: var(--success-color);"></i> Start
               </a>
             {% elif vm.status == 'paused' %}
-              <a class="dropdown-item" style="font-size:0.82rem;"
+              <a class="dropdown-item" style="font-size: 0.82rem;"
                  hx-post="/inventory/{{ vm.vmid }}/action/resume/"
                  hx-target="#vm-row-{{ vm.vmid }}"
                  hx-swap="outerHTML">
-                <i class="fas fa-play" style="width:1.2rem;color:#f59e0b;"></i> Resume
+                <i class="fas fa-play" style="width: 1.2rem;color: var(--warning-color);"></i> Resume
               </a>
             {% endif %}
-            <hr class="dropdown-divider" style="margin:0.25rem 0;">
-            <a class="dropdown-item" href="{% url 'vm_clone' vm.vmid %}" style="font-size:0.82rem;">
-              <i class="fas fa-clone" style="width:1.2rem;color:var(--link-color, #3273dc);"></i> Clone
+            <hr class="dropdown-divider" style="margin: 0.25rem 0;">
+            <a class="dropdown-item" href="{% url 'vm_clone' vm.vmid %}" style="font-size: 0.82rem;">
+              <i class="fas fa-clone" style="width: 1.2rem;color: var(--link-color);"></i> Clone
             </a>
-            <a class="dropdown-item" href="{% url 'export_options' vm.vmid %}" style="font-size:0.82rem;">
-              <i class="fas fa-file-export" style="width:1.2rem;color:var(--info-color, #3273dc);"></i> Export VM
+            <a class="dropdown-item" href="{% url 'export_options' vm.vmid %}" style="font-size: 0.82rem;">
+              <i class="fas fa-file-export" style="width: 1.2rem;color: var(--link-color);"></i> Export VM
             </a>
-            <a class="dropdown-item" href="{% url 'vm_detail' vm.vmid %}" style="font-size:0.82rem;">
-              <i class="fas fa-info-circle" style="width:1.2rem;color:var(--text-muted, #7a7a7a);"></i> Details
+            <a class="dropdown-item" href="{% url 'vm_detail' vm.vmid %}" style="font-size: 0.82rem;">
+              <i class="fas fa-info-circle" style="width: 1.2rem;color: var(--text-muted);"></i> Details
             </a>
             {% if vm.status == 'stopped' %}
-              <hr class="dropdown-divider" style="margin:0.25rem 0;">
-              <a class="dropdown-item" style="font-size:0.82rem;color:var(--danger-color, #f14668);"
+              <hr class="dropdown-divider" style="margin: 0.25rem 0;">
+              <a class="dropdown-item" style="font-size: 0.82rem;color: var(--danger-color);"
                  onclick="event.preventDefault();toggleKebab(event, this.closest('.vm-kebab'));openDeleteModal('{{ vm.vmid }}', '{{ vm.name|escapejs }}')">
-                <i class="fas fa-trash-alt" style="width:1.2rem;"></i> Delete
+                <i class="fas fa-trash-alt" style="width: 1.2rem;"></i> Delete
               </a>
             {% endif %}
           </div>

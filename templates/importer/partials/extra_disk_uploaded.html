@@ -1,8 +1,8 @@
-<div style="display:flex;align-items:center;gap:0.6rem;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:0.5rem 0.75rem;">
-  <i class="fas fa-check-circle" style="color:#16a34a;flex-shrink:0;"></i>
-  <div style="min-width:0;">
-    <div style="font-size:0.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ filename }}</div>
-    <div style="font-size:0.72rem;color:#6b7280;">{{ size_mb }} MB — ready to import</div>
+<div style="display: flex;align-items: center;gap: 0.6rem;background: var(--bg-success-light);border: 1px solid var(--border-success);border-radius: 6px;padding: 0.5rem 0.75rem;">
+  <i class="fas fa-check-circle" style="color: var(--text-success-dark);flex-shrink: 0;"></i>
+  <div style="min-width: 0;">
+    <div style="font-size: 0.82rem;font-weight: 600;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">{{ filename }}</div>
+    <div style="font-size: 0.72rem;color: var(--text-muted);">{{ size_mb }} MB — ready to import</div>
   </div>
   <input type="hidden" class="extra-disk-file-id" value="{{ file_id }}">
 </div>

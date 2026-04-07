@@ -5,9 +5,9 @@
 {% block wizard_content %}
 <div class="wizard-card">
   <div class="wizard-card-header">
-    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
-      <div style="width:40px;height:40px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i class="fas fa-key" style="color:#48c78e;font-size:1.1rem;"></i>
+    <div style="display: flex;align-items: center;gap: 0.75rem;margin-bottom: 0.5rem;">
+      <div style="width: 40px;height: 40px;border-radius: 10px;background: var(--bg-success-light);display: flex;align-items: center;justify-content: center;flex-shrink: 0;">
+        <i class="fas fa-key" style="color: var(--success-color);font-size: 1.1rem;"></i>
       </div>
       <h2>SSH Key Setup</h2>
     </div>
@@ -17,7 +17,7 @@
   <div class="wizard-card-body">
 
     {# Security info box #}
-    <div class="info-box" style="margin-bottom:1.5rem;">
+    <div class="info-box" style="margin-bottom: 1.5rem;">
       <div class="info-box-icon"><i class="fas fa-shield-alt"></i></div>
       <div>
         <strong>Your password is used once and never stored.</strong>
@@ -27,24 +27,24 @@
 
     {# Error display #}
     {% if error %}
-      <div class="notification is-danger is-light" style="font-size:0.875rem;margin-bottom:1.25rem;">
+      <div class="notification is-danger is-light" style="font-size: 0.875rem;margin-bottom: 1.25rem;">
         <button class="delete" onclick="this.parentElement.remove()"></button>
-        <strong><i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>SSH key copy failed</strong>
-        <p style="margin-top:0.35rem;">{{ error }}</p>
+        <strong><i class="fas fa-exclamation-triangle" style="margin-right: 0.4rem;"></i>SSH key copy failed</strong>
+        <p style="margin-top: 0.35rem;">{{ error }}</p>
       </div>
     {% endif %}
 
     {# Public key display #}
-    <div class="field" style="margin-bottom:1.5rem;">
-      <label class="label" style="font-weight:600;color:#1a1a2e;">ProxMigrate Public Key</label>
-      <p class="field-hint" style="margin-bottom:0.5rem;">This key will be added to <code>~/.ssh/authorized_keys</code> on your Proxmox host.</p>
+    <div class="field" style="margin-bottom: 1.5rem;">
+      <label class="label" style="font-weight: 600;color: var(--text-header);">ProxMigrate Public Key</label>
+      <p class="field-hint" style="margin-bottom: 0.5rem;">This key will be added to <code>~/.ssh/authorized_keys</code> on your Proxmox host.</p>
       <div class="key-display" id="public-key-box">{{ public_key }}</div>
-      <div style="margin-top:0.5rem;">
+      <div style="margin-top: 0.5rem;">
         <button type="button" class="button is-small is-light" onclick="copyPublicKey()">
           <span class="icon is-small"><i class="fas fa-copy"></i></span>
           <span>Copy to Clipboard</span>
         </button>
-        <span id="copy-feedback" style="display:none;margin-left:0.5rem;color:#48c78e;font-size:0.8rem;">
+        <span id="copy-feedback" style="display: none;margin-left: 0.5rem;color: var(--success-color);font-size: 0.8rem;">
           <i class="fas fa-check"></i> Copied!
         </span>
       </div>
@@ -54,10 +54,10 @@
     <form method="post" action="{% url 'wizard_step2' %}" id="step2-form">
       {% csrf_token %}
 
-      <div class="field" style="margin-bottom:1.5rem;">
-        <label class="label" style="font-weight:600;color:#1a1a2e;">
+      <div class="field" style="margin-bottom: 1.5rem;">
+        <label class="label" style="font-weight: 600;color: var(--text-header);">
           Proxmox Root Password
-          <span style="color:#f14668;">*</span>
+          <span style="color: var(--danger-color);">*</span>
         </label>
         <div class="control has-icons-left">
           <input
@@ -70,7 +70,7 @@
             autocomplete="off"
             required
           >
-          <span class="icon is-left"><i class="fas fa-lock" style="color:#b5b5b5;"></i></span>
+          <span class="icon is-left"><i class="fas fa-lock" style="color: var(--text-muted);"></i></span>
         </div>
         {% for error in form.root_password.errors %}
           <p class="help is-danger">{{ error }}</p>
@@ -83,12 +83,12 @@
 
       {# Host fingerprint warning #}
       {% if host_fingerprint %}
-        <div class="info-box is-warning" style="margin-bottom:1.25rem;">
+        <div class="info-box is-warning" style="margin-bottom: 1.25rem;">
           <div class="info-box-icon"><i class="fas fa-fingerprint"></i></div>
           <div>
             <strong>Host fingerprint:</strong>
-            <code style="display:block;margin-top:0.25rem;word-break:break-all;">{{ host_fingerprint }}</code>
-            <p style="margin-top:0.35rem;margin-bottom:0;font-size:0.8rem;">
+            <code style="display: block;margin-top: 0.25rem;word-break: break-all;">{{ host_fingerprint }}</code>
+            <p style="margin-top: 0.35rem;margin-bottom: 0;font-size: 0.8rem;">
               Verify this matches the fingerprint shown on your Proxmox console before proceeding.
             </p>
           </div>
@@ -99,16 +99,16 @@
   </div>
 
   <div class="wizard-card-footer">
-    <a href="{% url 'wizard_step1' %}" class="button is-light" style="font-weight:500;">
+    <a href="{% url 'wizard_step1' %}" class="button is-light" style="font-weight: 500;">
       <span class="icon"><i class="fas fa-arrow-left"></i></span>
       <span>Back</span>
     </a>
-    <div style="display:flex;align-items:center;gap:0.75rem;">
-      <span id="step2-spinner" style="display:none;">
+    <div style="display: flex;align-items: center;gap: 0.75rem;">
+      <span id="step2-spinner" style="display: none;">
         <span class="spinner"></span>
-        <span style="font-size:0.85rem;color:#7a7a7a;margin-left:0.4rem;">Copying key...</span>
+        <span style="font-size: 0.85rem;color: var(--text-muted);margin-left: 0.4rem;">Copying key...</span>
       </span>
-      <button type="submit" form="step2-form" class="button is-primary is-medium" style="font-weight:600;min-width:220px;" id="step2-btn">
+      <button type="submit" form="step2-form" class="button is-primary is-medium" style="font-weight: 600;min-width: 220px;" id="step2-btn">
         <span class="icon"><i class="fas fa-key"></i></span>
         <span>Copy Key &amp; Continue</span>
         <span class="icon"><i class="fas fa-arrow-right"></i></span>

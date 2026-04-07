@@ -15,33 +15,33 @@
 
 {% block configure_banner %}
   {# Manifest info banner — shown above the configure form #}
-  <div style="background:linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);border:1px solid #bfdbfe;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:1rem;">
-    <div style="flex-shrink:0;width:40px;height:40px;border-radius:8px;background:#3273dc;display:flex;align-items:center;justify-content:center;">
-      <i class="fas fa-file-import" style="color:#fff;font-size:1rem;"></i>
+  <div style="background: linear-gradient(135deg,var(--bg-info-light) 0%,var(--bg-success-light) 100%);border: 1px solid var(--border-info);border-radius: 10px;padding: 1rem 1.25rem;margin-bottom: 1.5rem;display: flex;align-items: flex-start;gap: 1rem;">
+    <div style="flex-shrink: 0;width: 40px;height: 40px;border-radius: 8px;background: var(--link-color);display: flex;align-items: center;justify-content: center;">
+      <i class="fas fa-file-import" style="color: var(--bg-card);font-size: 1rem;"></i>
     </div>
-    <div style="flex:1;min-width:0;">
-      <div style="font-weight:700;color:#1a1a2e;font-size:0.95rem;margin-bottom:0.35rem;">
+    <div style="flex: 1;min-width: 0;">
+      <div style="font-weight: 700;color: var(--text-header);font-size: 0.95rem;margin-bottom: 0.35rem;">
         Importing from .px package
       </div>
-      <div style="font-size:0.83rem;color:#4a4a4a;line-height:1.6;">
-        <span style="margin-right:1.25rem;">
-          <i class="fas fa-server" style="color:#3273dc;margin-right:0.3rem;"></i>
+      <div style="font-size: 0.83rem;color: var(--text-semi);line-height: 1.6;">
+        <span style="margin-right: 1.25rem;">
+          <i class="fas fa-server" style="color: var(--link-color);margin-right: 0.3rem;"></i>
           <strong>Source VM:</strong> {{ manifest.vm.name|default:"Unknown" }}
           (VMID {{ manifest.vm.vmid|default:"?" }})
         </span>
-        <span style="margin-right:1.25rem;">
-          <i class="fas fa-hdd" style="color:#3273dc;margin-right:0.3rem;"></i>
+        <span style="margin-right: 1.25rem;">
+          <i class="fas fa-hdd" style="color: var(--link-color);margin-right: 0.3rem;"></i>
           <strong>{{ manifest_disks|length }}</strong> disk{% if manifest_disks|length != 1 %}s{% endif %}
           ({% for d in manifest_disks %}{{ d.size }}{% if not forloop.last %}, {% endif %}{% endfor %})
         </span>
         {% if manifest.exported_at %}
         <span>
-          <i class="fas fa-calendar" style="color:#7a7a7a;margin-right:0.3rem;"></i>
+          <i class="fas fa-calendar" style="color: var(--text-muted);margin-right: 0.3rem;"></i>
           Exported {{ manifest.exported_at|slice:":10" }}
         </span>
         {% endif %}
       </div>
-      <div style="font-size:0.78rem;color:#7a7a7a;margin-top:0.4rem;">
+      <div style="font-size: 0.78rem;color: var(--text-muted);margin-top: 0.4rem;">
         All settings are pre-filled from the package. Review and adjust as needed for this Proxmox server, then click <strong>Deploy VM</strong>.
       </div>
     </div>

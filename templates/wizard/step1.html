@@ -5,9 +5,9 @@
 {% block wizard_content %}
 <div class="wizard-card">
   <div class="wizard-card-header">
-    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
-      <div style="width:40px;height:40px;border-radius:10px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i class="fas fa-network-wired" style="color:#3273dc;font-size:1.1rem;"></i>
+    <div style="display: flex;align-items: center;gap: 0.75rem;margin-bottom: 0.5rem;">
+      <div style="width: 40px;height: 40px;border-radius: 10px;background: var(--bg-info-light);display: flex;align-items: center;justify-content: center;flex-shrink: 0;">
+        <i class="fas fa-network-wired" style="color: var(--link-color);font-size: 1.1rem;"></i>
       </div>
       <h2>Connect to Proxmox Host</h2>
     </div>
@@ -16,11 +16,11 @@
 
   <div id="step1-form-area">
     {% if error %}
-      <div style="padding:0 2rem;">
-        <div class="notification is-danger is-light" style="font-size:0.875rem;">
+      <div style="padding: 0 2rem;">
+        <div class="notification is-danger is-light" style="font-size: 0.875rem;">
           <button class="delete" onclick="this.parentElement.remove()"></button>
-          <strong><i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i>Connection failed</strong>
-          <p style="margin-top:0.35rem;">{{ error }}</p>
+          <strong><i class="fas fa-exclamation-triangle" style="margin-right: 0.4rem;"></i>Connection failed</strong>
+          <p style="margin-top: 0.35rem;">{{ error }}</p>
         </div>
       </div>
     {% endif %}
@@ -33,10 +33,10 @@
       <div class="wizard-card-body">
 
         {# Host/IP #}
-        <div class="field" style="margin-bottom:1.5rem;">
-          <label class="label" style="font-weight:600;color:#1a1a2e;">
+        <div class="field" style="margin-bottom: 1.5rem;">
+          <label class="label" style="font-weight: 600;color: var(--text-header);">
             Proxmox Host
-            <span style="color:#f14668;">*</span>
+            <span style="color: var(--danger-color);">*</span>
           </label>
           <div class="control has-icons-left">
             <input
@@ -49,10 +49,10 @@
               autofocus
               required
             >
-            <span class="icon is-left"><i class="fas fa-server" style="color:#b5b5b5;"></i></span>
+            <span class="icon is-left"><i class="fas fa-server" style="color: var(--text-muted);"></i></span>
           </div>
           {% for error in form.host.errors %}
-            <p class="help is-danger"><i class="fas fa-exclamation-circle" style="margin-right:0.3rem;"></i>{{ error }}</p>
+            <p class="help is-danger"><i class="fas fa-exclamation-circle" style="margin-right: 0.3rem;"></i>{{ error }}</p>
           {% endfor %}
           <p class="field-hint">Hostname or IP address of your Proxmox VE server</p>
         </div>
@@ -61,7 +61,7 @@
           {# SSH Port #}
           <div class="column">
             <div class="field">
-              <label class="label" style="font-weight:600;color:#1a1a2e;">SSH Port</label>
+              <label class="label" style="font-weight: 600;color: var(--text-header);">SSH Port</label>
               <div class="control has-icons-left">
                 <input
                   class="input {% if form.ssh_port.errors %}is-danger{% endif %}"
@@ -72,7 +72,7 @@
                   min="1" max="65535"
                   required
                 >
-                <span class="icon is-left"><i class="fas fa-terminal" style="color:#b5b5b5;"></i></span>
+                <span class="icon is-left"><i class="fas fa-terminal" style="color: var(--text-muted);"></i></span>
               </div>
               {% for error in form.ssh_port.errors %}
                 <p class="help is-danger">{{ error }}</p>
@@ -84,7 +84,7 @@
           {# API Port #}
           <div class="column">
             <div class="field">
-              <label class="label" style="font-weight:600;color:#1a1a2e;">API Port</label>
+              <label class="label" style="font-weight: 600;color: var(--text-header);">API Port</label>
               <div class="control has-icons-left">
                 <input
                   class="input {% if form.api_port.errors %}is-danger{% endif %}"
@@ -95,7 +95,7 @@
                   min="1" max="65535"
                   required
                 >
-                <span class="icon is-left"><i class="fas fa-plug" style="color:#b5b5b5;"></i></span>
+                <span class="icon is-left"><i class="fas fa-plug" style="color: var(--text-muted);"></i></span>
               </div>
               {% for error in form.api_port.errors %}
                 <p class="help is-danger">{{ error }}</p>
@@ -106,7 +106,7 @@
         </div>
 
         {# Info box #}
-        <div class="info-box" style="margin-top:0.5rem;">
+        <div class="info-box" style="margin-top: 0.5rem;">
           <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
           <div>
             <strong>Network access required</strong> — Make sure this server can reach your Proxmox host on both the SSH port (22) and API port (8006). Firewalls or NAT may need to be configured.
@@ -115,13 +115,13 @@
       </div>
 
       <div class="wizard-card-footer">
-        <div style="display:flex;align-items:center;gap:0.75rem;">
-          <span id="step1-spinner" style="display:none;">
+        <div style="display: flex;align-items: center;gap: 0.75rem;">
+          <span id="step1-spinner" style="display: none;">
             <span class="spinner"></span>
-            <span style="font-size:0.85rem;color:#7a7a7a;margin-left:0.4rem;">Testing connectivity...</span>
+            <span style="font-size: 0.85rem;color: var(--text-muted);margin-left: 0.4rem;">Testing connectivity...</span>
           </span>
         </div>
-        <button type="submit" class="button is-primary is-medium" style="font-weight:600;min-width:200px;" id="step1-btn">
+        <button type="submit" class="button is-primary is-medium" style="font-weight: 600;min-width: 200px;" id="step1-btn">
           <span>Test &amp; Continue</span>
           <span class="icon"><i class="fas fa-arrow-right"></i></span>
         </button>
