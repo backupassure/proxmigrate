@@ -5,7 +5,10 @@
 
 {% block extra_head %}
 <style>
-  .vm-kebab .dropdown-menu { z-index: 30; }
+  .vm-kebab .dropdown-menu {
+    z-index: 30;
+    position: fixed !important;
+  }
   .vm-kebab .dropdown-item { display:flex; align-items:center; gap:0.5rem; padding:0.4rem 1rem; }
   .vm-kebab .dropdown-item:hover { background:var(--bg-card, #f5f5f5); }
 </style>
@@ -393,6 +396,38 @@
       if (k !== el) k.classList.remove('is-active');
     });
     el.classList.toggle('is-active');
+
+    // Position the fixed dropdown relative to the trigger button
+    if (el.classList.contains('is-active')) {
+      var btn = el.querySelector('.dropdown-trigger button');
+      var menu = el.querySelector('.dropdown-menu');
+      if (btn && menu) {
+        var rect = btn.getBoundingClientRect();
+        // Temporarily show to measure height
+        menu.style.visibility = 'hidden';
+        menu.style.display = 'block';
+        var menuHeight = menu.offsetHeight;
+        var menuWidth = menu.offsetWidth;
+        menu.style.visibility = '';
+        menu.style.display = '';
+
+        // Position right-aligned below the button
+        var left = rect.right - menuWidth;
+        var top = rect.bottom + 4;
+
+        // If not enough room below, expand upward
+        if (top + menuHeight > window.innerHeight - 8) {
+          top = rect.top - menuHeight - 4;
+        }
+        // Clamp to viewport
+        if (left < 8) left = 8;
+        if (top < 8) top = 8;
+
+        menu.style.left = left + 'px';
+        menu.style.top = top + 'px';
+        menu.style.right = 'auto';
+      }
+    }
   }
 
   // Close kebab on click outside
@@ -403,6 +438,13 @@
       });
     }
   });
+
+  // Close kebab on scroll (since menu is position:fixed)
+  document.addEventListener('scroll', function() {
+    document.querySelectorAll('.vm-kebab.is-active').forEach(function(k) {
+      k.classList.remove('is-active');
+    });
+  }, true);
 
   // ===== Delete VM modal =====
   let deleteTargetVmid = '';

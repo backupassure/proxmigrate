@@ -44,49 +44,60 @@
   </td>
   <td style="vertical-align: middle;">
     <div class="vm-actions" style="justify-content: flex-end;">
-      {% if ct.status == 'running' %}
-        <button class="button is-warning is-light is-small"
-                hx-post="/lxc/{{ ct.vmid }}/action/shutdown/"
-                hx-target="#ct-row-{{ ct.vmid }}"
-                hx-swap="outerHTML"
-                hx-confirm="Gracefully shut down {{ ct.name }}?"
-                title="Shutdown">
-          <i class="fas fa-power-off"></i>
-        </button>
-        <button class="button is-danger is-light is-small"
-                hx-post="/lxc/{{ ct.vmid }}/action/stop/"
-                hx-target="#ct-row-{{ ct.vmid }}"
-                hx-swap="outerHTML"
-                hx-confirm="Force stop {{ ct.name }}? Unsaved data may be lost."
-                title="Force Stop">
-          <i class="fas fa-stop"></i>
-        </button>
-        <button class="button is-info is-light is-small"
-                hx-post="/lxc/{{ ct.vmid }}/action/reboot/"
-                hx-target="#ct-row-{{ ct.vmid }}"
-                hx-swap="outerHTML"
-                hx-confirm="Reboot {{ ct.name }}?"
-                title="Reboot">
-          <i class="fas fa-redo"></i>
-        </button>
-      {% elif ct.status == 'stopped' %}
-        <button class="button is-success is-light is-small"
-                hx-post="/lxc/{{ ct.vmid }}/action/start/"
-                hx-target="#ct-row-{{ ct.vmid }}"
-                hx-swap="outerHTML"
-                title="Start">
-          <span class="icon is-small"><i class="fas fa-play"></i></span>
-          <span>Start</span>
-        </button>
-      {% endif %}
-      {% if ct.status == 'running' %}
-        <a href="{% url 'lxc_console' ct.vmid %}" target="_blank" class="button is-dark is-small" title="Console">
-          <i class="fas fa-terminal"></i>
-        </a>
-      {% endif %}
-      <a href="{% url 'lxc_detail' ct.vmid %}" class="button is-light is-small" title="Details">
-        <i class="fas fa-info-circle"></i>
-      </a>
+      <div class="dropdown is-right ct-kebab" onclick="toggleKebab(event, this)">
+        <div class="dropdown-trigger">
+          <button class="button is-small is-light" aria-haspopup="true" style="padding: 0 0.6rem;">
+            <i class="fas fa-ellipsis-v"></i>
+          </button>
+        </div>
+        <div class="dropdown-menu" role="menu" style="min-width: 180px;">
+          <div class="dropdown-content" style="padding: 0.35rem 0;">
+            {% if ct.status == 'running' %}
+              <a class="dropdown-item" style="font-size: 0.82rem;"
+                 hx-post="/lxc/{{ ct.vmid }}/action/shutdown/"
+                 hx-target="#ct-row-{{ ct.vmid }}"
+                 hx-swap="outerHTML"
+                 hx-confirm="Gracefully shut down {{ ct.name }}?">
+                <i class="fas fa-power-off" style="width: 1.2rem;color: var(--warning-color);"></i> Shutdown
+              </a>
+              <a class="dropdown-item" style="font-size: 0.82rem;"
+                 hx-post="/lxc/{{ ct.vmid }}/action/stop/"
+                 hx-target="#ct-row-{{ ct.vmid }}"
+                 hx-swap="outerHTML"
+                 hx-confirm="Force stop {{ ct.name }}? Unsaved data may be lost.">
+                <i class="fas fa-stop" style="width: 1.2rem;color: var(--danger-color);"></i> Force Stop
+              </a>
+              <a class="dropdown-item" style="font-size: 0.82rem;"
+                 hx-post="/lxc/{{ ct.vmid }}/action/reboot/"
+                 hx-target="#ct-row-{{ ct.vmid }}"
+                 hx-swap="outerHTML"
+                 hx-confirm="Reboot {{ ct.name }}?">
+                <i class="fas fa-redo" style="width: 1.2rem;color: var(--link-color);"></i> Reboot
+              </a>
+              <a class="dropdown-item" href="{% url 'lxc_console' ct.vmid %}" target="_blank" style="font-size: 0.82rem;">
+                <i class="fas fa-terminal" style="width: 1.2rem;color: var(--text-header);"></i> Console
+              </a>
+            {% elif ct.status == 'stopped' %}
+              <a class="dropdown-item" style="font-size: 0.82rem;"
+                 hx-post="/lxc/{{ ct.vmid }}/action/start/"
+                 hx-target="#ct-row-{{ ct.vmid }}"
+                 hx-swap="outerHTML">
+                <i class="fas fa-play" style="width: 1.2rem;color: var(--success-color);"></i> Start
+              </a>
+            {% endif %}
+            <hr class="dropdown-divider" style="margin: 0.25rem 0;">
+            <a class="dropdown-item" href="{% url 'lxc_clone' ct.vmid %}" style="font-size: 0.82rem;">
+              <i class="fas fa-clone" style="width: 1.2rem;color: var(--link-color);"></i> Clone
+            </a>
+            <a class="dropdown-item" href="{% url 'lxc_export_options' ct.vmid %}" style="font-size: 0.82rem;">
+              <i class="fas fa-file-export" style="width: 1.2rem;color: var(--link-color);"></i> Export Container
+            </a>
+            <a class="dropdown-item" href="{% url 'lxc_detail' ct.vmid %}" style="font-size: 0.82rem;">
+              <i class="fas fa-info-circle" style="width: 1.2rem;color: var(--text-muted);"></i> Details
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   </td>
 </tr>
