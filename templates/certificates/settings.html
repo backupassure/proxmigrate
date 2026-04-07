@@ -427,99 +427,95 @@
             </div>
           </div>
 
-          {# Toggle: Upload files vs Paste PEM #}
-          <div style="display: flex;gap: 0.5rem;margin-bottom: 1.25rem;">
-            <button type="button" id="own-mode-upload"
-              class="button is-small is-primary"
-              onclick="setOwnCertMode('upload')"
-              style="font-weight: 600;">
-              <span class="icon is-small"><i class="fas fa-upload"></i></span>
-              <span>Upload Files</span>
-            </button>
-            <button type="button" id="own-mode-paste"
-              class="button is-small is-light"
-              onclick="setOwnCertMode('paste')"
-              style="font-weight: 600;">
-              <span class="icon is-small"><i class="fas fa-paste"></i></span>
-              <span>Paste PEM</span>
-            </button>
-          </div>
-
-          {# File upload form #}
-          <form id="own-form-upload" method="post" action="{% url 'cert_upload' %}" enctype="multipart/form-data">
+          <form method="post" action="{% url 'cert_upload' %}" enctype="multipart/form-data">
             {% csrf_token %}
 
+            {# Certificate field with independent toggle #}
             <div class="field" style="margin-bottom: 1.25rem;">
-              <label class="label form-label">Certificate File (.pem / .crt)</label>
-              <div class="control">
-                <div class="file has-name is-fullwidth">
-                  <label class="file-label">
-                    <input class="file-input" type="file" name="cert_file"
-                      accept=".pem,.crt,.cer"
-                      onchange="this.closest('.file').querySelector('.file-name').textContent = this.files[0].name">
-                    <span class="file-cta">
-                      <span class="file-icon"><i class="fas fa-upload"></i></span>
-                      <span class="file-label">Choose file</span>
-                    </span>
-                    <span class="file-name">No file selected</span>
-                  </label>
+              <label class="label form-label">Certificate (.pem / .crt)</label>
+              <div style="display: flex;gap: 0.4rem;margin-bottom: 0.5rem;">
+                <button type="button" id="cert-mode-upload"
+                  class="button is-small is-primary"
+                  onclick="toggleFieldMode('cert', 'upload')"
+                  style="font-weight: 600;">
+                  <span class="icon is-small"><i class="fas fa-upload"></i></span>
+                  <span>Upload File</span>
+                </button>
+                <button type="button" id="cert-mode-paste"
+                  class="button is-small is-light"
+                  onclick="toggleFieldMode('cert', 'paste')"
+                  style="font-weight: 600;">
+                  <span class="icon is-small"><i class="fas fa-paste"></i></span>
+                  <span>Paste PEM</span>
+                </button>
+              </div>
+              <div id="cert-input-upload">
+                <div class="control">
+                  <div class="file has-name is-fullwidth">
+                    <label class="file-label">
+                      <input class="file-input" type="file" name="cert_file"
+                        accept=".pem,.crt,.cer"
+                        onchange="this.closest('.file').querySelector('.file-name').textContent = this.files[0].name">
+                      <span class="file-cta">
+                        <span class="file-icon"><i class="fas fa-upload"></i></span>
+                        <span class="file-label">Choose file</span>
+                      </span>
+                      <span class="file-name">No file selected</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div id="cert-input-paste" style="display: none;">
+                <div class="control">
+                  <textarea class="textarea" name="cert_pem" rows="8"
+                    placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
+                    style="font-family: monospace;font-size: 0.78rem;resize: vertical;"></textarea>
                 </div>
               </div>
               <p class="field-hint">Include the full chain (server cert + intermediates).</p>
             </div>
 
+            {# Private Key field with independent toggle #}
             <div class="field" style="margin-bottom: 1.5rem;">
-              <label class="label form-label">Private Key File (.pem / .key)</label>
-              <div class="control">
-                <div class="file has-name is-fullwidth">
-                  <label class="file-label">
-                    <input class="file-input" type="file" name="key_file"
-                      accept=".pem,.key"
-                      onchange="this.closest('.file').querySelector('.file-name').textContent = this.files[0].name">
-                    <span class="file-cta">
-                      <span class="file-icon"><i class="fas fa-key"></i></span>
-                      <span class="file-label">Choose file</span>
-                    </span>
-                    <span class="file-name">No file selected</span>
-                  </label>
+              <label class="label form-label">Private Key (.pem / .key)</label>
+              <div style="display: flex;gap: 0.4rem;margin-bottom: 0.5rem;">
+                <button type="button" id="key-mode-upload"
+                  class="button is-small is-primary"
+                  onclick="toggleFieldMode('key', 'upload')"
+                  style="font-weight: 600;">
+                  <span class="icon is-small"><i class="fas fa-upload"></i></span>
+                  <span>Upload File</span>
+                </button>
+                <button type="button" id="key-mode-paste"
+                  class="button is-small is-light"
+                  onclick="toggleFieldMode('key', 'paste')"
+                  style="font-weight: 600;">
+                  <span class="icon is-small"><i class="fas fa-paste"></i></span>
+                  <span>Paste PEM</span>
+                </button>
+              </div>
+              <div id="key-input-upload">
+                <div class="control">
+                  <div class="file has-name is-fullwidth">
+                    <label class="file-label">
+                      <input class="file-input" type="file" name="key_file"
+                        accept=".pem,.key"
+                        onchange="this.closest('.file').querySelector('.file-name').textContent = this.files[0].name">
+                      <span class="file-cta">
+                        <span class="file-icon"><i class="fas fa-key"></i></span>
+                        <span class="file-label">Choose file</span>
+                      </span>
+                      <span class="file-name">No file selected</span>
+                    </label>
+                  </div>
                 </div>
               </div>
-              <p class="field-hint">RSA or ECDSA private key. Must not be password-protected.</p>
-            </div>
-
-            <div class="info-box is-warning" style="margin-bottom: 1.25rem;">
-              <div class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
-              <div style="font-size: 0.8rem;">
-                Installing the certificate will reload nginx. You may need to refresh the page after a few seconds.
-              </div>
-            </div>
-
-            <button type="submit" class="button is-primary is-fullwidth" style="font-weight: 600;">
-              <span class="icon"><i class="fas fa-certificate"></i></span>
-              <span>Install Certificate</span>
-            </button>
-          </form>
-
-          {# Paste PEM form #}
-          <form id="own-form-paste" method="post" action="{% url 'cert_upload' %}" style="display: none;">
-            {% csrf_token %}
-
-            <div class="field" style="margin-bottom: 1.25rem;">
-              <label class="label form-label">Certificate (PEM text)</label>
-              <div class="control">
-                <textarea class="textarea" name="cert_pem" rows="8"
-                  placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
-                  style="font-family: monospace;font-size: 0.78rem;resize: vertical;"></textarea>
-              </div>
-              <p class="field-hint">Paste the full PEM — include the full chain (server cert + intermediates) if provided by your CA.</p>
-            </div>
-
-            <div class="field" style="margin-bottom: 1.5rem;">
-              <label class="label form-label">Private Key (PEM text)</label>
-              <div class="control">
-                <textarea class="textarea" name="key_pem" rows="8"
-                  placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
-                  style="font-family: monospace;font-size: 0.78rem;resize: vertical;"></textarea>
+              <div id="key-input-paste" style="display: none;">
+                <div class="control">
+                  <textarea class="textarea" name="key_pem" rows="8"
+                    placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
+                    style="font-family: monospace;font-size: 0.78rem;resize: vertical;"></textarea>
+                </div>
               </div>
               <p class="field-hint">RSA or ECDSA private key. Must not be password-protected.</p>
             </div>
@@ -972,12 +968,12 @@ function setSignedMode(mode) {
   document.getElementById('signed-mode-paste').className = 'button is-small ' + (isUpload ? 'is-light' : 'is-primary');
 }
 
-function setOwnCertMode(mode) {
+function toggleFieldMode(field, mode) {
   var isUpload = mode === 'upload';
-  document.getElementById('own-form-upload').style.display = isUpload ? '' : 'none';
-  document.getElementById('own-form-paste').style.display = isUpload ? 'none' : '';
-  document.getElementById('own-mode-upload').className = 'button is-small ' + (isUpload ? 'is-primary' : 'is-light');
-  document.getElementById('own-mode-paste').className = 'button is-small ' + (isUpload ? 'is-light' : 'is-primary');
+  document.getElementById(field + '-input-upload').style.display = isUpload ? '' : 'none';
+  document.getElementById(field + '-input-paste').style.display = isUpload ? 'none' : '';
+  document.getElementById(field + '-mode-upload').className = 'button is-small ' + (isUpload ? 'is-primary' : 'is-light');
+  document.getElementById(field + '-mode-paste').className = 'button is-small ' + (isUpload ? 'is-light' : 'is-primary');
 }
 
 function switchCertTab(name) {
