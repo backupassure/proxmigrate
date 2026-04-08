@@ -1,6 +1,6 @@
 # ProxMigrate
 
-**Version 1.1.2** — Build `2026-04-08.1`
+**Version 1.1.2** — Build `2026-04-08.2`
 
 > **To update an existing install:** `git pull origin main && sudo ./update.sh`
 
@@ -23,7 +23,8 @@ Made by **[Backup Assure](https://backupassure.io)**.
 - **Network management** — connect/disconnect NICs per interface with inline toggle
 - **VM console** — full in-browser VNC console with clipboard support (paste text into any OS including IOS-XE and Linux terminals)
 - **LXC container management** — browse, start/stop/reboot, delete, clone, export, and view detailed config of existing LXC containers; create new containers from Proxmox templates with full network, storage, and credential configuration; kebab action menu matching VM inventory UX
-- **Community Scripts** — browse 460+ pre-built apps (Docker, Pi-hole, Home Assistant, Plex, Grafana, and more) and deploy them as LXC containers with one click using the community-scripts project; interactive WebSocket terminal for real-time deployment output
+- **LXC Community Scripts** — browse 460+ pre-built apps (Docker, Pi-hole, Home Assistant, Plex, Grafana, and more) and deploy them as LXC containers with one click using the community-scripts project; interactive WebSocket terminal for real-time deployment output
+- **VM Community Scripts** — browse and deploy VM-based community scripts (Docker, Home Assistant OS, TrueNAS, Arch Linux, and more) with one click; fully interactive WebSocket terminal with whiptail prompt support; resilient screen sessions survive browser disconnect; automatic VMID detection with jump-to-console button; in-app catalog refresh from upstream GitHub
 - **Setup wizard** — guided first-run setup for Proxmox API token, SSH key deployment, and environment discovery
 - **Authentication** — local accounts, LDAP, and Microsoft Entra ID (Azure AD); login with username or email address
 - **Password recovery** — self-service password reset via email (requires SMTP or Microsoft Graph API to be configured); local accounts only — LDAP/Entra ID users manage passwords in their directory
@@ -362,8 +363,11 @@ ProxMigrate handles template downloading, container creation, and optional auto-
 
 ## Changelog
 
+### v1.1.2 — 2026-04-08.2
+- **VM Community Scripts marketplace** — browse and deploy VM-based community scripts (Docker, Home Assistant OS, TrueNAS, Arch Linux, OpenWrt, OPNsense, and more) with one click from a searchable, categorized catalog; fully interactive WebSocket terminal with whiptail prompt support; resilient screen sessions survive browser disconnect and allow reattach; automatic VMID detection with jump-to-Proxmox-console button; in-app catalog refresh from upstream GitHub via Celery task; VM community script jobs shown on dashboard
+
 ### v1.1.2 — 2026-04-08.1
-- **Community Scripts marketplace** — browse 460+ pre-built apps (Docker, Pi-hole, Home Assistant, Plex, Grafana, etc.) and deploy as LXC containers with one click; interactive WebSocket terminal for real-time deployment output; categorized browsing with search; catalog auto-update from community-scripts project
+- **LXC Community Scripts marketplace** — browse 460+ pre-built apps (Docker, Pi-hole, Home Assistant, Plex, Grafana, etc.) and deploy as LXC containers with one click; interactive WebSocket terminal for real-time deployment output; categorized browsing with search; catalog auto-update from community-scripts project
 - **ACME certificate automation** — automated TLS certificates from Let's Encrypt or internal CAs (Smallstep, etc.); DNS-01 challenge with DNS provider API integration (Cloudflare, Route53, and more); HTTP-01 challenge support; auto-renewal at half certificate validity; real-time issuance progress with HTMX polling; IP SAN support for internal CA certs
 - **Dark mode** — system-wide dark theme with CSS variable architecture; toggle in header with persistence; Bulma component overrides for tags, buttons, tabs, file inputs, and code blocks; attribute selectors catch hardcoded inline colors across all templates
 - **LXC kebab menu** — container inventory table now uses state-aware three-dot dropdown menu matching VM inventory UX; includes start/stop/shutdown/reboot, clone, export, delete, and details actions
@@ -464,6 +468,7 @@ ProxMigrate handles template downloading, container creation, and optional auto-
 - [x] MFA — TOTP (authenticator app) for local and LDAP accounts, recovery codes, email bypass, admin enforcement
 - [x] ACME certificate automation — Let's Encrypt and internal CAs, DNS-01/HTTP-01 challenges, auto-renewal
 - [x] Dark mode — system-wide theme toggle with CSS variable architecture
+- [x] VM Community Scripts — browse and deploy VM-based community scripts with interactive terminal and catalog refresh
 
 ### Phase 2 — VM Export & Portable Packages
 Export a complete VM (configuration + all disks) as a `.px` package — a tar.gz archive with a JSON manifest — that can be imported on any ProxMigrate server to recreate the VM identically.

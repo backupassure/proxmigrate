@@ -352,8 +352,7 @@ def build_catalog(vm_dir: Path) -> tuple[list[dict], list[dict]]:
     sh_files = sorted(vm_dir.glob("*.sh"))
 
     if not sh_files:
-        logger.error("No .sh files found in %s", vm_dir)
-        sys.exit(1)
+        raise RuntimeError(f"No .sh files found in {vm_dir}")
 
     logger.info("Parsing %d scripts in %s ...", len(sh_files), vm_dir)
 
