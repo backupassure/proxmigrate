@@ -596,7 +596,12 @@ FORCE_CHANGE=false
 if [[ -n "${PROXMIGRATE_ADMIN_USER:-}" && -n "${PROXMIGRATE_ADMIN_PASS:-}" ]]; then
     ADMIN_USER="${PROXMIGRATE_ADMIN_USER}"
     ADMIN_PASS="${PROXMIGRATE_ADMIN_PASS}"
-    echo "    Using credentials from environment variables."
+    if [[ "${ADMIN_PASS}" == "${DEFAULT_ADMIN_PASS}" ]]; then
+        FORCE_CHANGE=true
+        echo "    Using credentials from environment variables (default password — will force change on first login)."
+    else
+        echo "    Using credentials from environment variables."
+    fi
 else
     read -rp "    Admin username [admin]: " ADMIN_USER
     ADMIN_USER="${ADMIN_USER:-admin}"
