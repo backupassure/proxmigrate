@@ -1,4 +1,4 @@
-"""WebSocket consumer for interactive community script terminal."""
+"""WebSocket consumer for interactive VM community script terminal."""
 
 import json
 import logging
@@ -11,27 +11,39 @@ from channels.generic.websocket import WebsocketConsumer
 
 from apps.wizard.models import ProxmoxConfig
 
-from .models import CommunityScriptJob
-from .tasks import _build_env_string, _clean_terminal_output
-from .terminal_bridge import SSHTerminalBridge
+from .models import VmCommunityScriptJob
+from apps.lxc.terminal_bridge import SSHTerminalBridge
 
 logger = logging.getLogger(__name__)
 
-_VMID_RE = re.compile(r"CT\s+(\d+)")
+# VM scripts print "Virtual Machine ID is <VMID>" or just reference the VMID variable
+_VMID_RE = re.compile(r"(?:VM\s+ID\s+is|Virtual Machine ID:\s*|VMID[=:\s]+)(\d+)", re.IGNORECASE)
+# Also match the common pattern: "Created a <name> VM (hostname)"
+_VMID_RE2 = re.compile(r"VM\s+ID\s+(\d+)")
 
 # Keep bridges alive after WebSocket disconnect so scripts survive navigation.
-# Maps job_id -> {"bridge": SSHTerminalBridge, "flush_running": bool}
 _detached_bridges = {}
 _detached_lock = threading.Lock()
 
 
-class CommunityScriptTerminalConsumer(WebsocketConsumer):
-    """Bridge between a browser xterm.js terminal and a remote SSH session.
+def _clean_terminal_output(text):
+    """Strip ANSI escapes and process carriage returns."""
+    ansi_re = re.compile(r'\x1b\[[0-9;]*[a-zA-Z]|\x1b\][^\x07]*\x07|\x1b\(B')
+    text = ansi_re.sub('', text)
+    lines = text.split('\n')
+    cleaned = []
+    for line in lines:
+        if '\r' in line:
+            line = line.rsplit('\r', 1)[-1]
+        stripped = line.strip()
+        if stripped:
+            cleaned.append(line)
+    return '\n'.join(cleaned) if cleaned else ''
 
-    On connect, if the job is QUEUED, starts the SSH session and streams
-    output to the browser.  User keystrokes are forwarded to the SSH channel,
-    enabling fully interactive script execution.
-    """
+
+class VmCommunityScriptTerminalConsumer(WebsocketConsumer):
+    """Bridge between a browser xterm.js terminal and a remote SSH session
+    for VM community script deployment."""
 
     def connect(self):
         user = self.scope.get("user")
@@ -41,8 +53,8 @@ class CommunityScriptTerminalConsumer(WebsocketConsumer):
 
         job_id = self.scope["url_route"]["kwargs"]["job_id"]
         try:
-            self.job = CommunityScriptJob.objects.get(pk=job_id, created_by=user)
-        except CommunityScriptJob.DoesNotExist:
+            self.job = VmCommunityScriptJob.objects.get(pk=job_id, created_by=user)
+        except VmCommunityScriptJob.DoesNotExist:
             self.close(code=4404)
             return
 
@@ -52,14 +64,15 @@ class CommunityScriptTerminalConsumer(WebsocketConsumer):
         self.accept()
 
         # If already finished, send stored log and close
-        if self.job.stage in ("DONE", "FAILED", "CANCELLED"):
+        if self.job.stage in (VmCommunityScriptJob.STAGE_DONE,
+                              VmCommunityScriptJob.STAGE_FAILED,
+                              VmCommunityScriptJob.STAGE_CANCELLED):
             self._send_control("replay", data=self.job.log_output or "")
             self._send_control("stage", stage=self.job.stage)
             return
 
-        # If already running (reconnect scenario), try to reattach to
-        # a detached bridge that survived a previous disconnect.
-        if self.job.stage in ("DOWNLOADING_SCRIPT", "RUNNING_SCRIPT"):
+        # If already running (reconnect scenario), try to reattach
+        if self.job.stage == VmCommunityScriptJob.STAGE_RUNNING_SCRIPT:
             if self.job.log_output:
                 self._send_control("replay", data=self.job.log_output)
 
@@ -67,25 +80,23 @@ class CommunityScriptTerminalConsumer(WebsocketConsumer):
                 detached = _detached_bridges.pop(self.job.pk, None)
 
             if detached and detached["bridge"].is_running:
-                # Reattach to the existing SSH session
                 self.bridge = detached["bridge"]
                 self.bridge.send_callback = self._on_ssh_output
                 self._flush_running = True
                 self._flush_thread = threading.Thread(
                     target=self._flush_loop, daemon=True,
-                    name="terminal-log-flush",
+                    name="vm-terminal-log-flush",
                 )
                 self._flush_thread.start()
-                logger.info("Reattached to detached bridge for job %d",
+                logger.info("Reattached to detached bridge for VM job %d",
                             self.job.pk)
                 return
 
-            # No detached bridge — start fresh
             self._start_execution()
             return
 
         # Job is QUEUED — start execution
-        if self.job.stage == "QUEUED":
+        if self.job.stage == VmCommunityScriptJob.STAGE_QUEUED:
             self._start_execution()
 
     def _start_execution(self):
@@ -96,25 +107,27 @@ class CommunityScriptTerminalConsumer(WebsocketConsumer):
             self._fail_job("Proxmox is not configured")
             return
 
-        deploy_config = self.job.deploy_config
-        env_str = _build_env_string(deploy_config)
         script_url = self.job.script_url
         quoted_url = shlex.quote(script_url)
+        # VM scripts are fully interactive (whiptail prompts) — unlike LXC
+        # scripts there is no mode=default bypass. We run the script in an
+        # interactive PTY and let the user interact with it directly.
+        # We unset SSH variables to avoid "SSH DETECTED" warnings since we
+        # are running inside a resilient 'screen' session anyway.
         command = (
-            f"export TERM=xterm-256color {env_str}; "
+            f"export TERM=xterm-256color; "
             f"unset SSH_CLIENT SSH_TTY SSH_CONNECTION; "
             f'bash -c "$(curl -fsSL {quoted_url})"'
         )
 
-        # Update job stage
         self.job.set_stage(
-            CommunityScriptJob.STAGE_RUNNING_SCRIPT,
+            VmCommunityScriptJob.STAGE_RUNNING_SCRIPT,
             f"Deploying {self.job.app_name}...",
             percent=30,
         )
         self._send_control("stage", stage="RUNNING_SCRIPT")
 
-        screen_name = f"pm-cs-{self.job.pk}"
+        screen_name = f"pm-vm-cs-{self.job.pk}"
 
         self.bridge = SSHTerminalBridge(
             host=config.host,
@@ -128,34 +141,30 @@ class CommunityScriptTerminalConsumer(WebsocketConsumer):
         try:
             self.bridge.start(cols=120, rows=40)
         except Exception as exc:
-            logger.error("Terminal bridge failed to start: %s", exc)
+            logger.error("VM terminal bridge failed to start: %s", exc)
             self._send_control("error", message=f"SSH connection failed: {exc}")
             self._fail_job(f"SSH connection failed: {exc}")
             return
 
-        # Start periodic log flush to DB
         self._flush_running = True
         self._flush_thread = threading.Thread(
-            target=self._flush_loop, daemon=True, name="terminal-log-flush"
+            target=self._flush_loop, daemon=True, name="vm-terminal-log-flush"
         )
         self._flush_thread.start()
 
-        # Monitor for completion in a thread
         monitor = threading.Thread(
             target=self._monitor_completion, daemon=True,
-            name="terminal-monitor",
+            name="vm-terminal-monitor",
         )
         monitor.start()
 
     def _on_ssh_output(self, text):
-        """Called by the bridge when SSH output is received."""
         try:
             self.send(text_data=text)
         except Exception:
             pass
 
     def _flush_loop(self):
-        """Periodically flush captured output to the database."""
         last_len = 0
         while self._flush_running:
             time.sleep(5)
@@ -171,18 +180,15 @@ class CommunityScriptTerminalConsumer(WebsocketConsumer):
                 try:
                     self.job.save(update_fields=["log_output", "updated_at"])
                 except Exception as exc:
-                    logger.warning("Log flush failed: %s", exc)
+                    logger.warning("VM log flush failed: %s", exc)
 
     def _monitor_completion(self):
-        """Wait for the SSH command to finish and update the job."""
         if not self.bridge:
             return
 
-        # Wait for the bridge to finish
         while self.bridge.is_running:
             time.sleep(1)
 
-        # Final log flush
         raw = self.bridge.get_log()
         cleaned = _clean_terminal_output(raw)
         if len(cleaned) > 50000:
@@ -190,20 +196,20 @@ class CommunityScriptTerminalConsumer(WebsocketConsumer):
         self.job.log_output = cleaned
         self._flush_running = False
 
-        # Clean up the detached bridge registry
         with _detached_lock:
             _detached_bridges.pop(self.job.pk, None)
 
-        # Determine result
         exit_code = self.bridge.exit_code
         if exit_code == 0 or exit_code is None:
             # Try to extract VMID from output
             vmid_match = _VMID_RE.search(raw)
+            if not vmid_match:
+                vmid_match = _VMID_RE2.search(raw)
             if vmid_match:
                 self.job.vmid = int(vmid_match.group(1))
 
             self.job.set_stage(
-                CommunityScriptJob.STAGE_DONE,
+                VmCommunityScriptJob.STAGE_DONE,
                 f"{self.job.app_name} deployed successfully!",
                 percent=100,
             )
@@ -211,7 +217,7 @@ class CommunityScriptTerminalConsumer(WebsocketConsumer):
             self._send_control("exit", code=0, vmid=self.job.vmid)
         else:
             error_msg = f"Script exited with code {exit_code}"
-            self.job.stage = CommunityScriptJob.STAGE_FAILED
+            self.job.stage = VmCommunityScriptJob.STAGE_FAILED
             self.job.error = error_msg
             self.job.save(update_fields=[
                 "stage", "error", "log_output", "updated_at",
@@ -220,16 +226,14 @@ class CommunityScriptTerminalConsumer(WebsocketConsumer):
             self._send_control("error", message=error_msg)
 
         logger.info(
-            "CommunityScriptJob %d: terminal session ended (exit=%s, vmid=%s)",
+            "VmCommunityScriptJob %d: terminal session ended (exit=%s, vmid=%s)",
             self.job.pk, exit_code, self.job.vmid,
         )
 
     def receive(self, text_data=None, bytes_data=None):
-        """Handle messages from the browser."""
         if not text_data:
             return
 
-        # Check for JSON control messages
         if text_data.startswith("{"):
             try:
                 msg = json.loads(text_data)
@@ -241,26 +245,16 @@ class CommunityScriptTerminalConsumer(WebsocketConsumer):
             except (json.JSONDecodeError, KeyError):
                 pass
 
-        # Forward raw input to SSH
         if self.bridge and self.bridge.is_running:
             self.bridge.write(text_data)
 
     def disconnect(self, code):
-        """Handle WebSocket disconnect.
-
-        If the script is still running, detach the bridge into a background
-        registry so the SSH session stays alive.  The monitor thread will
-        update the job when the script finishes.  If the user reconnects,
-        the bridge is reattached.
-        """
         if self.bridge and self.bridge.is_running:
-            # Script still running — detach instead of killing
-            self.bridge.send_callback = lambda text: None  # silence output
+            self.bridge.send_callback = lambda text: None
             with _detached_lock:
                 _detached_bridges[self.job.pk] = {
                     "bridge": self.bridge,
                 }
-            # Save current log checkpoint
             raw = self.bridge.get_log()
             if raw:
                 cleaned = _clean_terminal_output(raw)
@@ -271,11 +265,10 @@ class CommunityScriptTerminalConsumer(WebsocketConsumer):
                     self.job.save(update_fields=["log_output", "updated_at"])
                 except Exception:
                     pass
-            logger.info("Detached bridge for job %d (script still running)",
+            logger.info("Detached bridge for VM job %d (script still running)",
                         self.job.pk)
             return
 
-        # Script already finished — clean up
         self._flush_running = False
         if self.bridge:
             raw = self.bridge.get_log()
@@ -291,7 +284,6 @@ class CommunityScriptTerminalConsumer(WebsocketConsumer):
             self.bridge.close()
 
     def _send_control(self, msg_type, **kwargs):
-        """Send a JSON control message to the browser."""
         msg = {"type": msg_type, **kwargs}
         try:
             self.send(text_data="\x00" + json.dumps(msg))
@@ -299,7 +291,6 @@ class CommunityScriptTerminalConsumer(WebsocketConsumer):
             pass
 
     def _fail_job(self, error_msg):
-        """Mark the job as failed."""
-        self.job.stage = CommunityScriptJob.STAGE_FAILED
+        self.job.stage = VmCommunityScriptJob.STAGE_FAILED
         self.job.error = error_msg
         self.job.save(update_fields=["stage", "error", "updated_at"])

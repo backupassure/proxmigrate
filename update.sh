@@ -53,9 +53,13 @@ sudo -u "${APP_USER}" \
 
 echo "==> Installing frontend dependencies..."
 if command -v npm &>/dev/null; then
-    sudo -u "${APP_USER}" bash -c "cd ${APP_HOME} && npm install --omit=dev 2>&1 | tail -1"
+    if sudo -u "${APP_USER}" bash -c "cd ${APP_HOME} && npm install --omit=dev 2>/dev/null | tail -1"; then
+        echo "    npm dependencies installed."
+    else
+        echo "    npm install failed (non-fatal) — vendored static files will be used."
+    fi
 else
-    echo "    WARN: npm not found — skipping xterm.js install"
+    echo "    npm not found — using vendored static files."
 fi
 
 echo "==> Collecting static files..."

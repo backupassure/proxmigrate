@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load vm_filters %}
 {% block title %}{{ vm.name }} — VM Details — ProxMigrate{% endblock %}
 {% block page_title %}{{ vm.name }}{% endblock %}
 {% block help_slug %}vm-detail{% endblock %}
@@ -123,7 +124,11 @@
         <div class="cert-detail-row">
           <div class="cert-detail-label">Description</div>
           <div class="cert-detail-value">
-            {{ vm.description|default:"—" }}
+            {% if vm.description %}
+              {{ vm.description|safe_html_description }}
+            {% else %}
+              —
+            {% endif %}
             <button class="button is-small is-white" style="margin-left:0.5rem;padding:0 0.4rem;height:1.5rem;" onclick="openSettingsModal('general')" title="Edit description">
               <i class="fas fa-pencil-alt" style="font-size:0.7rem;color:var(--text-muted, #7a7a7a);"></i>
             </button>

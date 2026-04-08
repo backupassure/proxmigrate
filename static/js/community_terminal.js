@@ -103,7 +103,38 @@
 
       // Regular terminal output
       term.write(data);
+
+      // ── Detect VMID/CTID to show Console Jump button ──────────────
+      detectProxmoxId(data);
     };
+
+    function detectProxmoxId(text) {
+      // Patterns commonly seen in tteck scripts:
+      // "Virtual Machine ID is 100" or "Container ID is 100"
+      // "Successfully created a <name> VM (100)"
+      var vmMatch = text.match(/(?:VM|Virtual Machine|Container)\s+ID(?:\s+is)?[:\s]+(\d+)/i) ||
+                    text.match(/created.*(?:\s+\((\d+)\))/i);
+      
+      if (vmMatch && vmMatch[1]) {
+        var id = vmMatch[1];
+        var isLxc = wsPath.indexOf("/lxc/") !== -1;
+        var jumpEl = document.getElementById(isLxc ? "ct-console-jump" : "vm-console-jump");
+        var linkEl = document.getElementById(isLxc ? "ct-console-link" : "vm-console-link");
+        
+        if (jumpEl && linkEl && jumpEl.style.display === "none") {
+          // Construct the Proxmox console URL (using our internal console viewer)
+          var consoleUrl = isLxc ? "/lxc/" + id + "/console/" : "/vm/" + id + "/console/";
+          linkEl.href = consoleUrl;
+          jumpEl.style.display = "block";
+          
+          // Also try to update the page header if possible
+          var headerId = document.querySelector(".is-monospace");
+          if (headerId && headerId.textContent.trim() === "") {
+             headerId.textContent = id;
+          }
+        }
+      }
+    }
 
     ws.onclose = function (evt) {
       if (evt.code === 4401) {

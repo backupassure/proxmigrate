@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load vm_filters %}
 {% block title %}{{ ct.name }} — LXC Details — ProxMigrate{% endblock %}
 {% block page_title %}{{ ct.name }}{% endblock %}
 {% block help_slug %}lxc-detail{% endblock %}
@@ -93,7 +94,7 @@
         </div>
         <div class="cert-detail-row">
           <div class="cert-detail-label">Description</div>
-          <div class="cert-detail-value">{{ ct.description|striptags|truncatechars:200|default:"—" }}</div>
+          <div class="cert-detail-value">{% if ct.description %}{{ ct.description|safe_html_description }}{% else %}—{% endif %}</div>
         </div>
       </div>
     </div>
