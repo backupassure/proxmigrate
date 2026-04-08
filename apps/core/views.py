@@ -41,7 +41,7 @@ def dashboard(request):
     import os
     from apps.wizard.models import ProxmoxConfig
     from apps.importer.models import ImportJob
-    from apps.vmcreator.models import VmCreateJob
+    from apps.vmcreator.models import VmCommunityScriptJob, VmCreateJob
     from apps.lxc.models import LxcCloneJob, LxcCreateJob, LxcSnapshotLog, CommunityScriptJob
     from apps.proxmox.api import ProxmoxAPIError
 
@@ -119,7 +119,13 @@ def dashboard(request):
             j.display_name = j.app_name
             j.vm_name = j.app_name
 
-        combined = sorted(import_jobs + create_jobs + lxc_jobs + lxc_clone_jobs + snapshot_logs + community_jobs, key=lambda j: j.created_at, reverse=True)
+        vm_community_jobs = list(VmCommunityScriptJob.objects.order_by("-created_at")[:5])
+        for j in vm_community_jobs:
+            j.job_type = "vm_community_script"
+            j.display_name = j.app_name
+            j.vm_name = j.app_name
+
+        combined = sorted(import_jobs + create_jobs + lxc_jobs + lxc_clone_jobs + snapshot_logs + community_jobs + vm_community_jobs, key=lambda j: j.created_at, reverse=True)
         recent_jobs = combined[:8]
 
     # Certificate expiry warning

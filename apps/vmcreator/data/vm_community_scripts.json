@@ -1,0 +1,338 @@
+[
+  {
+    "slug": "archlinux-vm",
+    "name": "Arch Linux",
+    "description": "Arch Linux is a highly customizable, independent Linux distribution that gives users complete control over their system. Known for its rolling release model, Arch Linux is always up-to-date with the latest software. It's favored by experienced users who appreciate its minimalist approach, demanding a hands-on installation and configuration process. This level of control and flexibility makes it a popular choice for those who want to tailor their Linux system to their exact needs.",
+    "categories": [
+      "Operating Systems"
+    ],
+    "tags": "archlinux-vm",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/arch-linux.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/archlinux-vm.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/archlinux-vm.sh",
+    "defaults": {
+      "cpu": 1,
+      "ram": 1024,
+      "disk": 4,
+      "os": "arch-linux",
+      "version": "",
+      "machine": "",
+      "start_vm": "yes"
+    }
+  },
+  {
+    "slug": "debian-vm",
+    "name": "Debian",
+    "description": "Debian Linux is a distribution that emphasizes free software. It supports many hardware platforms",
+    "categories": [
+      "Operating Systems"
+    ],
+    "tags": "debian-vm",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/debian.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/debian-vm.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/debian-vm.sh",
+    "defaults": {
+      "cpu": 2,
+      "ram": 2048,
+      "disk": 8,
+      "os": "debian",
+      "version": "12",
+      "machine": "",
+      "start_vm": "yes"
+    }
+  },
+  {
+    "slug": "debian-13-vm",
+    "name": "Debian 13",
+    "description": "Debian 13 (Trixie) Linux is a distribution that emphasizes free software. It supports many hardware platforms",
+    "categories": [
+      "Operating Systems"
+    ],
+    "tags": "debian-13-vm",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/debian.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/debian-13-vm.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/debian-13-vm.sh",
+    "defaults": {
+      "cpu": 2,
+      "ram": 2048,
+      "disk": 8,
+      "os": "debian",
+      "version": "13",
+      "machine": "",
+      "start_vm": "yes"
+    }
+  },
+  {
+    "slug": "docker-vm",
+    "name": "Docker",
+    "description": "Docker is an open-source project for automating the deployment of applications as portable, self-sufficient containers. This Template includes Docker Engine and Docker Compose Plugin.",
+    "categories": [
+      "Containers & Docker"
+    ],
+    "tags": "docker-vm",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/docker.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/docker-vm.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/docker-vm.sh",
+    "defaults": {
+      "cpu": 2,
+      "ram": 4096,
+      "disk": 10,
+      "os": "debian",
+      "version": "13",
+      "machine": "q35",
+      "start_vm": "yes"
+    }
+  },
+  {
+    "slug": "haos-vm",
+    "name": "Home Assistant OS",
+    "description": "This script automates the process of creating a Virtual Machine (VM) using the official KVM (qcow2) disk image provided by the Home Assistant Team. It involves finding, downloading, and extracting the image, defining user-defined settings, importing and attaching the disk, setting the boot order, and starting the VM. It supports various storage types, and does not involve any hidden installations. After the script completes, click on the VM, then on the Summary tab to find the VM IP.",
+    "categories": [
+      "Other"
+    ],
+    "tags": "haos-vm",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/home-assistant.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/haos-vm.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/haos-vm.sh",
+    "defaults": {
+      "cpu": 2,
+      "ram": 4096,
+      "disk": 32,
+      "os": "homeassistant",
+      "version": "",
+      "machine": "q35",
+      "start_vm": "yes"
+    }
+  },
+  {
+    "slug": "mikrotik-routeros",
+    "name": "MikroTik RouterOS",
+    "description": "Mikrotik RouterOS CHR is a Linux-based operating system that transforms a computer into a router. It provides a wide range of features for network routing, firewall, bandwidth management, wireless access point, backhaul link, hotspot gateway, VPN server, and many others. RouterOS is a versatile solution that supports various network configurations, including those with multiple WAN links, hotspots, and VPNs. It is highly customizable, allowing administrators to configure and manage their networks according to their specific requirements. With RouterOS, network administrators can monitor and control the performance and security of their networks, ensuring reliable and secure communication for their users. The software is designed to be easy to use and provides a wide range of tools for network management, making it a valuable solution for small and large networks alike.",
+    "categories": [
+      "VPN & Networking"
+    ],
+    "tags": "mikrotik-routeros",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/mikrotik.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/mikrotik-routeros.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/mikrotik-routeros.sh",
+    "defaults": {
+      "cpu": 2,
+      "ram": 512,
+      "disk": 8,
+      "os": "mikrotik",
+      "version": "",
+      "machine": "",
+      "start_vm": "yes"
+    }
+  },
+  {
+    "slug": "nextcloud-vm",
+    "name": "Nextcloud",
+    "description": "TurnKey Nextcloud is an open-source file sharing server and collaboration platform that can store your personal content, like documents and pictures, in a centralized location.",
+    "categories": [
+      "File Sharing"
+    ],
+    "tags": "nextcloud-vm",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/nextcloud.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/nextcloud-vm.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/nextcloud-vm.sh",
+    "defaults": {
+      "cpu": 2,
+      "ram": 2048,
+      "disk": 10,
+      "os": "turnkey-nextcloud",
+      "version": "",
+      "machine": "",
+      "start_vm": "yes"
+    }
+  },
+  {
+    "slug": "openwrt-vm",
+    "name": "OpenWrt",
+    "description": "OpenWrt is a powerful open-source firmware that can transform a wide range of networking devices into highly customizable and feature-rich routers, providing users with greater control and flexibility over their network infrastructure.",
+    "categories": [
+      "VPN & Networking"
+    ],
+    "tags": "openwrt-vm",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/openwrt.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/openwrt-vm.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/openwrt-vm.sh",
+    "defaults": {
+      "cpu": 1,
+      "ram": 256,
+      "disk": 1,
+      "os": "openwrt",
+      "version": "",
+      "machine": "",
+      "start_vm": "yes"
+    }
+  },
+  {
+    "slug": "opnsense-vm",
+    "name": "OPNsense",
+    "description": "OPNsense is an open-source firewall and routing platform based on FreeBSD. It provides advanced security features, including intrusion detection, VPN support, traffic shaping, and web filtering, with an intuitive web interface for easy management. Known for its reliability and regular updates, OPNsense is a popular choice for both businesses and home networks.",
+    "categories": [
+      "VPN & Networking"
+    ],
+    "tags": "opnsense-vm",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/opnsense.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/opnsense-vm.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/opnsense-vm.sh",
+    "defaults": {
+      "cpu": 4,
+      "ram": 8192,
+      "disk": 32,
+      "os": "opnsense",
+      "version": "25.7",
+      "machine": "",
+      "start_vm": "yes"
+    }
+  },
+  {
+    "slug": "owncloud-vm",
+    "name": "ownCloud",
+    "description": "TurnKey ownCloud is an open-source file sharing server and collaboration platform that can store your personal content, like documents and pictures, in a centralized location.",
+    "categories": [
+      "Other"
+    ],
+    "tags": "owncloud-vm",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/owncloud.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/owncloud-vm.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/owncloud-vm.sh",
+    "defaults": {
+      "cpu": 2,
+      "ram": 2048,
+      "disk": 10,
+      "os": "owncloud",
+      "version": "18.0",
+      "machine": "",
+      "start_vm": "yes"
+    }
+  },
+  {
+    "slug": "pimox-haos-vm",
+    "name": "PiMox Home Assistant OS",
+    "description": "The script automates the manual process of finding, downloading and extracting the aarch64 (qcow2) disk image provided by the Home Assistant Team, creating a VM with user defined settings, importing and attaching the disk, setting the boot order and starting the VM.",
+    "categories": [
+      "Other"
+    ],
+    "tags": "pimox-haos-vm",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/home-assistant.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/pimox-haos-vm.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/pimox-haos-vm.sh",
+    "defaults": {
+      "cpu": 2,
+      "ram": 4096,
+      "disk": 32,
+      "os": "pimox-haos",
+      "version": "",
+      "machine": "",
+      "start_vm": "yes"
+    }
+  },
+  {
+    "slug": "truenas-vm",
+    "name": "TrueNAS",
+    "description": "TrueNAS Community Edition is the world's most deployed storage software. Free, flexible and build on OpenZFS with Docker.",
+    "categories": [
+      "Backup & Storage"
+    ],
+    "tags": "truenas-vm",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/truenas-core.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/truenas-vm.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/truenas-vm.sh",
+    "defaults": {
+      "cpu": 2,
+      "ram": 8192,
+      "disk": 16,
+      "os": "",
+      "version": "",
+      "machine": "q35",
+      "start_vm": "yes"
+    }
+  },
+  {
+    "slug": "ubuntu2204-vm",
+    "name": "Ubuntu 22.04",
+    "description": "Ubuntu is a distribution based on Debian, designed to have regular releases and a consistent user experience.",
+    "categories": [
+      "Other"
+    ],
+    "tags": "ubuntu2204-vm",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/ubuntu.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/ubuntu2204-vm.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/ubuntu2204-vm.sh",
+    "defaults": {
+      "cpu": 2,
+      "ram": 2048,
+      "disk": 5,
+      "os": "ubuntu",
+      "version": "2204",
+      "machine": "",
+      "start_vm": "yes"
+    }
+  },
+  {
+    "slug": "ubuntu2404-vm",
+    "name": "Ubuntu 24.04",
+    "description": "Ubuntu is a distribution based on Debian, designed to have regular releases and a consistent user experience.",
+    "categories": [
+      "Other"
+    ],
+    "tags": "ubuntu2404-vm",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/ubuntu.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/ubuntu2404-vm.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/ubuntu2404-vm.sh",
+    "defaults": {
+      "cpu": 2,
+      "ram": 2048,
+      "disk": 7,
+      "os": "ubuntu",
+      "version": "2404",
+      "machine": "",
+      "start_vm": "yes"
+    }
+  },
+  {
+    "slug": "ubuntu2504-vm",
+    "name": "Ubuntu 25.04",
+    "description": "Ubuntu is a distribution based on Debian, designed to have regular releases and a consistent user experience.",
+    "categories": [
+      "Other"
+    ],
+    "tags": "ubuntu2504-vm",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/ubuntu.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/ubuntu2504-vm.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/ubuntu2504-vm.sh",
+    "defaults": {
+      "cpu": 2,
+      "ram": 2048,
+      "disk": 7,
+      "os": "ubuntu",
+      "version": "2504",
+      "machine": "",
+      "start_vm": "no"
+    }
+  },
+  {
+    "slug": "umbrel-os-vm",
+    "name": "Umbrel OS",
+    "description": "Take control of your digital life with Umbrel \u2014 a private, personal server that lets you self-host powerful open source apps with ease. Whether you want to run a Bitcoin or Lightning node, manage your files with Nextcloud, stream media, block ads across your network, or explore self-hosted AI tools, Umbrel gives you full ownership and privacy. All through a beautiful, user-friendly interface \u2014 no cloud, no tracking, just your data under your control.",
+    "categories": [
+      "Operating Systems"
+    ],
+    "tags": "umbrel-os-vm",
+    "logo": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/umbrelos.webp",
+    "source_url": "https://github.com/community-scripts/ProxmoxVE/blob/main/vm/umbrel-os-vm.sh",
+    "script_url": "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/umbrel-os-vm.sh",
+    "defaults": {
+      "cpu": 2,
+      "ram": 4096,
+      "disk": 32,
+      "os": "umbrel-os",
+      "version": "",
+      "machine": "q35",
+      "start_vm": "yes"
+    }
+  }
+]

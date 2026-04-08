@@ -23,6 +23,9 @@ lib/
 lib64/
 wheels/
 
+# Node
+node_modules/
+
 # Virtual environment
 .venv/
 venv/

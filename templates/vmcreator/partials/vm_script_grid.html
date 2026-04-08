@@ -1,0 +1,86 @@
+{# Out-of-band swap: update the script count in the search bar #}
+<span id="script-count" hx-swap-oob="true" style="font-size:0.85rem;color:var(--text-muted, #7a7a7a);white-space:nowrap;">
+  {{ total_count }} script{{ total_count|pluralize }}
+</span>
+
+<div id="script-grid-wrapper">
+
+  {% if page.object_list %}
+    <div class="columns is-multiline">
+      {% for script in page.object_list %}
+        {% include "vmcreator/partials/vm_script_card.html" with script=script %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="proxmigrate-card">
+      <div class="card-body" style="padding:3rem;text-align:center;">
+        <i class="fas fa-search" style="font-size:2rem;color:var(--border-main, #e8ecf0);margin-bottom:1rem;display:block;"></i>
+        <h3 style="font-size:1rem;font-weight:700;color:var(--text-semi, #4a4a4a);margin-bottom:0.5rem;">No VM scripts found</h3>
+        <p style="font-size:0.85rem;color:var(--text-muted, #7a7a7a);">
+          {% if query %}
+            No results for "<strong>{{ query }}</strong>".
+          {% else %}
+            No scripts match the selected filter.
+          {% endif %}
+          Try a different search or category.
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  {# ===== Pagination ===== #}
+  {% if page.has_other_pages %}
+    <nav style="display:flex;justify-content:center;gap:0.25rem;margin-top:1.5rem;">
+
+      {% if page.has_previous %}
+        <a class="button is-small is-light"
+           href="?page={{ page.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}"
+           hx-get="{% url 'vm_community_scripts' %}?page={{ page.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}"
+           hx-target="#script-grid-wrapper"
+           hx-swap="outerHTML"
+           hx-push-url="true">
+          <span class="icon is-small"><i class="fas fa-chevron-left"></i></span>
+        </a>
+      {% endif %}
+
+      {% for num in page.paginator.page_range %}
+        {% if page.number == num %}
+          <span class="button is-small is-primary" style="font-weight:700;">{{ num }}</span>
+        {% elif num > page.number|add:"-3" and num < page.number|add:"3" %}
+          <a class="button is-small is-light"
+             href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}"
+             hx-get="{% url 'vm_community_scripts' %}?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}"
+             hx-target="#script-grid-wrapper"
+             hx-swap="outerHTML"
+             hx-push-url="true">
+            {{ num }}
+          </a>
+        {% elif num == 1 or num == page.paginator.num_pages %}
+          <a class="button is-small is-light"
+             href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}"
+             hx-get="{% url 'vm_community_scripts' %}?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}"
+             hx-target="#script-grid-wrapper"
+             hx-swap="outerHTML"
+             hx-push-url="true">
+            {{ num }}
+          </a>
+        {% elif num == 2 or num == page.paginator.num_pages|add:"-1" %}
+          <span class="button is-small is-light" disabled style="pointer-events:none;">&hellip;</span>
+        {% endif %}
+      {% endfor %}
+
+      {% if page.has_next %}
+        <a class="button is-small is-light"
+           href="?page={{ page.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}"
+           hx-get="{% url 'vm_community_scripts' %}?page={{ page.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}"
+           hx-target="#script-grid-wrapper"
+           hx-swap="outerHTML"
+           hx-push-url="true">
+          <span class="icon is-small"><i class="fas fa-chevron-right"></i></span>
+        </a>
+      {% endif %}
+
+    </nav>
+  {% endif %}
+
+</div>

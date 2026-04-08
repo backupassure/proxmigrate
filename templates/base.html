@@ -65,6 +65,9 @@
       <a href="{% url 'inventory' %}" class="{% if request.resolver_match.url_name == 'inventory' %}is-active{% endif %}">
         <i class="fas fa-server"></i> VM Inventory
       </a>
+      <a href="{% url 'vm_community_scripts' %}" class="{% if 'vm_community_scripts' in request.resolver_match.url_name %}is-active{% endif %}">
+        <i class="fas fa-store"></i> Community Scripts
+      </a>
       <a href="{% url 'export_index' %}" class="{% if 'lxc' not in request.resolver_match.url_name and 'export' in request.resolver_match.url_name or 'px_' in request.resolver_match.url_name and 'lxc' not in request.resolver_match.url_name %}is-active{% endif %}">
         <i class="fas fa-file-export"></i> Export &amp; Import
       </a>

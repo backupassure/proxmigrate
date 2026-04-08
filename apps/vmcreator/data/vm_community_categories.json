@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "backup-storage",
+    "name": "Backup & Storage",
+    "icon": "fa-solid fa-box-archive"
+  },
+  {
+    "slug": "containers-docker",
+    "name": "Containers & Docker",
+    "icon": "fa-brands fa-docker"
+  },
+  {
+    "slug": "file-sharing",
+    "name": "File Sharing",
+    "icon": "fa-solid fa-folder-open"
+  },
+  {
+    "slug": "operating-systems",
+    "name": "Operating Systems",
+    "icon": "fa-brands fa-linux"
+  },
+  {
+    "slug": "other",
+    "name": "Other",
+    "icon": "fa-solid fa-puzzle-piece"
+  },
+  {
+    "slug": "vpn-networking",
+    "name": "VPN & Networking",
+    "icon": "fa-solid fa-network-wired"
+  }
+]

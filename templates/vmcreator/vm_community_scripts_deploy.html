@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Deploy {{ script.name }} VM — ProxMigrate{% endblock %}
+{% block page_title %}Deploy VM Community Script{% endblock %}
+{% block help_slug %}vm-community-scripts{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'vm_community_scripts' %}" class="button is-light is-small">
+    <span class="icon is-small"><i class="fas fa-arrow-left"></i></span>
+    <span>Back to VM Scripts</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+
+{% if error %}
+  <div class="notification is-danger is-light">
+    <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i> {{ error }}
+  </div>
+{% endif %}
+
+<form method="post" action="{% url 'vm_community_scripts_deploy' script.slug %}">
+{% csrf_token %}
+
+<div class="columns">
+
+  {# ===== LEFT: App Info ===== #}
+  <div class="column is-4">
+    <div class="proxmigrate-card" style="position:sticky;top:1rem;">
+      <div class="card-body" style="padding:1.5rem;text-align:center;">
+        <img src="{{ script.logo }}"
+             alt="{{ script.name }}"
+             style="width:72px;height:72px;object-fit:contain;border-radius:10px;margin-bottom:1rem;"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div style="display:none;width:72px;height:72px;border-radius:10px;background:var(--border-light, #f0f0f0);align-items:center;justify-content:center;margin:0 auto 1rem;color:var(--text-muted, #7a7a7a);font-size:1.8rem;">
+          <i class="{{ script.category_icon|default:'fas fa-server' }}"></i>
+        </div>
+
+        <h2 style="font-size:1.15rem;font-weight:700;color:var(--text-header, #1a1a2e);margin-bottom:0.3rem;">{{ script.name }}</h2>
+        <p style="font-size:0.85rem;color:var(--text-muted, #7a7a7a);margin-bottom:1.25rem;">{{ script.description }}</p>
+
+        <div style="background:var(--bg-main, #f5f7fa);border-radius:8px;padding:1rem;text-align:left;font-size:0.82rem;">
+          <div style="font-weight:700;color:var(--text-semi, #4a4a4a);margin-bottom:0.6rem;">
+            <i class="fas fa-sliders-h" style="margin-right:0.3rem;color:var(--link-color, #3273dc);"></i> Script Defaults
+          </div>
+          <table style="width:100%;font-size:0.82rem;">
+            <tr>
+              <td style="padding:0.2rem 0;color:var(--text-muted, #7a7a7a);">CPU Cores</td>
+              <td style="padding:0.2rem 0;font-weight:600;text-align:right;">{{ script.defaults.cpu }}</td>
+            </tr>
+            <tr>
+              <td style="padding:0.2rem 0;color:var(--text-muted, #7a7a7a);">Memory</td>
+              <td style="padding:0.2rem 0;font-weight:600;text-align:right;">{{ script.defaults.ram }} MB</td>
+            </tr>
+            <tr>
+              <td style="padding:0.2rem 0;color:var(--text-muted, #7a7a7a);">Disk</td>
+              <td style="padding:0.2rem 0;font-weight:600;text-align:right;">{{ script.defaults.disk }} GB</td>
+            </tr>
+            <tr>
+              <td style="padding:0.2rem 0;color:var(--text-muted, #7a7a7a);">OS</td>
+              <td style="padding:0.2rem 0;font-weight:600;text-align:right;">{% if script.defaults.os %}{{ script.defaults.os }}{% if script.defaults.version %} {{ script.defaults.version }}{% endif %}{% else %}N/A{% endif %}</td>
+            </tr>
+          </table>
+        </div>
+
+        {% if script.source_url %}
+          <a href="{{ script.source_url|truncatechars:200 }}"
+             target="_blank" rel="noopener"
+             style="display:inline-block;margin-top:1rem;font-size:0.78rem;color:var(--link-color, #3273dc);">
+            <i class="fas fa-external-link-alt" style="margin-right:0.2rem;"></i> Project Website
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# ===== RIGHT: Launch Panel ===== #}
+  <div class="column is-8">
+
+    {# ---- How It Works ---- #}
+    <div class="form-section">
+      <div class="form-section-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon" style="background:var(--bg-info-light, #eff6ff);color:var(--link-color, #3273dc);"><i class="fas fa-terminal"></i></div>
+          Interactive Deployment
+        </div>
+      </div>
+      <div class="form-section-body is-open">
+        <p style="font-size:0.9rem;color:var(--text-semi, #4a4a4a);line-height:1.6;margin-bottom:1rem;">
+          This script runs <strong>interactively</strong> in a live terminal session on your Proxmox host.
+          You'll be guided through the configuration step by step &mdash; including resource allocation,
+          storage, and network settings.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:0.5rem;font-size:0.85rem;">
+          <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+            <span style="color:var(--link-color, #3273dc);font-size:0.75rem;margin-top:0.15rem;"><i class="fas fa-check-circle"></i></span>
+            <span style="color:var(--text-muted, #7a7a7a);">Choose <strong style="color:var(--text-semi, #4a4a4a);">Default Settings</strong> for a quick deploy, or <strong style="color:var(--text-semi, #4a4a4a);">Advanced</strong> to customise everything</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+            <span style="color:var(--link-color, #3273dc);font-size:0.75rem;margin-top:0.15rem;"><i class="fas fa-check-circle"></i></span>
+            <span style="color:var(--text-muted, #7a7a7a);">The terminal stays connected even if you navigate away &mdash; rejoin any time to check progress</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+            <span style="color:var(--link-color, #3273dc);font-size:0.75rem;margin-top:0.15rem;"><i class="fas fa-check-circle"></i></span>
+            <span style="color:var(--text-muted, #7a7a7a);">Default values shown on the left are what the script uses if you accept the defaults</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ---- Target Node ---- #}
+    <div class="form-section">
+      <div class="form-section-header">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div class="section-icon" style="background:var(--bg-success-light, #f0fdf4);color:var(--text-success-dark, #257953);"><i class="fas fa-server"></i></div>
+          Proxmox Host
+        </div>
+      </div>
+      <div class="form-section-body is-open">
+        <div class="columns">
+          <div class="column is-half">
+            <div class="field">
+              <label class="label" style="font-size:0.875rem;font-weight:600;">Connect to Node <span style="color:var(--danger-color, #f14668);">*</span></label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="node">
+                    {% for n in nodes %}
+                      <option value="{{ n }}" {% if n == config.default_node %}selected{% endif %}>{{ n }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <p class="field-hint">The Proxmox node where the script will be executed. The script itself may offer additional node selection.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ---- Deploy Button ---- #}
+    <div style="text-align:center;margin-top:1.5rem;">
+      <button type="submit" class="button is-primary is-medium" style="font-weight:700;min-width:280px;"
+              {% if error %}disabled{% endif %}>
+        <span class="icon"><i class="fas fa-terminal"></i></span>
+        <span>Deploy</span>
+      </button>
+      <p style="font-size:0.78rem;color:var(--text-muted, #7a7a7a);margin-top:0.75rem;">
+        Opens an interactive terminal session on your Proxmox host via SSH.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+</form>
+
+{% endblock %}

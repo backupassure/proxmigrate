@@ -1,0 +1,8 @@
+<span id="catalog-update-check">
+  {% if update_available %}
+    <button class="cs-update-pill" id="refresh-catalog-btn" onclick="refreshCatalog()" title="New VM scripts available — click to update">
+      <i class="fas fa-arrow-circle-up"></i>
+      <span class="cs-update-pill-text">Update available</span>
+    </button>
+  {% endif %}
+</span>

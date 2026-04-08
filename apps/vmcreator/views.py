@@ -6,20 +6,33 @@ import uuid
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from apps.proxmox.api import ProxmoxAPIError
 from apps.vmcreator.forms import VmCreateConfigForm
-from apps.vmcreator.models import VmCreateJob
+from apps.vmcreator.models import VmCommunityScriptJob, VmCreateJob
 from apps.vmcreator.stages import (
     CREATE_STAGES_BLANK,
     CREATE_STAGES_ISO,
     CREATE_STAGES_ISO_PROXMOX,
     build_stages,
 )
+from apps.vmcreator.vm_catalog import (
+    can_refresh,
+    check_for_updates,
+    get_catalog,
+    get_categories,
+    get_script,
+    search_catalog,
+)
 from apps.wizard.models import DiscoveredEnvironment, ProxmoxConfig
 
 logger = logging.getLogger(__name__)
+
+VM_COMMUNITY_SCRIPTS_PER_PAGE = 30
 
 UPLOAD_ROOT = getattr(settings, "UPLOAD_ROOT", "/opt/proxmigrate/uploads")
 ALLOWED_ISO_EXT = {".iso"}
@@ -330,3 +343,189 @@ def iso_browser(request):
         "error": error,
         "storage": storage,
     })
+
+
+# =========================================================================
+# VM Community Scripts
+# =========================================================================
+
+@login_required
+def vm_community_scripts(request):
+    """Browse, search, and filter the VM community scripts catalog."""
+    query = request.GET.get("q", "").strip()
+    category = request.GET.get("category", "").strip()
+    page_num = request.GET.get("page", "1")
+
+    scripts = search_catalog(query=query, category=category)
+    categories = get_categories()
+
+    paginator = Paginator(scripts, VM_COMMUNITY_SCRIPTS_PER_PAGE)
+    page = paginator.get_page(page_num)
+
+    cat_icon_map = {cat["name"]: cat["icon"] for cat in categories}
+    for script in scripts:
+        first_cat = (script.get("categories") or [""])[0]
+        script["category_icon"] = cat_icon_map.get(first_cat, "fas fa-server")
+
+    ctx = {
+        "page": page,
+        "categories": categories,
+        "query": query,
+        "selected_category": category,
+        "total_count": len(scripts),
+    }
+
+    if request.headers.get("HX-Request"):
+        return render(request, "vmcreator/partials/vm_script_grid.html", ctx)
+
+    return render(request, "vmcreator/vm_community_scripts.html", ctx)
+
+
+@login_required
+def vm_community_scripts_deploy(request, slug):
+    """Configure and deploy a VM community script."""
+    script = get_script(slug)
+    if not script:
+        messages.error(request, f"Unknown VM community script: {slug}")
+        return redirect("vm_community_scripts")
+
+    cat_icon_map = {cat["name"]: cat["icon"] for cat in get_categories()}
+    first_cat = (script.get("categories") or [""])[0]
+    script["category_icon"] = cat_icon_map.get(first_cat, "fas fa-server")
+
+    config = ProxmoxConfig.get_config()
+
+    if request.method == "POST":
+        node = request.POST.get("node", config.default_node)
+
+        # Store script defaults as reference metadata (not user-editable config
+        # — VM scripts are fully interactive and handle their own configuration
+        # via whiptail prompts in the terminal session).
+        deploy_config = {
+            "script_defaults": script.get("defaults", {}),
+        }
+
+        job = VmCommunityScriptJob.objects.create(
+            app_name=script["name"],
+            app_slug=script["slug"],
+            script_url=script["script_url"],
+            node=node,
+            deploy_config_json=json.dumps(deploy_config),
+            created_by=request.user,
+        )
+
+        return redirect("vm_community_scripts_progress", job_id=job.pk)
+
+    # GET: render deploy launch page
+    nodes = []
+    error = None
+
+    if config and config.is_configured:
+        try:
+            api = config.get_api_client()
+            nodes = [n.get("node") for n in api.get_nodes() if n.get("node")]
+        except ProxmoxAPIError as exc:
+            error = f"Could not load Proxmox resources: {exc.message}"
+    else:
+        error = "Proxmox is not yet configured. Please complete the setup wizard."
+
+    return render(request, "vmcreator/vm_community_scripts_deploy.html", {
+        "script": script,
+        "config": config,
+        "nodes": nodes,
+        "error": error,
+    })
+
+
+VM_COMMUNITY_SCRIPT_STAGES = [
+    ("RUNNING_SCRIPT", "Running Script"),
+]
+
+
+@login_required
+def vm_community_scripts_progress(request, job_id):
+    """Progress page for a VM community script deployment."""
+    job = get_object_or_404(VmCommunityScriptJob, pk=job_id, created_by=request.user)
+    return render(request, "vmcreator/vm_community_scripts_progress.html", {"job": job})
+
+
+@login_required
+def vm_community_scripts_job_status(request, job_id):
+    """HTMX polling endpoint for VM community script job status."""
+    job = get_object_or_404(VmCommunityScriptJob, pk=job_id, created_by=request.user)
+
+    stages, stages_done_count = build_stages(job, VM_COMMUNITY_SCRIPT_STAGES)
+
+    from django.utils import timezone as tz
+    elapsed_seconds = int((tz.now() - job.created_at).total_seconds())
+    elapsed_min, elapsed_sec = divmod(elapsed_seconds, 60)
+
+    return render(request, "vmcreator/partials/vm_community_job_status.html", {
+        "job": job,
+        "stages": stages,
+        "stages_done_count": stages_done_count,
+        "elapsed_min": elapsed_min,
+        "elapsed_sec": elapsed_sec,
+    })
+
+
+@login_required
+def vm_community_scripts_cancel(request, job_id):
+    """Cancel a running VM community script deployment."""
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    job = get_object_or_404(VmCommunityScriptJob, pk=job_id, created_by=request.user)
+
+    if job.stage not in (VmCommunityScriptJob.STAGE_DONE,
+                         VmCommunityScriptJob.STAGE_FAILED,
+                         VmCommunityScriptJob.STAGE_CANCELLED):
+        job.cancelled = True
+        job.stage = VmCommunityScriptJob.STAGE_CANCELLED
+        job.message = "Cancelled by user."
+        job.save(update_fields=["cancelled", "stage", "message", "updated_at"])
+
+        logger.info("VmCommunityScriptJob %d: cancelled by user %s", job.pk, request.user)
+
+    return redirect("vm_community_scripts_progress", job_id=job.pk)
+
+
+@login_required
+def vm_community_scripts_check_updates(request):
+    """HTMX endpoint: check if the VM community scripts catalog has updates."""
+    result = check_for_updates()
+    return render(request, "vmcreator/partials/vm_catalog_update_banner.html", {
+        "update_available": result["update_available"],
+        "can_refresh": can_refresh(),
+        "check_error": result["error"],
+    })
+
+
+@login_required
+def vm_community_scripts_refresh_catalog(request):
+    """Trigger a VM catalog rebuild via Celery and return JSON status."""
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    from apps.vmcreator.vm_tasks import refresh_vm_community_catalog
+    task = refresh_vm_community_catalog.delay()
+
+    return JsonResponse({"task_id": task.id, "status": "started"})
+
+
+@login_required
+def vm_community_scripts_refresh_status(request, task_id):
+    """Poll the status of a VM catalog refresh task."""
+    from celery.result import AsyncResult
+    result = AsyncResult(task_id)
+
+    if result.ready():
+        task_result = result.result or {}
+        return JsonResponse({
+            "status": "complete",
+            "success": task_result.get("success", False),
+            "script_count": task_result.get("script_count", 0),
+            "error": task_result.get("error"),
+        })
+
+    return JsonResponse({"status": "running"})
