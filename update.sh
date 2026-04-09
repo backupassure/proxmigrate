@@ -179,16 +179,7 @@ SUDOERS
 
     chown -R "${APP_USER}:${APP_USER}" "${APP_HOME}"
 
-    # 12. Install new systemd service files
-    echo "==> Installing new service files..."
-    cp "${APP_HOME}/deploy/gunicorn.service.template" /etc/systemd/system/proxorchestrator-gunicorn.service
-    cp "${APP_HOME}/deploy/celery.service.template" /etc/systemd/system/proxorchestrator-celery.service
-    cp "${APP_HOME}/deploy/daphne.service.template" /etc/systemd/system/proxorchestrator-daphne.service
-    systemctl daemon-reload
-    for svc in proxorchestrator-gunicorn proxorchestrator-celery proxorchestrator-daphne; do
-        systemctl enable "${svc}" 2>/dev/null || true
-    done
-    echo "    Service files installed and enabled."
+    # 12. Service files will be installed after rsync brings in new templates
 
     MIGRATED_FROM_PROXMIGRATE=true
 
@@ -260,6 +251,19 @@ for p in /etc/nginx/sites-enabled/proxorchestrator /etc/nginx/sites-available/pr
         break
     fi
 done
+
+# ---------------------------------------------------------------------------
+# Fix stale systemd service files that still reference old proxmigrate paths
+# ---------------------------------------------------------------------------
+GUNICORN_SVC="/etc/systemd/system/proxorchestrator-gunicorn.service"
+if [[ -f "${GUNICORN_SVC}" ]] && grep -q "proxmigrate" "${GUNICORN_SVC}" 2>/dev/null; then
+    echo "==> Fixing stale systemd service files (still reference proxmigrate)..."
+    cp "${APP_HOME}/deploy/gunicorn.service.template" /etc/systemd/system/proxorchestrator-gunicorn.service
+    cp "${APP_HOME}/deploy/celery.service.template" /etc/systemd/system/proxorchestrator-celery.service
+    cp "${APP_HOME}/deploy/daphne.service.template" /etc/systemd/system/proxorchestrator-daphne.service
+    systemctl daemon-reload
+    echo "    Service files updated from new templates."
+fi
 
 if [[ -n "${NGINX_LIVE}" ]] && grep -q "proxmigrate" "${NGINX_LIVE}" 2>/dev/null; then
     echo "==> Fixing stale nginx config (still references proxmigrate)..."
