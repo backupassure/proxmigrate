@@ -21,7 +21,7 @@ class ProxmoxConfig(models.Model):
     default_node = models.CharField(max_length=100, blank=True)
     default_storage = models.CharField(max_length=100, blank=True)
     default_bridge = models.CharField(max_length=100, blank=True)
-    proxmox_temp_dir = models.CharField(max_length=500, default="/var/tmp/proxmigrate/")
+    proxmox_temp_dir = models.CharField(max_length=500, default="/var/tmp/proxorchestrator/")
     virtio_iso = models.CharField(
         max_length=500,
         blank=True,
@@ -98,7 +98,7 @@ class ProxmoxConfig(models.Model):
     def _ssh_key_path():
         import os
 
-        production_key = "/opt/proxmigrate/.ssh/id_rsa"
+        production_key = "/opt/proxorchestrator/.ssh/id_rsa"
         dev_key = os.path.expanduser("~/.ssh/id_rsa")
         if os.path.exists(production_key):
             return production_key

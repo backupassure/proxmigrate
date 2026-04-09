@@ -533,7 +533,7 @@ def acme_configure(request):
                 dns_providers.create_txt_record(
                     config.dns_provider,
                     config.domain,
-                    "proxmigrate-api-test",
+                    "proxorchestrator-api-test",
                     api_token=config.dns_api_token,
                     api_secret=config.dns_api_secret,
                     zone_id=config.dns_zone_id,

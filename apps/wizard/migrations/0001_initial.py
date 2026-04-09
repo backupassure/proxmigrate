@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('default_node', models.CharField(blank=True, max_length=100)),
                 ('default_storage', models.CharField(blank=True, max_length=100)),
                 ('default_bridge', models.CharField(blank=True, max_length=100)),
-                ('proxmox_temp_dir', models.CharField(default='/var/tmp/proxmigrate/', max_length=500)),
+                ('proxmox_temp_dir', models.CharField(default='/var/tmp/proxorchestrator/', max_length=500)),
                 ('default_cores', models.IntegerField(default=2)),
                 ('default_memory_mb', models.IntegerField(default=2048)),
                 ('vmid_min', models.IntegerField(default=100)),

@@ -30,7 +30,7 @@ class EmailConfig(models.Model):
     from_email = models.CharField(
         max_length=255,
         blank=True,
-        help_text="Sender address shown in outgoing email (e.g. proxmigrate@example.com)",
+        help_text="Sender address shown in outgoing email (e.g. proxorchestrator@example.com)",
     )
 
     # ── SMTP fields ──────────────────────────────────────────────────────────

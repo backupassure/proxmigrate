@@ -96,12 +96,12 @@ The installer auto-detects `apt`, `dnf`, `yum`, or `zypper` and installs the cor
 
 The installer performs operations that require root privileges:
 
-- Creates a `proxmigrate` system user and group
-- Writes application files to `/opt/proxmigrate/`
+- Creates a `proxorchestrator` system user and group
+- Writes application files to `/opt/proxorchestrator/`
 - Installs system packages (`apt-get install`, `dnf install`, etc.)
 - Writes systemd unit files to `/etc/systemd/system/`
 - Writes an nginx site configuration to `/etc/nginx/sites-available/` (or `/etc/nginx/conf.d/`)
-- Writes a sudoers rule to `/etc/sudoers.d/proxmigrate-nginx` so the `proxmigrate` service user can reload nginx without a password (needed when TLS certificates or Proxmox connection settings change)
+- Writes a sudoers rule to `/etc/sudoers.d/proxorchestrator-nginx` so the `proxorchestrator` service user can reload nginx without a password (needed when TLS certificates or Proxmox connection settings change)
 - Generates a self-signed TLS certificate
 
 `uninstall.sh` also requires root to remove all of the above.
@@ -111,31 +111,31 @@ The installer performs operations that require root privileges:
 ProxOrchestrator holds an uploaded disk image in two places before it reaches Proxmox:
 
 1. **Upload temp dir** — Django writes the incoming file here during the HTTP upload. Defaults to the OS temp directory (`/tmp` on Linux), which is often a RAM-backed `tmpfs` mount limited to 50% of total RAM. A 15 GB image will fail if this fills up.
-2. **Upload store** (`/opt/proxmigrate/uploads/`) — the file is copied here once the upload completes, then deleted after it has been transferred to Proxmox via SFTP.
+2. **Upload store** (`/opt/proxorchestrator/uploads/`) — the file is copied here once the upload completes, then deleted after it has been transferred to Proxmox via SFTP.
 
 **Rule of thumb:** the ProxOrchestrator server needs free space equal to at least **2× the size of the largest image** you plan to import (temp file + stored file exist briefly at the same time).
 
 ### Changing the upload temp directory
 
-If your `/tmp` is small (check with `df -h /tmp`), set `UPLOAD_TEMP_DIR` in `/opt/proxmigrate/.env` to a path on a disk with enough free space:
+If your `/tmp` is small (check with `df -h /tmp`), set `UPLOAD_TEMP_DIR` in `/opt/proxorchestrator/.env` to a path on a disk with enough free space:
 
 ```env
-UPLOAD_TEMP_DIR=/data/proxmigrate/tmp
+UPLOAD_TEMP_DIR=/data/proxorchestrator/tmp
 ```
 
-Create the directory and give the `proxmigrate` user write access, then restart the service:
+Create the directory and give the `proxorchestrator` user write access, then restart the service:
 
 ```bash
-sudo mkdir -p /data/proxmigrate/tmp
-sudo chown proxmigrate:proxmigrate /data/proxmigrate/tmp
-sudo systemctl restart proxmigrate-gunicorn
+sudo mkdir -p /data/proxorchestrator/tmp
+sudo chown proxorchestrator:proxorchestrator /data/proxorchestrator/tmp
+sudo systemctl restart proxorchestrator-gunicorn
 ```
 
 ## Quick Install
 
 ```bash
 git clone https://github.com/ForgedIO/ProxOrchestrator.git
-cd proxmigrate
+cd ProxOrchestrator
 sudo ./install.sh
 ```
 
@@ -146,10 +146,10 @@ sudo ./install.sh --port 9443
 ```
 
 The installer:
-1. Creates a dedicated `proxmigrate` system user
+1. Creates a dedicated `proxorchestrator` system user
 2. Installs Python, Redis, nginx, and `qemu-utils`
 3. Sets up a Python virtualenv and installs all dependencies
-4. Generates a self-signed TLS certificate (replace with your own at `/opt/proxmigrate/certs/`)
+4. Generates a self-signed TLS certificate (replace with your own at `/opt/proxorchestrator/certs/`)
 5. Configures nginx as a reverse proxy with WebSocket support
 6. Creates and enables systemd services for gunicorn and Celery (auto-start on reboot)
 7. Runs database migrations and creates an admin account
@@ -161,13 +161,13 @@ After install, open `https://<your-server-ip>:8443` and log in with the admin ac
 To update an existing installation to the latest version:
 
 ```bash
-cd /path/to/proxmigrate   # wherever you cloned the repo
+cd /path/to/ProxOrchestrator   # wherever you cloned the repo
 git pull origin main
 sudo ./update.sh
 ```
 
 `update.sh` will:
-1. Rsync all application files into `/opt/proxmigrate/`
+1. Rsync all application files into `/opt/proxorchestrator/`
 2. Install any new Python dependencies
 3. Run database migrations
 4. Collect static files
@@ -267,7 +267,7 @@ ProxOrchestrator includes a full certificate management UI at **Settings → Cer
 ### Option 1 — Generate a CSR (recommended for CA-signed certs)
 
 1. Go to **Settings → Certificates → Generate CSR**.
-2. Fill in the Common Name (e.g. `proxmigrate.example.com`), optional Organization and Country, and any DNS or IP Subject Alternative Names.
+2. Fill in the Common Name (e.g. `proxorchestrator.example.com`), optional Organization and Country, and any DNS or IP Subject Alternative Names.
 3. Click **Generate CSR** — ProxOrchestrator creates an RSA 2048 private key (stored on the server) and a CSR.
 4. Copy the CSR from the **Pending CSR** panel and submit it to your Certificate Authority.
 5. Once your CA returns the signed certificate, go to **Upload Signed Cert** and upload it. ProxOrchestrator verifies the cert matches the stored key before installing.
@@ -293,8 +293,8 @@ Go to **Settings → Certificates → Self-Signed** and click **Generate New Sel
 You can also place files directly and reload nginx:
 
 ```
-/opt/proxmigrate/certs/proxmigrate.crt
-/opt/proxmigrate/certs/proxmigrate.key
+/opt/proxorchestrator/certs/proxorchestrator.crt
+/opt/proxorchestrator/certs/proxorchestrator.key
 ```
 
 ```bash
@@ -311,19 +311,19 @@ ProxOrchestrator runs as five systemd services, all enabled for auto-start on re
 
 | Service | Purpose |
 |---|---|
-| `proxmigrate-gunicorn` | Django application server |
-| `proxmigrate-celery` | Background task worker (conversions, imports) |
-| `proxmigrate-daphne` | ASGI server for WebSocket connections (community scripts terminal) |
+| `proxorchestrator-gunicorn` | Django application server |
+| `proxorchestrator-celery` | Background task worker (conversions, imports) |
+| `proxorchestrator-daphne` | ASGI server for WebSocket connections (community scripts terminal) |
 | `nginx` | HTTPS reverse proxy and WebSocket proxy |
 | `redis-server` | Task queue broker |
 
 ```bash
 # Check status
-sudo systemctl status proxmigrate-gunicorn proxmigrate-celery
+sudo systemctl status proxorchestrator-gunicorn proxorchestrator-celery
 
 # View logs
-sudo journalctl -u proxmigrate-gunicorn -f
-sudo journalctl -u proxmigrate-celery -f
+sudo journalctl -u proxorchestrator-gunicorn -f
+sudo journalctl -u proxorchestrator-celery -f
 ```
 
 ## Uninstall
@@ -332,7 +332,7 @@ sudo journalctl -u proxmigrate-celery -f
 sudo ./uninstall.sh
 ```
 
-This removes all services, files, and the `proxmigrate` system user. The database and uploads under `/opt/proxmigrate/` are removed — back up anything you need first.
+This removes all services, files, and the `proxorchestrator` system user. The database and uploads under `/opt/proxorchestrator/` are removed — back up anything you need first.
 
 ## LXC Container Management
 
@@ -495,7 +495,7 @@ bash -c "$(wget -qLO - https://github.com/ForgedIO/ProxOrchestrator/raw/main/lxc
 | Option | Default | Description |
 |---|---|---|
 | `--id <n>` | Next available | Container ID (VMID) |
-| `--hostname <s>` | `proxmigrate` | Container hostname |
+| `--hostname <s>` | `proxorchestrator` | Container hostname |
 | `--storage <s>` | Auto-detect | Proxmox storage for rootfs (e.g. `local`, `local-lvm`, `nvme-pool2`) |
 | `--bridge <s>` | `vmbr0` | Network bridge |
 | `--disk <n>` | `16` | Rootfs size in GB |
@@ -515,7 +515,7 @@ bash -c "$(wget -qLO - https://github.com/ForgedIO/ProxOrchestrator/raw/main/lxc
 
 **Find your container ID:**
 ```bash
-pct list | grep proxmigrate
+pct list | grep proxorchestrator
 ```
 
 **Enter the container** (no password needed — run from the Proxmox host shell or SSH):
@@ -525,17 +525,17 @@ pct enter <container-id>
 
 **Update ProxOrchestrator to the latest version** (run from inside the container):
 ```bash
-cd /opt/proxmigrate-src && git pull origin main && sudo ./update.sh
+cd /opt/proxorchestrator-src && git pull origin main && sudo ./update.sh
 ```
 
 Or as a one-liner from the Proxmox host without entering the container:
 ```bash
-pct exec <container-id> -- bash -c "cd /opt/proxmigrate-src && git pull origin main && sudo ./update.sh"
+pct exec <container-id> -- bash -c "cd /opt/proxorchestrator-src && git pull origin main && sudo ./update.sh"
 ```
 
 **Restart services** (from inside the container):
 ```bash
-sudo systemctl restart proxmigrate-gunicorn proxmigrate-celery
+sudo systemctl restart proxorchestrator-gunicorn proxorchestrator-celery
 ```
 
 ### VM Management (complete)

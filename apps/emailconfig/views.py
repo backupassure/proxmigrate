@@ -129,7 +129,7 @@ def email_settings_test(request, backend_type):
                 conn.login(username, password)
 
             conn.sendmail(
-                from_email or username or "proxmigrate@localhost",
+                from_email or username or "proxorchestrator@localhost",
                 to_address,
                 f"Subject: ProxOrchestrator Test Email\r\n\r\n"
                 f"This is a test email from ProxOrchestrator to confirm your SMTP configuration is working.",

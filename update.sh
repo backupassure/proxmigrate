@@ -8,8 +8,8 @@
 # and restarts services.  Does NOT change TLS certs or SSH keys.
 set -euo pipefail
 
-APP_USER="proxmigrate"
-APP_HOME="/opt/proxmigrate"
+APP_USER="proxorchestrator"
+APP_HOME="/opt/proxorchestrator"
 VENV="${APP_HOME}/venv"
 PYTHON="${VENV}/bin/python"
 PIP="${VENV}/bin/pip"
@@ -22,7 +22,7 @@ if [[ "${EUID}" -ne 0 ]]; then
 fi
 
 echo "==> Copying application files to ${APP_HOME}..."
-COPY_DIRS=(apps proxmigrate templates static help deploy scripts)
+COPY_DIRS=(apps proxorchestrator templates static help deploy scripts)
 for d in "${COPY_DIRS[@]}"; do
     if [[ -d "${SCRIPT_DIR}/${d}" ]]; then
         rsync -a --delete "${SCRIPT_DIR}/${d}/" "${APP_HOME}/${d}/"
@@ -47,9 +47,9 @@ sudo -u "${APP_USER}" "${PIP}" install -q -r "${APP_HOME}/requirements.txt"
 
 echo "==> Running database migrations..."
 sudo -u "${APP_USER}" \
-    DJANGO_SETTINGS_MODULE=proxmigrate.settings.production \
+    DJANGO_SETTINGS_MODULE=proxorchestrator.settings.production \
     "${PYTHON}" "${APP_HOME}/manage.py" migrate --noinput \
-    --settings=proxmigrate.settings.production
+    --settings=proxorchestrator.settings.production
 
 echo "==> Installing frontend dependencies..."
 if command -v npm &>/dev/null; then
@@ -64,9 +64,9 @@ fi
 
 echo "==> Collecting static files..."
 sudo -u "${APP_USER}" \
-    DJANGO_SETTINGS_MODULE=proxmigrate.settings.production \
+    DJANGO_SETTINGS_MODULE=proxorchestrator.settings.production \
     "${PYTHON}" "${APP_HOME}/manage.py" collectstatic --noinput \
-    --settings=proxmigrate.settings.production
+    --settings=proxorchestrator.settings.production
 
 # ---------------------------------------------------------------------------
 # Ensure ACME certificate automation prerequisites exist
@@ -91,7 +91,7 @@ fi
 
 # Add ACME include to live nginx config if not present
 NGINX_CONF=""
-for p in /etc/nginx/sites-enabled/proxmigrate /etc/nginx/sites-available/proxmigrate /etc/nginx/conf.d/proxmigrate.conf; do
+for p in /etc/nginx/sites-enabled/proxorchestrator /etc/nginx/sites-available/proxorchestrator /etc/nginx/conf.d/proxorchestrator.conf; do
     if [[ -f "${p}" ]]; then
         NGINX_CONF="${p}"
         break
@@ -107,14 +107,14 @@ if [[ -n "${NGINX_CONF}" ]] && ! grep -q "acme-challenge.conf" "${NGINX_CONF}" 2
 fi
 
 # Add ACME sudoers rule if not present
-SUDOERS_FILE="/etc/sudoers.d/proxmigrate-nginx"
+SUDOERS_FILE="/etc/sudoers.d/proxorchestrator-nginx"
 if [[ -f "${SUDOERS_FILE}" ]] && ! grep -q "acme-challenge" "${SUDOERS_FILE}" 2>/dev/null; then
     echo "${APP_USER} ALL=(ALL) NOPASSWD: /usr/bin/tee ${ACME_CONF}" >> "${SUDOERS_FILE}"
     echo "    Added ACME sudoers rule"
 fi
 
 # Update celery service to include Beat scheduler (-B flag)
-CELERY_SERVICE="/etc/systemd/system/proxmigrate-celery.service"
+CELERY_SERVICE="/etc/systemd/system/proxorchestrator-celery.service"
 if [[ -f "${CELERY_SERVICE}" ]] && ! grep -q "\-B" "${CELERY_SERVICE}" 2>/dev/null; then
     cp "${APP_HOME}/deploy/celery.service.template" "${CELERY_SERVICE}"
     systemctl daemon-reload
@@ -125,34 +125,34 @@ fi
 # Daphne WebSocket service
 # ---------------------------------------------------------------------------
 echo "==> Updating Daphne WebSocket service..."
-cp "${APP_HOME}/deploy/daphne.service.template" /etc/systemd/system/proxmigrate-daphne.service
+cp "${APP_HOME}/deploy/daphne.service.template" /etc/systemd/system/proxorchestrator-daphne.service
 systemctl daemon-reload
-systemctl enable proxmigrate-daphne 2>/dev/null
+systemctl enable proxorchestrator-daphne 2>/dev/null
 echo "    Daphne service installed."
 
 # Ensure gunicorn service also preserves the shared RuntimeDirectory
-if ! grep -q 'RuntimeDirectoryPreserve' /etc/systemd/system/proxmigrate-gunicorn.service 2>/dev/null; then
+if ! grep -q 'RuntimeDirectoryPreserve' /etc/systemd/system/proxorchestrator-gunicorn.service 2>/dev/null; then
     sed -i '/^RuntimeDirectoryMode=/a RuntimeDirectoryPreserve=yes' \
-        /etc/systemd/system/proxmigrate-gunicorn.service
+        /etc/systemd/system/proxorchestrator-gunicorn.service
     systemctl daemon-reload
     echo "    Added RuntimeDirectoryPreserve to gunicorn service."
 fi
 
 # Auto-update nginx config with WebSocket proxy block if missing
-if [[ -n "$NGINX_CONF" ]] && ! grep -q 'proxmigrate_ws' "$NGINX_CONF"; then
+if [[ -n "$NGINX_CONF" ]] && ! grep -q 'proxorchestrator_ws' "$NGINX_CONF"; then
     echo "==> Adding WebSocket proxy config to nginx..."
     # Add the daphne upstream block after the gunicorn upstream
-    sed -i '/^upstream proxmigrate_app {/,/^}/{
+    sed -i '/^upstream proxorchestrator_app {/,/^}/{
         /^}/a\
 \
-upstream proxmigrate_ws {\
-    server unix:\/run\/proxmigrate\/daphne.sock fail_timeout=0;\
+upstream proxorchestrator_ws {\
+    server unix:\/run\/proxorchestrator\/daphne.sock fail_timeout=0;\
 }
     }' "$NGINX_CONF"
     # Add the /ws/ location block before the catch-all location /
     sed -i '/location \/ {/i\
     location /ws/ {\
-        proxy_pass          http://proxmigrate_ws;\
+        proxy_pass          http://proxorchestrator_ws;\
         proxy_http_version  1.1;\
         proxy_set_header    Upgrade           $http_upgrade;\
         proxy_set_header    Connection        "upgrade";\
@@ -169,10 +169,10 @@ upstream proxmigrate_ws {\
 fi
 
 echo "==> Restarting services..."
-systemctl restart proxmigrate-gunicorn proxmigrate-celery
+systemctl restart proxorchestrator-gunicorn proxorchestrator-celery
 sleep 2
-systemctl restart proxmigrate-daphne
-systemctl is-active proxmigrate-gunicorn proxmigrate-celery proxmigrate-daphne
+systemctl restart proxorchestrator-daphne
+systemctl is-active proxorchestrator-gunicorn proxorchestrator-celery proxorchestrator-daphne
 
 echo ""
 echo "ProxOrchestrator updated successfully."

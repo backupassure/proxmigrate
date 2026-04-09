@@ -33,7 +33,7 @@
     {% endif %}
 
     {# ── Delivery method selector ── #}
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;">
       <div class="card-header">
         <i class="fas fa-paper-plane" style="color: var(--link-color);margin-right: 0.5rem;"></i>
         Delivery Method
@@ -96,7 +96,7 @@
     {# SMTP Form                                                              #}
     {# ══════════════════════════════════════════════════════════════════════ #}
     <div id="pane-smtp" class="{% if config and config.backend_type == 'graph' %}is-hidden{% endif %}">
-      <div class="proxmigrate-card">
+      <div class="proxorchestrator-card">
         <div class="card-header">
           <i class="fas fa-envelope" style="color: var(--link-color);margin-right: 0.5rem;"></i>
           SMTP Configuration
@@ -112,7 +112,7 @@
                   <div class="control has-icons-left">
                     <input class="input" type="email" name="from_email"
                            value="{{ config.from_email|default:'' }}"
-                           placeholder="proxmigrate@example.com">
+                           placeholder="proxorchestrator@example.com">
                     <span class="icon is-left"><i class="fas fa-at"></i></span>
                   </div>
                   <p class="field-hint">Sender address shown on all outgoing emails.</p>
@@ -239,7 +239,7 @@
     {# Microsoft Graph API Form                                               #}
     {# ══════════════════════════════════════════════════════════════════════ #}
     <div id="pane-graph" class="{% if not config or config.backend_type != 'graph' %}is-hidden{% endif %}">
-      <div class="proxmigrate-card">
+      <div class="proxorchestrator-card">
         <div class="card-header">
           <i class="fab fa-microsoft" style="color: var(--link-color);margin-right: 0.5rem;"></i>
           Microsoft Graph API

@@ -14,7 +14,7 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 _BASE_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
-_LDAP_CA_CERT_PATH = "/opt/proxmigrate/certs/ldap-ca.pem"
+_LDAP_CA_CERT_PATH = "/opt/proxorchestrator/certs/ldap-ca.pem"
 
 
 def load_auth_backends_from_db():

@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 VM_COMMUNITY_SCRIPTS_PER_PAGE = 30
 
-UPLOAD_ROOT = getattr(settings, "UPLOAD_ROOT", "/opt/proxmigrate/uploads")
+UPLOAD_ROOT = getattr(settings, "UPLOAD_ROOT", "/opt/proxorchestrator/uploads")
 ALLOWED_ISO_EXT = {".iso"}
 
 
@@ -287,7 +287,7 @@ def cancel_job(request, job_id):
         return redirect("dashboard")
 
     if job.task_id:
-        from proxmigrate.celery import app as celery_app
+        from proxorchestrator.celery import app as celery_app
         celery_app.control.revoke(job.task_id, terminate=True, signal="SIGTERM")
         logger.info("cancel_job: revoked Celery task %s for VmCreateJob %d", job.task_id, job.pk)
 

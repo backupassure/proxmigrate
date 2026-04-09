@@ -11,7 +11,7 @@
 #
 # Options:
 #   --id <n>         Container ID (default: next available)
-#   --hostname <s>   Container hostname (default: proxmigrate)
+#   --hostname <s>   Container hostname (default: proxorchestrator)
 #   --storage <s>    Proxmox storage for rootfs (default: auto-detect)
 #   --bridge <s>     Network bridge (default: vmbr0)
 #   --disk <n>       Rootfs size in GB (default: 16)
@@ -66,7 +66,7 @@ header() {
 # Defaults
 # ---------------------------------------------------------------------------
 CT_ID=""
-CT_HOSTNAME="proxmigrate"
+CT_HOSTNAME="proxorchestrator"
 CT_STORAGE=""  # Auto-detect if not specified
 CT_BRIDGE="vmbr0"
 CT_DISK=16
@@ -101,7 +101,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  --id <n>         Container ID (default: next available)"
-            echo "  --hostname <s>   Container hostname (default: proxmigrate)"
+            echo "  --hostname <s>   Container hostname (default: proxorchestrator)"
             echo "  --storage <s>    Proxmox storage for rootfs (default: auto-detect)"
             echo "  --bridge <s>     Network bridge (default: vmbr0)"
             echo "  --disk <n>       Rootfs size in GB (default: 16)"
@@ -274,12 +274,12 @@ msg "Prerequisites installed (git, sudo, curl)."
 
 # Clone the repository
 info "Cloning ProxOrchestrator repository..."
-pct exec "${CT_ID}" -- bash -c "git clone -b ${REPO_BRANCH} ${REPO_URL} /opt/proxmigrate-src" 2>&1 | tail -1
+pct exec "${CT_ID}" -- bash -c "git clone -b ${REPO_BRANCH} ${REPO_URL} /opt/proxorchestrator-src" 2>&1 | tail -1
 
 # Run install.sh inside the container
 info "Running install.sh (this will take a few minutes)..."
 echo ""
-pct exec "${CT_ID}" -- bash -c "cd /opt/proxmigrate-src && bash install.sh --port ${CT_PORT}" 2>&1
+pct exec "${CT_ID}" -- bash -c "cd /opt/proxorchestrator-src && bash install.sh --port ${CT_PORT}" 2>&1
 
 # ---------------------------------------------------------------------------
 # Done
@@ -311,5 +311,5 @@ echo -e "  Hostname:       ${CT_HOSTNAME}"
 echo -e "  Default login:  ${YW}admin / admin${NC} (you'll be prompted to change it)"
 echo ""
 echo -e "  To enter the container:  ${BL}pct enter ${CT_ID}${NC}"
-echo -e "  To update ProxOrchestrator:   ${BL}pct exec ${CT_ID} -- bash -c 'cd /opt/proxmigrate-src && git pull && sudo ./update.sh'${NC}"
+echo -e "  To update ProxOrchestrator:   ${BL}pct exec ${CT_ID} -- bash -c 'cd /opt/proxorchestrator-src && git pull && sudo ./update.sh'${NC}"
 echo ""

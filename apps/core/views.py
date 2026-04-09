@@ -60,7 +60,7 @@ def dashboard(request):
 
         # Check SSH key on disk (fast — no network)
         ssh_key_paths = [
-            "/opt/proxmigrate/.ssh/id_rsa",
+            "/opt/proxorchestrator/.ssh/id_rsa",
             os.path.expanduser("~/.ssh/id_rsa"),
         ]
         ssh_key_ok = any(os.path.exists(p) for p in ssh_key_paths)

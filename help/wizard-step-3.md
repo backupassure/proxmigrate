@@ -17,13 +17,13 @@ API tokens are the recommended way to integrate with Proxmox. They:
 
 3. **Fill in the form:**
    - User: `root@pam`
-   - Token ID: `proxmigrate` (or any name you choose)
+   - Token ID: `proxorchestrator` (or any name you choose)
    - **Uncheck "Privilege Separation"** — this is critical! Without unchecking this, the token won't have full root privileges and ProxOrchestrator won't be able to create or manage VMs.
 
 4. **Click Add** — Proxmox will show a dialog with the token secret. **Copy it immediately.** This is the only time Proxmox will show you the secret.
 
 5. **Paste the values** into the form on this page:
-   - Full Token ID: `root@pam!proxmigrate`
+   - Full Token ID: `root@pam!proxorchestrator`
    - Token Secret: the UUID shown by Proxmox
 
 ## Understanding Privilege Separation
@@ -34,9 +34,9 @@ When "Privilege Separation" is enabled, a token only has access to resources exp
 
 The full token ID follows the format `USER@REALM!TOKENID`. If you created a token with:
 - User: `root@pam`
-- Token ID: `proxmigrate`
+- Token ID: `proxorchestrator`
 
-Then the full token ID is: `root@pam!proxmigrate`
+Then the full token ID is: `root@pam!proxorchestrator`
 
 ## Common issues
 

@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 )),
                 ("from_email", models.CharField(
                     blank=True,
-                    help_text="Sender address shown in outgoing email (e.g. proxmigrate@example.com)",
+                    help_text="Sender address shown in outgoing email (e.g. proxorchestrator@example.com)",
                     max_length=255,
                 )),
                 ("smtp_host", models.CharField(blank=True, max_length=255)),

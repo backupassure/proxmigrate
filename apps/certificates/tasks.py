@@ -13,17 +13,17 @@ from apps.certificates.acme import AcmeError
 
 logger = logging.getLogger(__name__)
 
-CERT_DIR = "/opt/proxmigrate/certs"
-CERT_FILE = os.path.join(CERT_DIR, "proxmigrate.crt")
-KEY_FILE = os.path.join(CERT_DIR, "proxmigrate.key")
+CERT_DIR = "/opt/proxorchestrator/certs"
+CERT_FILE = os.path.join(CERT_DIR, "proxorchestrator.crt")
+KEY_FILE = os.path.join(CERT_DIR, "proxorchestrator.key")
 CHALLENGE_DIR = os.path.join(CERT_DIR, "acme-challenge")
-ACME_NGINX_CONF = "/opt/proxmigrate/deploy/acme-challenge.conf"
+ACME_NGINX_CONF = "/opt/proxorchestrator/deploy/acme-challenge.conf"
 
 ACME_NGINX_BLOCK = """server {
     listen 80;
     server_name _;
     location /.well-known/acme-challenge/ {
-        alias /opt/proxmigrate/certs/acme-challenge/;
+        alias /opt/proxorchestrator/certs/acme-challenge/;
     }
     location / {
         return 301 https://$host$request_uri;

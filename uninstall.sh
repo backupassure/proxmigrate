@@ -3,9 +3,9 @@
 # Usage: sudo ./uninstall.sh [--keep-data]
 set -euo pipefail
 
-APP_USER="proxmigrate"
-APP_HOME="/opt/proxmigrate"
-LOG_DIR="/var/log/proxmigrate"
+APP_USER="proxorchestrator"
+APP_HOME="/opt/proxorchestrator"
+LOG_DIR="/var/log/proxorchestrator"
 
 # ---------------------------------------------------------------------------
 # Parse arguments
@@ -23,7 +23,7 @@ while [[ $# -gt 0 ]]; do
             echo "Usage: sudo $0 [--keep-data]"
             echo ""
             echo "Options:"
-            echo "  --keep-data   Remove services and packages but keep /opt/proxmigrate data"
+            echo "  --keep-data   Remove services and packages but keep /opt/proxorchestrator data"
             echo "                (database, uploads, SSL certs, SSH keys)"
             exit 0
             ;;
@@ -77,7 +77,7 @@ echo ""
 
 echo "==> Stopping ProxOrchestrator services..."
 
-for SVC in proxmigrate-gunicorn proxmigrate-celery; do
+for SVC in proxorchestrator-gunicorn proxorchestrator-celery; do
     if systemctl is-active "${SVC}" &>/dev/null; then
         systemctl stop "${SVC}"
         echo "    Stopped: ${SVC}"
@@ -100,8 +100,8 @@ systemctl daemon-reload
 
 echo "==> Removing Nginx configuration..."
 
-NGINX_AVAILABLE="/etc/nginx/sites-available/proxmigrate"
-NGINX_ENABLED="/etc/nginx/sites-enabled/proxmigrate"
+NGINX_AVAILABLE="/etc/nginx/sites-available/proxorchestrator"
+NGINX_ENABLED="/etc/nginx/sites-enabled/proxorchestrator"
 
 if [[ -L "${NGINX_ENABLED}" ]]; then
     rm -f "${NGINX_ENABLED}"
@@ -121,9 +121,9 @@ fi
 # Remove runtime directory
 # ---------------------------------------------------------------------------
 
-if [[ -d /run/proxmigrate ]]; then
-    rm -rf /run/proxmigrate
-    echo "==> Removed runtime directory: /run/proxmigrate"
+if [[ -d /run/proxorchestrator ]]; then
+    rm -rf /run/proxorchestrator
+    echo "==> Removed runtime directory: /run/proxorchestrator"
 fi
 
 # ---------------------------------------------------------------------------

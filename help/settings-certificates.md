@@ -36,10 +36,10 @@ After uploading, ProxOrchestrator validates the certificate/key pair and restart
 If your ProxOrchestrator server is publicly accessible, you can get a free, browser-trusted certificate from Let's Encrypt:
 
 ```
-certbot certonly --standalone -d proxmigrate.yourdomain.com
+certbot certonly --standalone -d proxorchestrator.yourdomain.com
 ```
 
-The certificate and key will be in `/etc/letsencrypt/live/proxmigrate.yourdomain.com/`. Use:
+The certificate and key will be in `/etc/letsencrypt/live/proxorchestrator.yourdomain.com/`. Use:
 - `fullchain.pem` as the certificate file (includes chain)
 - `privkey.pem` as the private key file
 

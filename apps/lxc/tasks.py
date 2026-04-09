@@ -353,7 +353,7 @@ def run_lxc_clone_pipeline(self, job_id):
             clone_kwargs["storage"] = job.target_storage
 
         if source_running and job.full_clone:
-            temp_snap = f"proxmigrate-clone-{job.pk}"
+            temp_snap = f"proxorchestrator-clone-{job.pk}"
             job.set_stage(LxcCloneJob.STAGE_CLONING,
                           "Creating temporary snapshot of running container...", percent=5)
             with config.get_ssh_client() as ssh:

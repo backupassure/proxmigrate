@@ -24,7 +24,7 @@ class EmailConfigApp(AppConfig):
             if not config or not config.is_enabled:
                 return
 
-            django_settings.DEFAULT_FROM_EMAIL = config.from_email or "noreply@proxmigrate.local"
+            django_settings.DEFAULT_FROM_EMAIL = config.from_email or "noreply@proxorchestrator.local"
 
             if config.backend_type == EmailConfig.BACKEND_SMTP:
                 django_settings.EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

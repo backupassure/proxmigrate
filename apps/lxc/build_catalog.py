@@ -562,7 +562,7 @@ def main() -> None:
         if args.repo_path:
             repo_path = Path(args.repo_path)
         else:
-            tmp_dir = tempfile.mkdtemp(prefix="proxmigrate-catalog-")
+            tmp_dir = tempfile.mkdtemp(prefix="proxorchestrator-catalog-")
             repo_path = Path(clone_repo(tmp_dir))
 
         ct_dir = repo_path / "ct"

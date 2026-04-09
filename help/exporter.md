@@ -14,7 +14,7 @@ VM Export allows you to package a Proxmox VM (its disk image and configuration) 
 ## Planned features
 
 ### Portable Packages
-Export any VM as a versioned, compressed archive containing the qcow2 disk image and a metadata JSON file with the full VM configuration. These `.proxmigrate` packages can be imported back into any ProxOrchestrator instance.
+Export any VM as a versioned, compressed archive containing the qcow2 disk image and a metadata JSON file with the full VM configuration. These `.proxorchestrator` packages can be imported back into any ProxOrchestrator instance.
 
 ### Format Options
 Choose the output format for exported disks:

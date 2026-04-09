@@ -24,10 +24,10 @@ For Active Directory, use your domain controller's hostname or IP. In clustered 
 The Bind DN is the Distinguished Name of a service account that ProxOrchestrator uses to search the directory. This account needs read access to user and group objects.
 
 Example Active Directory bind DN:
-`CN=proxmigrate-svc,OU=Service Accounts,DC=example,DC=com`
+`CN=proxorchestrator-svc,OU=Service Accounts,DC=example,DC=com`
 
 Example OpenLDAP bind DN:
-`uid=proxmigrate,ou=service,dc=example,dc=com`
+`uid=proxorchestrator,ou=service,dc=example,dc=com`
 
 Use a dedicated service account with minimal permissions — read-only access to users and groups is sufficient.
 

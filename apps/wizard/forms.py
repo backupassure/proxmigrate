@@ -46,8 +46,8 @@ class Step3Form(forms.Form):
     api_token_id = forms.CharField(
         max_length=255,
         label="API Token ID",
-        help_text="Format: user@realm!tokenid — e.g. root@pam!proxmigrate",
-        widget=forms.TextInput(attrs={"placeholder": "root@pam!proxmigrate"}),
+        help_text="Format: user@realm!tokenid — e.g. root@pam!proxorchestrator",
+        widget=forms.TextInput(attrs={"placeholder": "root@pam!proxorchestrator"}),
     )
     api_token_secret = forms.CharField(
         max_length=255,
@@ -74,7 +74,7 @@ class Step5Form(forms.Form):
     proxmox_temp_dir = forms.CharField(
         max_length=500,
         label="Proxmox Temp Directory",
-        initial="/var/tmp/proxmigrate/",
+        initial="/var/tmp/proxorchestrator/",
         help_text="Temporary directory on the Proxmox host for disk image staging.",
     )
     default_cores = forms.IntegerField(

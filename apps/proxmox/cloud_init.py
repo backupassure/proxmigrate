@@ -83,7 +83,7 @@ def apply_cloud_init(vmid, vm_config, config, ssh):
 
 def _apply_user_data(vmid, user_data, ci_storage, config, ssh):
     """Write user-data YAML to the snippets directory and attach it."""
-    snippet_name = f"proxmigrate-ci-{vmid}.yaml"
+    snippet_name = f"proxorchestrator-ci-{vmid}.yaml"
 
     # Resolve the full filesystem path via pvesm
     pvesm_out, _, rc = ssh.run(["pvesm", "path", f"{ci_storage}:snippets/{snippet_name}"])
@@ -100,7 +100,7 @@ def _apply_user_data(vmid, user_data, ci_storage, config, ssh):
 
     # Write to a local temp file then SFTP it over
     with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", prefix="proxmigrate_ci_", delete=False
+        mode="w", suffix=".yaml", prefix="proxorchestrator_ci_", delete=False
     ) as tmp:
         tmp.write(user_data)
         tmp_path = tmp.name

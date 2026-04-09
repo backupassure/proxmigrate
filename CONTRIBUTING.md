@@ -69,7 +69,7 @@ You only need to do this once.
 
 ```bash
 git clone git@github.com:ForgedIO/ProxOrchestrator.git
-cd proxmigrate
+cd ProxOrchestrator
 ```
 
 ### 2. Check your remotes

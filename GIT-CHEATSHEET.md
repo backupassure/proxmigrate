@@ -137,7 +137,7 @@ git branch -d hotfix/fix-something
 
 ```bash
 # Switch server to a branch for testing
-cd /opt/proxmigrate
+cd /opt/proxorchestrator
 git fetch --all
 git checkout <branch-name>
 git pull
