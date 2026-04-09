@@ -423,6 +423,24 @@ upstream proxorchestrator_ws {\
     echo "    Nginx WebSocket config added and reloaded."
 fi
 
+# ---------------------------------------------------------------------------
+# Ensure service files exist (install them if missing)
+# ---------------------------------------------------------------------------
+for svc_pair in \
+    "proxorchestrator-gunicorn:gunicorn.service.template" \
+    "proxorchestrator-celery:celery.service.template" \
+    "proxorchestrator-daphne:daphne.service.template"; do
+    svc_name="${svc_pair%%:*}"
+    tpl_name="${svc_pair##*:}"
+    svc_file="/etc/systemd/system/${svc_name}.service"
+    if [[ ! -f "${svc_file}" ]]; then
+        echo "==> Installing missing service: ${svc_name}..."
+        cp "${APP_HOME}/deploy/${tpl_name}" "${svc_file}"
+        systemctl daemon-reload
+        systemctl enable "${svc_name}" 2>/dev/null || true
+    fi
+done
+
 echo "==> Restarting services..."
 systemctl restart proxorchestrator-gunicorn proxorchestrator-celery
 sleep 2
