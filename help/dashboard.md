@@ -11,7 +11,7 @@ The dashboard gives you a quick overview of your Proxmox environment and recent 
 
 ## Getting started
 
-If this is your first time, click **Run Setup Wizard** to connect ProxMigrate to your Proxmox server. The wizard will guide you through:
+If this is your first time, click **Run Setup Wizard** to connect ProxOrchestrator to your Proxmox server. The wizard will guide you through:
 
 1. Entering your Proxmox host details
 2. Copying an SSH key to your Proxmox server

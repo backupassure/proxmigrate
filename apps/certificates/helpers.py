@@ -12,16 +12,16 @@ import subprocess
 
 logger = logging.getLogger(__name__)
 
-CERT_DIR = "/opt/proxmigrate/certs"
-CERT_FILE = os.path.join(CERT_DIR, "proxmigrate.crt")
-KEY_FILE = os.path.join(CERT_DIR, "proxmigrate.key")
-CSR_KEY_FILE = os.path.join(CERT_DIR, "proxmigrate.csr.key")
+CERT_DIR = "/opt/proxorchestrator/certs"
+CERT_FILE = os.path.join(CERT_DIR, "proxorchestrator.crt")
+KEY_FILE = os.path.join(CERT_DIR, "proxorchestrator.key")
+CSR_KEY_FILE = os.path.join(CERT_DIR, "proxorchestrator.csr.key")
 PENDING_CSR_FILE = os.path.join(CERT_DIR, "pending.csr")
-ENV_FILE = "/opt/proxmigrate/.env"
+ENV_FILE = "/opt/proxorchestrator/.env"
 
 NGINX_CONF_PATHS = [
-    "/etc/nginx/sites-available/proxmigrate",
-    "/etc/nginx/conf.d/proxmigrate.conf",
+    "/etc/nginx/sites-available/proxorchestrator",
+    "/etc/nginx/conf.d/proxorchestrator.conf",
 ]
 
 

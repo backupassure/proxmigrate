@@ -9,9 +9,9 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-# Load .env from the project root (or /opt/proxmigrate/.env in production)
+# Load .env from the project root (or /opt/proxorchestrator/.env in production)
 load_dotenv(BASE_DIR / ".env")
-_prod_env = Path("/opt/proxmigrate/.env")
+_prod_env = Path("/opt/proxorchestrator/.env")
 if _prod_env.is_file() and os.access(_prod_env, os.R_OK):
     load_dotenv(_prod_env)
 
@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.microsoft",
-    # ProxMigrate apps
+    # ProxOrchestrator apps
     "apps.core",
     "apps.wizard",
     "apps.proxmox",
@@ -89,10 +89,10 @@ MIDDLEWARE = [
 # URL / WSGI
 # ---------------------------------------------------------------------------
 
-ROOT_URLCONF = "proxmigrate.urls"
+ROOT_URLCONF = "proxorchestrator.urls"
 
-WSGI_APPLICATION = "proxmigrate.wsgi.application"
-ASGI_APPLICATION = "proxmigrate.asgi.application"
+WSGI_APPLICATION = "proxorchestrator.wsgi.application"
+ASGI_APPLICATION = "proxorchestrator.asgi.application"
 
 # ---------------------------------------------------------------------------
 # Templates
@@ -118,7 +118,7 @@ TEMPLATES = [
 # Database
 # ---------------------------------------------------------------------------
 
-_db_path = os.environ.get("DB_PATH", "/opt/proxmigrate/db.sqlite3")
+_db_path = os.environ.get("DB_PATH", "/opt/proxorchestrator/db.sqlite3")
 
 DATABASES = {
     "default": {
@@ -163,7 +163,7 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
-UPLOAD_ROOT = os.environ.get("UPLOAD_ROOT", "/opt/proxmigrate/uploads")
+UPLOAD_ROOT = os.environ.get("UPLOAD_ROOT", "/opt/proxorchestrator/uploads")
 MEDIA_URL = "/media/"
 MEDIA_ROOT = UPLOAD_ROOT
 
@@ -242,7 +242,7 @@ LOGGING = {
     "handlers": {
         "file": {
             "class": "logging.FileHandler",
-            "filename": "/var/log/proxmigrate/django.log",
+            "filename": "/var/log/proxorchestrator/django.log",
         },
     },
     "root": {
@@ -285,4 +285,4 @@ WEB_PORT = int(os.environ.get("WEB_PORT", "8443"))
 # ---------------------------------------------------------------------------
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-DEFAULT_FROM_EMAIL = "noreply@proxmigrate.local"
+DEFAULT_FROM_EMAIL = "noreply@proxorchestrator.local"

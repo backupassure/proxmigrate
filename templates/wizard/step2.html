@@ -11,7 +11,7 @@
       </div>
       <h2>SSH Key Setup</h2>
     </div>
-    <p class="subtitle">ProxMigrate will authenticate to Proxmox using an SSH key. We'll copy our public key now.</p>
+    <p class="subtitle">ProxOrchestrator will authenticate to Proxmox using an SSH key. We'll copy our public key now.</p>
   </div>
 
   <div class="wizard-card-body">
@@ -21,7 +21,7 @@
       <div class="info-box-icon"><i class="fas fa-shield-alt"></i></div>
       <div>
         <strong>Your password is used once and never stored.</strong>
-        ProxMigrate uses SSH key authentication for all ongoing operations. The root password you enter below is only used this one time to copy the public key, then discarded immediately.
+        ProxOrchestrator uses SSH key authentication for all ongoing operations. The root password you enter below is only used this one time to copy the public key, then discarded immediately.
       </div>
     </div>
 
@@ -36,7 +36,7 @@
 
     {# Public key display #}
     <div class="field" style="margin-bottom: 1.5rem;">
-      <label class="label" style="font-weight: 600;color: var(--text-header);">ProxMigrate Public Key</label>
+      <label class="label" style="font-weight: 600;color: var(--text-header);">ProxOrchestrator Public Key</label>
       <p class="field-hint" style="margin-bottom: 0.5rem;">This key will be added to <code>~/.ssh/authorized_keys</code> on your Proxmox host.</p>
       <div class="key-display" id="public-key-box">{{ public_key }}</div>
       <div style="margin-top: 0.5rem;">

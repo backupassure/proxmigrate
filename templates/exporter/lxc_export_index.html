@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Container Export & Import — ProxMigrate{% endblock %}
+{% block title %}Container Export & Import — ProxOrchestrator{% endblock %}
 {% block page_title %}Container Export & Import{% endblock %}
 {% block help_slug %}lxc-export{% endblock %}
 
@@ -24,7 +24,7 @@
   <div class="column is-8">
 
     {# ===== Container Export Jobs ===== #}
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;">
       <div class="card-header">
         <i class="fas fa-file-export" style="color: var(--link-color);"></i> Container Exports
         <span style="margin-left: auto;font-size: 0.78rem;color: var(--text-muted);font-weight: 400;">
@@ -99,7 +99,7 @@
 
     {# ===== Container Import Jobs ===== #}
     {% if lxc_px_import_jobs %}
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header">
         <i class="fas fa-file-import" style="color: var(--text-muted);"></i> Recent Container Imports
       </div>
@@ -166,7 +166,7 @@
 
   {# Right column: info card #}
   <div class="column is-4">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header">
         <i class="fas fa-info-circle" style="color: var(--link-color);"></i> About Container Packages
       </div>
@@ -176,7 +176,7 @@
           using vzdump snapshot mode (zero downtime).
         </p>
         <p style="margin-bottom: 0.75rem;">
-          <strong>Import</strong> — restores a container <code>.px</code> package onto any ProxMigrate server.
+          <strong>Import</strong> — restores a container <code>.px</code> package onto any ProxOrchestrator server.
           You can review and adjust hostname, resources, network, and storage before deployment.
         </p>
         <p style="margin-bottom: 0.75rem;">
@@ -190,13 +190,13 @@
       </div>
     </div>
 
-    <div class="proxmigrate-card" style="margin-top: 1rem;">
+    <div class="proxorchestrator-card" style="margin-top: 1rem;">
       <div class="card-header">
         <i class="fas fa-file-import" style="color: var(--link-color);"></i> Import a Container
       </div>
       <div class="card-body" style="text-align: center;padding: 1.5rem;">
         <p style="font-size: 0.85rem;color: var(--text-semi);margin-bottom: 1rem;">
-          Have a container <code>.px</code> file from another ProxMigrate server?
+          Have a container <code>.px</code> file from another ProxOrchestrator server?
         </p>
         <a href="{% url 'lxc_px_upload' %}" class="button is-info is-medium is-fullwidth" style="font-weight: 600;">
           <span class="icon"><i class="fas fa-upload"></i></span>

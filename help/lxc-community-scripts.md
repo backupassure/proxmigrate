@@ -6,7 +6,7 @@ Community Scripts lets you deploy popular self-hosted applications as LXC contai
 
 1. **Browse** — Search or filter by category to find the app you want.
 2. **Configure** — Choose the target node, storage, and optionally override resource defaults (CPU, RAM, disk).
-3. **Deploy** — ProxMigrate SSHs into your Proxmox host and runs the community script non-interactively. The script handles all setup: downloading the OS template, creating the container, installing the application, and starting it.
+3. **Deploy** — ProxOrchestrator SSHs into your Proxmox host and runs the community script non-interactively. The script handles all setup: downloading the OS template, creating the container, installing the application, and starting it.
 
 ## Browsing apps
 
@@ -47,7 +47,7 @@ The new container will appear in your Container Inventory immediately.
 
 ## How scripts execute
 
-The community scripts are run directly on your Proxmox host (the same way they work when you run them manually). ProxMigrate passes `var_*` environment variables so the script runs non-interactively — it skips all prompts and uses the values you configured.
+The community scripts are run directly on your Proxmox host (the same way they work when you run them manually). ProxOrchestrator passes `var_*` environment variables so the script runs non-interactively — it skips all prompts and uses the values you configured.
 
 No data leaves your network except the HTTPS request to GitHub to download the script itself.
 
@@ -60,14 +60,14 @@ No data leaves your network except the HTTPS request to GitHub to download the s
 
 ## Refreshing the catalog
 
-The script catalog is bundled with ProxMigrate. When newer scripts are published upstream, a small **Update available** pill appears in the search bar. Click it to rebuild the catalog directly from GitHub — no ProxMigrate update required. The refresh runs in the background and the page reloads when complete.
+The script catalog is bundled with ProxOrchestrator. When newer scripts are published upstream, a small **Update available** pill appears in the search bar. Click it to rebuild the catalog directly from GitHub — no ProxOrchestrator update required. The refresh runs in the background and the page reloads when complete.
 
 ## Common issues
 
 **"Could not load Proxmox resources"** — The Proxmox API may be unreachable. Check your connection settings in the setup wizard.
 
-**Script fails with "permission denied"** — Ensure the SSH key configured in ProxMigrate has root access to the Proxmox host.
+**Script fails with "permission denied"** — Ensure the SSH key configured in ProxOrchestrator has root access to the Proxmox host.
 
 **Container created but app not working** — Some scripts print setup instructions (default passwords, web UI URLs) to stdout. Check the Proxmox host's console for the container to see post-install messages.
 
-**Script fails with "TERM environment variable not set"** — This was fixed in a recent update. If you see this error, ensure you are running the latest version of ProxMigrate.
+**Script fails with "TERM environment variable not set"** — This was fixed in a recent update. If you see this error, ensure you are running the latest version of ProxOrchestrator.

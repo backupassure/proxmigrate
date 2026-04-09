@@ -11,7 +11,7 @@
       </div>
       <h2>Create API Token</h2>
     </div>
-    <p class="subtitle">ProxMigrate needs a Proxmox API token to manage VMs. Follow these steps in your Proxmox web interface.</p>
+    <p class="subtitle">ProxOrchestrator needs a Proxmox API token to manage VMs. Follow these steps in your Proxmox web interface.</p>
   </div>
 
   <div class="wizard-card-body">
@@ -44,7 +44,7 @@
           <div class="step-guide-num">3</div>
           <div class="step-guide-text">
             Set: <strong>User</strong> = <code>root@pam</code>,
-            <strong>Token ID</strong> = <code>proxmigrate</code>,
+            <strong><strong>Token ID</strong> = <code>proxorchestrator</code>,
             and <strong>uncheck</strong> "Privilege Separation" so the token inherits root permissions.
           </div>
         </li>
@@ -92,8 +92,8 @@
                 type="text"
                 name="api_token_id"
                 id="id_api_token_id"
-                value="{{ form.api_token_id.value|default:'root@pam!proxmigrate' }}"
-                placeholder="root@pam!proxmigrate"
+                value="{{ form.api_token_id.value|default:'root@pam!proxorchestrator' }}"
+                placeholder="root@pam!proxorchestrator"
                 required
               >
               <span class="icon is-left"><i class="fas fa-tag" style="color: var(--text-muted);"></i></span>

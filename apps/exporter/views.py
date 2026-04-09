@@ -32,7 +32,7 @@ from apps.wizard.models import ProxmoxConfig
 
 logger = logging.getLogger(__name__)
 
-UPLOAD_ROOT = getattr(settings, "UPLOAD_ROOT", "/opt/proxmigrate/uploads")
+UPLOAD_ROOT = getattr(settings, "UPLOAD_ROOT", "/opt/proxorchestrator/uploads")
 EXPORT_ROOT = os.path.join(UPLOAD_ROOT, "exports")
 PX_IMPORT_ROOT = os.path.join(UPLOAD_ROOT, "px-imports")
 CT_EXPORT_ROOT = os.path.join(UPLOAD_ROOT, "ct-exports")
@@ -68,7 +68,7 @@ def _parse_manifest(px_path):
     if version != MANIFEST_VERSION:
         raise ValueError(
             f"Unsupported package version '{version}'. "
-            f"This version of ProxMigrate supports version '{MANIFEST_VERSION}'."
+            f"This version of ProxOrchestrator supports version '{MANIFEST_VERSION}'."
         )
     return manifest
 

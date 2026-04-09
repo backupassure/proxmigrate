@@ -1,12 +1,12 @@
 # Setup Wizard — Step 4: Discover Environment
 
-ProxMigrate queries your Proxmox cluster via the API and displays what it found. This page is for review only — no changes are made to your Proxmox environment.
+ProxOrchestrator queries your Proxmox cluster via the API and displays what it found. This page is for review only — no changes are made to your Proxmox environment.
 
 ## What was discovered
 
 ### Cluster Nodes
 
-All nodes in your Proxmox cluster are listed, along with their online/offline status. ProxMigrate can create VMs on any online node. In step 5 you'll pick a default node.
+All nodes in your Proxmox cluster are listed, along with their online/offline status. ProxOrchestrator can create VMs on any online node. In step 5 you'll pick a default node.
 
 ### Storage Pools
 
@@ -26,7 +26,7 @@ Linux bridges on your Proxmox host that VMs can be connected to. Typically:
 
 ### Existing VMs
 
-If ProxMigrate found existing VMs, their VMIDs are noted so you can avoid conflicts when configuring your VMID pool in step 5.
+If ProxOrchestrator found existing VMs, their VMIDs are noted so you can avoid conflicts when configuring your VMID pool in step 5.
 
 ## What to do if something looks wrong
 

@@ -46,8 +46,8 @@ class Step3Form(forms.Form):
     api_token_id = forms.CharField(
         max_length=255,
         label="API Token ID",
-        help_text="Format: user@realm!tokenid — e.g. root@pam!proxmigrate",
-        widget=forms.TextInput(attrs={"placeholder": "root@pam!proxmigrate"}),
+        help_text="Format: user@realm!tokenid — e.g. root@pam!proxorchestrator",
+        widget=forms.TextInput(attrs={"placeholder": "root@pam!proxorchestrator"}),
     )
     api_token_secret = forms.CharField(
         max_length=255,
@@ -74,7 +74,7 @@ class Step5Form(forms.Form):
     proxmox_temp_dir = forms.CharField(
         max_length=500,
         label="Proxmox Temp Directory",
-        initial="/var/tmp/proxmigrate/",
+        initial="/var/tmp/proxorchestrator/",
         help_text="Temporary directory on the Proxmox host for disk image staging.",
     )
     default_cores = forms.IntegerField(
@@ -93,13 +93,13 @@ class Step5Form(forms.Form):
         initial=100,
         label="VMID Pool — Minimum",
         min_value=100,
-        help_text="Lowest VMID ProxMigrate will auto-assign.",
+        help_text="Lowest VMID ProxOrchestrator will auto-assign.",
     )
     vmid_max = forms.IntegerField(
         initial=999,
         label="VMID Pool — Maximum",
         min_value=101,
-        help_text="Highest VMID ProxMigrate will auto-assign.",
+        help_text="Highest VMID ProxOrchestrator will auto-assign.",
     )
     virtio_iso = forms.CharField(
         max_length=500,

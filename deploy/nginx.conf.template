@@ -1,17 +1,17 @@
-upstream proxmigrate_app {
-    server unix:/run/proxmigrate/gunicorn.sock fail_timeout=0;
+upstream proxorchestrator_app {
+    server unix:/run/proxorchestrator/gunicorn.sock fail_timeout=0;
 }
 
-upstream proxmigrate_ws {
-    server unix:/run/proxmigrate/daphne.sock fail_timeout=0;
+upstream proxorchestrator_ws {
+    server unix:/run/proxorchestrator/daphne.sock fail_timeout=0;
 }
 
 server {
     listen {{ WEB_PORT }} ssl;
     server_name _;
 
-    ssl_certificate     /opt/proxmigrate/certs/proxmigrate.crt;
-    ssl_certificate_key /opt/proxmigrate/certs/proxmigrate.key;
+    ssl_certificate     /opt/proxorchestrator/certs/proxorchestrator.crt;
+    ssl_certificate_key /opt/proxorchestrator/certs/proxorchestrator.key;
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_ciphers         HIGH:!aNULL:!MD5;
     ssl_session_cache   shared:SSL:10m;
@@ -26,7 +26,7 @@ server {
     proxy_connect_timeout 75s;
 
     location /static/ {
-        alias /opt/proxmigrate/staticfiles/;
+        alias /opt/proxorchestrator/staticfiles/;
         expires 30d;
         add_header Cache-Control "public, immutable";
     }
@@ -37,7 +37,7 @@ server {
     }
 
     location /ws/ {
-        proxy_pass          http://proxmigrate_ws;
+        proxy_pass          http://proxorchestrator_ws;
         proxy_http_version  1.1;
         proxy_set_header    Upgrade           $http_upgrade;
         proxy_set_header    Connection        "upgrade";
@@ -50,7 +50,7 @@ server {
     }
 
     location / {
-        proxy_pass          http://proxmigrate_app;
+        proxy_pass          http://proxorchestrator_app;
         proxy_set_header    Host              $http_host;
         proxy_set_header    X-Real-IP         $remote_addr;
         proxy_set_header    X-Forwarded-For   $proxy_add_x_forwarded_for;
@@ -61,9 +61,9 @@ server {
         proxy_request_buffering off;
     }
 
-    # VM console WebSocket proxy — target written by ProxMigrate after wizard completes
-    include /opt/proxmigrate/deploy/proxmox_ws.conf;
+    # VM console WebSocket proxy — target written by ProxOrchestrator after wizard completes
+    include /opt/proxorchestrator/deploy/proxmox_ws.conf;
 }
 
-# ACME HTTP-01 challenge server (managed by ProxMigrate — empty when not in use)
-include /opt/proxmigrate/deploy/acme-challenge.conf;
+# ACME HTTP-01 challenge server (managed by ProxOrchestrator — empty when not in use)
+include /opt/proxorchestrator/deploy/acme-challenge.conf;

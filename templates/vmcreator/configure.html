@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Configure New VM — ProxMigrate{% endblock %}
+{% block title %}Configure New VM — ProxOrchestrator{% endblock %}
 {% block page_title %}Configure New VM{% endblock %}
 {% block help_slug %}vmcreator-configure{% endblock %}
 
@@ -142,7 +142,7 @@
             &nbsp;<strong>Start VM after creation</strong>
           </label>
           <p class="field-hint" style="margin-left: 1.5rem;">
-            Powers on the VM immediately once ProxMigrate finishes creating it — independent of the "Start on boot" setting above.
+            Powers on the VM immediately once ProxOrchestrator finishes creating it — independent of the "Start on boot" setting above.
             {% if job.source_type == 'iso' or job.source_type == 'iso_proxmox' %}
             The VM will boot from the ISO so you can connect via the Proxmox console and begin installation.
             {% endif %}
@@ -411,7 +411,7 @@
               <p id="virtio-windows-warning" class="help is-warning" style="display: none;">
                 <i class="fas fa-exclamation-triangle"></i>
                 The Windows installer has no VirtIO drivers — it won't see the disk.
-                ProxMigrate will automatically use <strong>SATA</strong> during installation.
+                ProxOrchestrator will automatically use <strong>SATA</strong> during installation.
                 You can switch to VirtIO-SCSI after installing the VirtIO driver package inside the guest.
               </p>
             </div>
@@ -759,7 +759,7 @@
   {# ===== RIGHT: Summary + Tips ===== #}
   <div class="column is-4">
 
-    <div class="proxmigrate-card" style="position: sticky;top: 70px;">
+    <div class="proxorchestrator-card" style="position: sticky;top: 70px;">
 
       {# Source summary card #}
       <div class="card-header">

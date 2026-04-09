@@ -1,20 +1,20 @@
 [Unit]
-Description=ProxMigrate Celery worker
+Description=ProxOrchestrator Celery worker
 After=network.target redis-server.service
 Requires=redis-server.service
 
 [Service]
 Type=simple
-User=proxmigrate
-Group=proxmigrate
-WorkingDirectory=/opt/proxmigrate
-EnvironmentFile=/opt/proxmigrate/.env
-ExecStart=/opt/proxmigrate/venv/bin/celery \
-    -A proxmigrate worker \
+User=proxorchestrator
+Group=proxorchestrator
+WorkingDirectory=/opt/proxorchestrator
+EnvironmentFile=/opt/proxorchestrator/.env
+ExecStart=/opt/proxorchestrator/venv/bin/celery \
+    -A proxorchestrator worker \
     -l info \
     --concurrency=4 \
     -B \
-    --schedule=/opt/proxmigrate/celerybeat-schedule
+    --schedule=/opt/proxorchestrator/celerybeat-schedule
 Restart=always
 RestartSec=10
 KillSignal=SIGTERM

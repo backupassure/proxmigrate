@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Export {{ ct_name }} — ProxMigrate{% endblock %}
+{% block title %}Export {{ ct_name }} — ProxOrchestrator{% endblock %}
 {% block page_title %}Export Container{% endblock %}
 {% block help_slug %}lxc-export{% endblock %}
 
@@ -22,7 +22,7 @@
     {% endif %}
 
     {# ── Container summary card ── #}
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;">
       <div class="card-body" style="padding: 1.25rem 1.5rem;">
         <div style="display: flex;align-items: center;gap: 1rem;">
           <div style="width: 44px;height: 44px;border-radius: 8px;background: var(--bg-info-light);display: flex;align-items: center;justify-content: center;flex-shrink: 0;">
@@ -48,7 +48,7 @@
     <form method="post" action="{% url 'lxc_export_trigger' vmid %}">
       {% csrf_token %}
 
-      <div class="proxmigrate-card">
+      <div class="proxorchestrator-card">
         <div class="card-header">
           <i class="fas fa-file-export" style="color: var(--link-color);"></i> Export Container
         </div>
@@ -76,14 +76,14 @@
 
   {# Right column: help card #}
   <div class="column is-5">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header">
         <i class="fas fa-info-circle" style="color: var(--link-color);"></i> About Container Export
       </div>
       <div class="card-body" style="font-size: 0.84rem;color: var(--text-semi);line-height: 1.7;">
         <p style="margin-bottom: 0.75rem;">
           Exports the container's full configuration and rootfs as a portable
-          <code>.px</code> package that can be imported on any ProxMigrate server.
+          <code>.px</code> package that can be imported on any ProxOrchestrator server.
         </p>
         <p style="margin-bottom: 0.75rem;">
           The export uses <strong>vzdump snapshot mode</strong> — the container

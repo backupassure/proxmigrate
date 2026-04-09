@@ -298,8 +298,8 @@ def generate_self_signed(request):
 
         key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         subject = issuer = x509.Name([
-            x509.NameAttribute(NameOID.COMMON_NAME, "ProxMigrate"),
-            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "ProxMigrate"),
+            x509.NameAttribute(NameOID.COMMON_NAME, "ProxOrchestrator"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "ProxOrchestrator"),
         ])
         now = datetime.datetime.now(datetime.timezone.utc)
         cert = (
@@ -533,7 +533,7 @@ def acme_configure(request):
                 dns_providers.create_txt_record(
                     config.dns_provider,
                     config.domain,
-                    "proxmigrate-api-test",
+                    "proxorchestrator-api-test",
                     api_token=config.dns_api_token,
                     api_secret=config.dns_api_secret,
                     zone_id=config.dns_zone_id,

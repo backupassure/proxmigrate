@@ -26,13 +26,13 @@ from apps.wizard.models import ProxmoxConfig
 logger = logging.getLogger(__name__)
 
 SSH_KEY_PATHS = [
-    "/opt/proxmigrate/.ssh/id_rsa.pub",
+    "/opt/proxorchestrator/.ssh/id_rsa.pub",
     os.path.expanduser("~/.ssh/id_rsa.pub"),
 ]
 
 
 def _read_public_key():
-    """Read the ProxMigrate SSH public key from disk."""
+    """Read the ProxOrchestrator SSH public key from disk."""
     for path in SSH_KEY_PATHS:
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as fh:
@@ -142,7 +142,7 @@ def step2(request):
                         port=config.ssh_port,
                         key_path=key_path.replace(".pub", ""),
                     ) as ssh_test:
-                        ssh_test.run_checked(["echo", "proxmigrate-ok"])
+                        ssh_test.run_checked(["echo", "proxorchestrator-ok"])
 
                     config.wizard_step = 3
                     config.save()
@@ -570,12 +570,12 @@ def proxmox_settings(request):
                     errors["ssh"] = {"root_password": [f"Failed to copy key: {exc}"]}
 
         elif section == "ssh_regenerate":
-            key_path = "/opt/proxmigrate/.ssh/id_rsa"
+            key_path = "/opt/proxorchestrator/.ssh/id_rsa"
             try:
                 import subprocess
                 subprocess.run(
                     ["ssh-keygen", "-t", "rsa", "-b", "4096", "-N", "",
-                     "-C", f"proxmigrate@{socket.gethostname()}",
+                     "-C", f"proxorchestrator@{socket.gethostname()}",
                      "-f", key_path],
                     check=True, capture_output=True,
                 )
@@ -592,7 +592,7 @@ def proxmox_settings(request):
                 config.default_node = data.get("default_node", "").strip()
                 config.default_storage = data.get("default_storage", "").strip()
                 config.default_bridge = data.get("default_bridge", "").strip()
-                config.proxmox_temp_dir = data.get("proxmox_temp_dir", "/var/tmp/proxmigrate/").strip()
+                config.proxmox_temp_dir = data.get("proxmox_temp_dir", "/var/tmp/proxorchestrator/").strip()
                 config.default_cores = int(data.get("default_cores", 2))
                 config.default_memory_mb = int(data.get("default_memory_mb", 2048))
                 config.vmid_min = int(data.get("vmid_min", 100))

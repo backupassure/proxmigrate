@@ -30,7 +30,7 @@ from apps.wizard.models import ProxmoxConfig
 
 logger = logging.getLogger(__name__)
 
-UPLOAD_ROOT = getattr(settings, "UPLOAD_ROOT", "/opt/proxmigrate/uploads")
+UPLOAD_ROOT = getattr(settings, "UPLOAD_ROOT", "/opt/proxorchestrator/uploads")
 
 
 def _sync_upload_temp_dir():
@@ -343,7 +343,7 @@ def cancel_job(request, job_id):
 
     # Revoke the Celery task if we have a task_id
     if job.task_id:
-        from proxmigrate.celery import app as celery_app
+        from proxorchestrator.celery import app as celery_app
         celery_app.control.revoke(job.task_id, terminate=True, signal="SIGTERM")
         logger.info("cancel_job: revoked Celery task %s for ImportJob %d", job.task_id, job.pk)
 

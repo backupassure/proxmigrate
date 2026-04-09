@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load vm_filters %}
-{% block title %}{{ vm.name }} — VM Details — ProxMigrate{% endblock %}
+{% block title %}{{ vm.name }} — VM Details — ProxOrchestrator{% endblock %}
 {% block page_title %}{{ vm.name }}{% endblock %}
 {% block help_slug %}vm-detail{% endblock %}
 
@@ -88,7 +88,7 @@
 
   {# General #}
   <div class="column is-6">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header" style="display: flex;justify-content: space-between;align-items: center;">
         <span><i class="fas fa-info-circle" style="color: var(--link-color);"></i> General</span>
         <button class="button is-small is-white" onclick="openSettingsModal('general')" title="Edit description">
@@ -140,7 +140,7 @@
 
   {# Firmware #}
   <div class="column is-6">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header" style="display: flex;justify-content: space-between;align-items: center;">
         <span><i class="fas fa-microchip" style="color: var(--purple-color);"></i> Firmware &amp; Boot</span>
         <button class="button is-small is-white" onclick="openSettingsModal('firmware')" title="Edit firmware settings">
@@ -180,7 +180,7 @@
 
   {# CPU #}
   <div class="column is-6">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header" style="display: flex;justify-content: space-between;align-items: center;">
         <span><i class="fas fa-microchip" style="color: var(--success-color);"></i> CPU</span>
         <button class="button is-small is-white" onclick="openSettingsModal('cpu')" title="Edit CPU settings">
@@ -214,7 +214,7 @@
 
   {# Memory #}
   <div class="column is-6">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header" style="display: flex;justify-content: space-between;align-items: center;">
         <span><i class="fas fa-memory" style="color: var(--warning-color);"></i> Memory</span>
         <button class="button is-small is-white" onclick="openSettingsModal('memory')" title="Edit memory settings">
@@ -240,7 +240,7 @@
 
   {# Disks #}
   <div class="column is-12">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header"><i class="fas fa-hdd" style="color: var(--success-color);"></i> Disks</div>
       <div style="overflow-x: auto;">
         <div hx-get="{% url 'vm_disks' vmid %}"
@@ -257,7 +257,7 @@
 
   {# Network Interfaces #}
   <div class="column is-12">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header"><i class="fas fa-ethernet" style="color: var(--link-color);"></i> Network Interfaces</div>
       <div style="overflow-x: auto;">
         <div hx-get="{% url 'vm_networks' vmid %}"
@@ -274,7 +274,7 @@
 
   {# Display #}
   <div class="column is-6">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header"><i class="fas fa-desktop" style="color: var(--text-muted);"></i> Display</div>
       <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
@@ -287,7 +287,7 @@
 
   {# Snapshots #}
   <div class="column is-12" id="snapshots">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header"><i class="fas fa-camera" style="color:var(--link-color, #3273dc);"></i> Snapshots</div>
       <div class="card-body" style="padding:1rem 1.5rem;">
         <div hx-get="{% url 'vm_snapshots' vmid %}"

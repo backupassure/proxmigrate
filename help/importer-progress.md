@@ -1,6 +1,6 @@
 # Import VM — Deployment Progress
 
-This screen shows real-time progress as ProxMigrate imports your VM. The pipeline runs as a background task and updates every 2 seconds automatically.
+This screen shows real-time progress as ProxOrchestrator imports your VM. The pipeline runs as a background task and updates every 2 seconds automatically.
 
 ## Import Pipeline Stages
 
@@ -23,7 +23,7 @@ Checks via the Proxmox API that the requested VMID is still available. The wizar
 Calls the Proxmox API (`POST /nodes/{node}/qemu`) to create the VM configuration without a disk. This creates the VM entry with all settings: CPU, RAM, network, firmware, etc.
 
 ### 6. Transfer Disk via SFTP
-Transfers the converted qcow2 file to the Proxmox node via SFTP. Progress is shown as a percentage. Transfer speed depends on your network connection between the ProxMigrate server and Proxmox. Large disks (50+ GB) may take 10–30+ minutes on a gigabit network.
+Transfers the converted qcow2 file to the Proxmox node via SFTP. Progress is shown as a percentage. Transfer speed depends on your network connection between the ProxOrchestrator server and Proxmox. Large disks (50+ GB) may take 10–30+ minutes on a gigabit network.
 
 ### 7. Import Disk to VM
 Runs `qm importdisk {vmid} {file} {storage}` on the Proxmox node via SSH. This tells Proxmox to register the disk file as belonging to this VM in the specified storage pool. Usually completes in seconds.
@@ -32,13 +32,13 @@ Runs `qm importdisk {vmid} {file} {storage}` on the Proxmox node via SSH. This t
 Runs `qm set {vmid} --scsi0 {storage}:{vmid}/vm-{vmid}-disk-0.qcow2` (or equivalent for the configured disk interface) to attach the imported disk to the VM. This wires the disk into the VM's configuration.
 
 ### 9. Finalize
-Cleans up temporary files on both the ProxMigrate server and Proxmox, marks the import job as complete in the database, and updates the VMID pool tracking.
+Cleans up temporary files on both the ProxOrchestrator server and Proxmox, marks the import job as complete in the database, and updates the VMID pool tracking.
 
 ## What to do while waiting
 
 - You don't need to keep this browser tab open — the import runs as a background task
 - You can close the tab and return to check progress later from the dashboard's "Recent Imports" section
-- Other ProxMigrate features remain fully usable while an import runs
+- Other ProxOrchestrator features remain fully usable while an import runs
 - Multiple imports can run in parallel (limited by your Celery worker count)
 
 ## If the import fails

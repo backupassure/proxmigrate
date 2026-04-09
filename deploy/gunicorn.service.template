@@ -1,23 +1,23 @@
 [Unit]
-Description=ProxMigrate Gunicorn application server
+Description=ProxOrchestrator Gunicorn application server
 After=network.target
 
 [Service]
 Type=simple
-User=proxmigrate
-Group=proxmigrate
-WorkingDirectory=/opt/proxmigrate
-EnvironmentFile=/opt/proxmigrate/.env
-RuntimeDirectory=proxmigrate
+User=proxorchestrator
+Group=proxorchestrator
+WorkingDirectory=/opt/proxorchestrator
+EnvironmentFile=/opt/proxorchestrator/.env
+RuntimeDirectory=proxorchestrator
 RuntimeDirectoryMode=0755
-ExecStart=/opt/proxmigrate/venv/bin/gunicorn \
+ExecStart=/opt/proxorchestrator/venv/bin/gunicorn \
     --workers 3 \
-    --bind unix:/run/proxmigrate/gunicorn.sock \
+    --bind unix:/run/proxorchestrator/gunicorn.sock \
     --timeout 3600 \
     --log-level info \
-    --access-logfile /var/log/proxmigrate/gunicorn-access.log \
-    --error-logfile /var/log/proxmigrate/gunicorn-error.log \
-    proxmigrate.wsgi:application
+    --access-logfile /var/log/proxorchestrator/gunicorn-access.log \
+    --error-logfile /var/log/proxorchestrator/gunicorn-error.log \
+    proxorchestrator.wsgi:application
 Restart=always
 RestartSec=5
 

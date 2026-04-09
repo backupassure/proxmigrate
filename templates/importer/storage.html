@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Storage Management — ProxMigrate{% endblock %}
+{% block title %}Storage Management — ProxOrchestrator{% endblock %}
 {% block page_title %}Storage Management{% endblock %}
 {% block help_slug %}{{ help_slug }}{% endblock %}
 
@@ -8,7 +8,7 @@
 
   {# ===== Local Upload Storage ===== #}
   <div class="column is-7">
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;">
       <div class="card-header">
         <i class="fas fa-hdd" style="color: var(--link-color);"></i> Local Upload Storage
         <span style="margin-left: auto;font-size: 0.78rem;color: var(--text-muted);">{{ upload_root }}</span>
@@ -90,7 +90,7 @@
     </div>
 
     {# ===== Proxmox Temp Dir ===== #}
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header">
         <i class="fas fa-server" style="color: var(--purple-color);"></i> Proxmox Temp Directory
         <span style="margin-left: auto;font-size: 0.78rem;color: var(--text-muted);">{{ proxmox_temp_dir|default:"Not configured" }}</span>
@@ -173,13 +173,13 @@
   {# ===== Right column: info ===== #}
   <div class="column is-5">
 
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;">
       <div class="card-header">
         <i class="fas fa-info-circle" style="color: var(--link-color);"></i> How Cleanup Works
       </div>
       <div class="card-body" style="font-size: 0.85rem;color: var(--text-semi);line-height: 1.7;">
         <p style="margin-bottom: 0.75rem;">
-          <strong>Automatic cleanup:</strong> When an import job completes successfully or fails, ProxMigrate automatically deletes the local upload file and any temporary files on the Proxmox staging directory.
+          <strong>Automatic cleanup:</strong> When an import job completes successfully or fails, ProxOrchestrator automatically deletes the local upload file and any temporary files on the Proxmox staging directory.
         </p>
         <p style="margin-bottom: 0.75rem;">
           <strong>What can remain on disk:</strong>
@@ -195,7 +195,7 @@
       </div>
     </div>
 
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header">
         <i class="fas fa-cog" style="color: var(--text-muted);"></i> Storage Paths
       </div>

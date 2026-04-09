@@ -1,6 +1,6 @@
 # Setup Wizard — Step 5: Configure Defaults
 
-Set the default values that ProxMigrate will pre-fill when you create new VMs. All of these can be overridden on a per-VM basis at import time, and can be changed later in Settings.
+Set the default values that ProxOrchestrator will pre-fill when you create new VMs. All of these can be overridden on a per-VM basis at import time, and can be changed later in Settings.
 
 ## Proxmox Resources
 
@@ -17,10 +17,10 @@ The Proxmox storage pool where imported disk images will be stored. Requirements
 The Linux bridge new VM network interfaces will be connected to. `vmbr0` is the most common choice — it's usually connected to your physical network.
 
 ### Upload Temp Directory
-A directory on the **ProxMigrate server** (not Proxmox) where uploaded disk files are staged before being converted and transferred. Ensure:
-- The directory exists or ProxMigrate will create it
+A directory on the **ProxOrchestrator server** (not Proxmox) where uploaded disk files are staged before being converted and transferred. Ensure:
+- The directory exists or ProxOrchestrator will create it
 - There is enough free disk space (at least as large as your biggest disk image)
-- The ProxMigrate service user has write access
+- The ProxOrchestrator service user has write access
 
 ## VM Defaults
 
@@ -32,7 +32,7 @@ Default memory allocation. `2048` MB (2 GB) is a reasonable default. Remember: 1
 
 ## VMID Pool Range
 
-VMIDs are the numeric identifiers Proxmox uses for VMs. ProxMigrate will automatically select an unused VMID from within this range when creating new VMs.
+VMIDs are the numeric identifiers Proxmox uses for VMs. ProxOrchestrator will automatically select an unused VMID from within this range when creating new VMs.
 
 **Guidelines:**
 - VMIDs 100–999 are reserved by Proxmox for various purposes but are often usable
@@ -40,11 +40,11 @@ VMIDs are the numeric identifiers Proxmox uses for VMs. ProxMigrate will automat
 - A range of 900–999 is a common choice for imported VMs
 - For larger environments, use a range like 5000–5999 to avoid conflicts with manually created VMs
 
-**Important:** If ProxMigrate picks a VMID that's in use (due to a race condition or misconfiguration), the VM creation will fail at the Proxmox stage. Always leave some room in your pool range.
+**Important:** If ProxOrchestrator picks a VMID that's in use (due to a race condition or misconfiguration), the VM creation will fail at the Proxmox stage. Always leave some room in your pool range.
 
 ## After saving
 
-ProxMigrate saves all settings and marks setup as complete. You'll proceed to the success screen (step 6) and then the dashboard.
+ProxOrchestrator saves all settings and marks setup as complete. You'll proceed to the success screen (step 6) and then the dashboard.
 
 ## Changing settings later
 

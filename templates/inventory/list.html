@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}VM Inventory — ProxMigrate{% endblock %}
+{% block title %}VM Inventory — ProxOrchestrator{% endblock %}
 {% block page_title %}VM Inventory{% endblock %}
 {% block help_slug %}inventory{% endblock %}
 
@@ -70,7 +70,7 @@
 </div>
 
 {# ===== VM Table — polls every 10s for live status ===== #}
-<div id="vm-table-wrapper" class="proxmigrate-card"
+<div id="vm-table-wrapper" class="proxorchestrator-card"
      hx-get="{% url 'inventory' %}"
      hx-trigger="every 10s"
      hx-select="#vm-table-wrapper"

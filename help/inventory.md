@@ -59,4 +59,4 @@ Click the "Refresh" button to immediately reload the VM list from the Proxmox AP
 
 **VM shows wrong status** — The status shown was correct at the time of last refresh. Click Refresh to get current data. Power state changes via Proxmox's own web UI won't be reflected here until you refresh.
 
-**VMs from other nodes not shown** — ProxMigrate currently shows VMs on the configured default node. Multi-node inventory is on the roadmap.
+**VMs from other nodes not shown** — ProxOrchestrator currently shows VMs on the configured default node. Multi-node inventory is on the roadmap.

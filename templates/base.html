@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}ProxMigrate{% endblock %}</title>
+  <title>{% block title %}ProxOrchestrator{% endblock %}</title>
   <link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg">
   <link rel="stylesheet" href="/static/vendor/css/bulma.min.css">
   <link rel="stylesheet" href="/static/vendor/css/all.min.css">
-  <link rel="stylesheet" href="/static/css/proxmigrate.css">
+  <link rel="stylesheet" href="/static/css/proxorchestrator.css">
   <script>
     window.applyTheme = function(theme) {
-      theme = theme || localStorage.getItem('proxmigrate_theme') || 'system';
+      theme = theme || localStorage.getItem('proxorchestrator_theme') || 'system';
       const darkMode = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
       document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
       var cb = document.getElementById('theme-toggle-cb');
@@ -21,7 +21,7 @@
     window.toggleTheme = function() {
       var current = document.documentElement.getAttribute('data-theme');
       var next = current === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('proxmigrate_theme', next);
+      localStorage.setItem('proxorchestrator_theme', next);
       window.applyTheme(next);
     };
     (function() {
@@ -29,7 +29,7 @@
         window.applyTheme();
         document.addEventListener('DOMContentLoaded', function() { window.applyTheme(); });
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-          if ((localStorage.getItem('proxmigrate_theme') || 'system') === 'system') window.applyTheme();
+          if ((localStorage.getItem('proxorchestrator_theme') || 'system') === 'system') window.applyTheme();
         });
       } catch (e) { console.error('Theme detection failed', e); }
     })();
@@ -43,10 +43,10 @@
   {# ===== Sidebar ===== #}
   <div class="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-title">&#9889; ProxMigrate</div>
+      <div class="logo-title">&#9889; ProxOrchestrator</div>
       <div style="display: flex;align-items: center;gap: 0.5rem;margin-top: 0.25rem;">
-        <img src="/static/images/backup_assure_logo.png" alt="Backup Assure" style="width: 22px;height: 22px;border-radius: 50%;opacity: 0.7;flex-shrink: 0;">
-        <div class="logo-subtitle" style="margin-top: 0;">by Backup Assure</div>
+        <img src="/static/images/forged_io_logo.png" alt="ForgedIO" style="width: 22px;height: 22px;border-radius: 50%;opacity: 0.7;flex-shrink: 0;">
+        <div class="logo-subtitle" style="margin-top: 0;">by ForgedIO</div>
       </div>
     </div>
     <nav class="sidebar-nav">
@@ -157,7 +157,7 @@
     </div>
 
     <div class="footer-bar">
-      ProxMigrate &mdash; by Backup Assure &mdash; Free &amp; Open Source
+      ProxOrchestrator &mdash; by ForgedIO &mdash; Free &amp; Open Source
     </div>
   </div>
 

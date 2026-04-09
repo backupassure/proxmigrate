@@ -233,7 +233,7 @@ def rebuild_catalog():
             "success": False,
             "script_count": 0,
             "category_count": 0,
-            "error": "Build script not found. Update ProxMigrate to enable catalog refresh.",
+            "error": "Build script not found. Update ProxOrchestrator to enable catalog refresh.",
         }
 
     try:

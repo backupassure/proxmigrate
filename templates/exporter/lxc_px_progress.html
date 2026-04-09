@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Importing {{ job.ct_name }} — ProxMigrate{% endblock %}
+{% block title %}Importing {{ job.ct_name }} — ProxOrchestrator{% endblock %}
 {% block page_title %}Deploying Container from Package{% endblock %}
 {% block help_slug %}lxc-px-progress{% endblock %}
 
@@ -15,7 +15,7 @@
   <div class="column is-8 is-offset-2">
 
     {# ===== Header card ===== #}
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;">
       <div class="card-body" style="padding: 1.5rem;">
         <div style="display: flex;align-items: center;gap: 1rem;">
           {% if job.stage == 'DONE' %}
@@ -60,7 +60,7 @@
 
     {# ===== Terminal state actions ===== #}
     {% if job.stage == 'DONE' %}
-      <div class="proxmigrate-card" style="margin-top: 1.5rem;">
+      <div class="proxorchestrator-card" style="margin-top: 1.5rem;">
         <div class="card-body" style="padding: 1.5rem;text-align: center;">
           <i class="fas fa-check-circle" style="font-size: 2rem;color: var(--success-color);margin-bottom: 1rem;display: block;"></i>
           <h3 style="font-size: 1.1rem;font-weight: 700;color: var(--text-header);margin-bottom: 0.5rem;">Container Created Successfully!</h3>
@@ -88,7 +88,7 @@
       </div>
 
     {% elif job.stage == 'FAILED' %}
-      <div class="proxmigrate-card" style="margin-top: 1.5rem;border-left: 4px solid var(--danger-color);border-radius: 0 10px 10px 0;">
+      <div class="proxorchestrator-card" style="margin-top: 1.5rem;border-left: 4px solid var(--danger-color);border-radius: 0 10px 10px 0;">
         <div class="card-body" style="padding: 1.5rem;">
           <h3 style="font-size: 1rem;font-weight: 700;color: var(--danger-color);margin-bottom: 0.75rem;">
             <i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem;"></i>Import Failed

@@ -110,7 +110,7 @@ class AuthConfigConfig(AppConfig):
 
                     # Enforce require group (or admin_group if no require_group set).
                     if effective_require and effective_require not in group_ids:
-                        django_messages.error(request, "Your Microsoft account is not authorized to access ProxMigrate.")
+                        django_messages.error(request, "Your Microsoft account is not authorized to access ProxOrchestrator.")
                         raise ImmediateHttpResponse(_redirect("/login/"))
 
                     # Set admin flags based on admin_group_id membership.

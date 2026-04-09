@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}New VM — ProxMigrate{% endblock %}
+{% block title %}New VM — ProxOrchestrator{% endblock %}
 {% block page_title %}New VM{% endblock %}
 {% block help_slug %}vmcreator-create{% endblock %}
 
@@ -12,7 +12,7 @@
       <input type="hidden" name="source_type" id="source-type-value" value="blank">
 
       {# ===== Source type tabs ===== #}
-      <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+      <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;">
         <div class="card-header">
           <i class="fas fa-plus-circle" style="color: var(--link-color);"></i> Choose VM Source
         </div>
@@ -149,13 +149,13 @@
 
   {# Right column: guidance #}
   <div class="column is-5">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header">
         <i class="fas fa-info-circle" style="color: var(--link-color);"></i> About New VM
       </div>
       <div class="card-body" style="font-size: 0.85rem;color: var(--text-semi);line-height: 1.7;">
         <p style="margin-bottom: 0.75rem;">
-          <strong>Install from ISO</strong> — upload any bootable ISO (Linux, Windows, network OS, etc.). ProxMigrate transfers it to Proxmox ISO storage, creates the VM, attaches the ISO as a virtual CD-ROM, and boots from it. You complete the installation inside the VM console.
+          <strong>Install from ISO</strong> — upload any bootable ISO (Linux, Windows, network OS, etc.). ProxOrchestrator transfers it to Proxmox ISO storage, creates the VM, attaches the ISO as a virtual CD-ROM, and boots from it. You complete the installation inside the VM console.
         </p>
         <p style="margin-bottom: 0.75rem;">
           <strong>Blank VM</strong> — creates a fully configured VM shell with no media attached. Useful when you want to attach an existing Proxmox ISO or disk manually after creation.

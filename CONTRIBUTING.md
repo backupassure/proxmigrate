@@ -1,6 +1,6 @@
-# Contributing to ProxMigrate
+# Contributing to ProxOrchestrator
 
-Welcome to the ProxMigrate project. This guide explains how we work together as a team using Git and GitHub. Read this before you start writing any code.
+Welcome to the ProxOrchestrator project. This guide explains how we work together as a team using Git and GitHub. Read this before you start writing any code.
 
 ---
 
@@ -68,8 +68,8 @@ You only need to do this once.
 ### 1. Clone the repository
 
 ```bash
-git clone git@github.com:backupassure/proxmigrate.git
-cd proxmigrate
+git clone git@github.com:ForgedIO/ProxOrchestrator.git
+cd ProxOrchestrator
 ```
 
 ### 2. Check your remotes
@@ -78,10 +78,10 @@ cd proxmigrate
 git remote -v
 ```
 
-You should see `origin` pointing to `github.com:backupassure/proxmigrate.git`. If not, add it:
+You should see `origin` pointing to `github.com:ForgedIO/ProxOrchestrator.git`. If not, add it:
 
 ```bash
-git remote add origin git@github.com:backupassure/proxmigrate.git
+git remote add origin git@github.com:ForgedIO/ProxOrchestrator.git
 ```
 
 ### 3. Set your name and email (if not already done)
@@ -181,7 +181,7 @@ git push origin feature/your-feature-name
 
 ### Step 2. Go to GitHub
 
-Open `https://github.com/backupassure/proxmigrate` in your browser.
+Open `https://github.com/ForgedIO/ProxOrchestrator` in your browser.
 
 GitHub will usually show a yellow banner saying your branch was recently pushed with a **"Compare & pull request"** button. Click it.
 

@@ -1,6 +1,6 @@
 # Import VM — Upload Disk Image
 
-This is the first step in importing a VM into Proxmox. You'll upload your disk image file, which ProxMigrate will then convert (if needed) and prepare for VM configuration.
+This is the first step in importing a VM into Proxmox. You'll upload your disk image file, which ProxOrchestrator will then convert (if needed) and prepare for VM configuration.
 
 ## Supported file formats
 
@@ -28,19 +28,19 @@ Once a file is selected, the filename and size will be displayed, and the "Uploa
 For large disk images (10 GB+):
 - Ensure your browser tab remains open during the upload
 - The progress bar shows real-time upload progress
-- Upload speed depends on your network connection to the ProxMigrate server
-- There is no file size limit imposed by ProxMigrate (your server's disk space is the limit)
+- Upload speed depends on your network connection to the ProxOrchestrator server
+- There is no file size limit imposed by ProxOrchestrator (your server's disk space is the limit)
 - If you close the browser, the upload will be interrupted
 
 ## OVA files
 
-OVA files are ZIP archives containing the VM disk (VMDK), a manifest, and an OVF descriptor. ProxMigrate will:
+OVA files are ZIP archives containing the VM disk (VMDK), a manifest, and an OVF descriptor. ProxOrchestrator will:
 1. Extract the OVA archive
 2. Locate the disk file (VMDK) inside
 3. Convert the VMDK to qcow2
 4. Discard the OVF metadata (use the configure screen to set VM settings manually)
 
-Note: OVA files may contain multiple disks. ProxMigrate currently imports the first/primary disk. Multi-disk OVAs are on the roadmap.
+Note: OVA files may contain multiple disks. ProxOrchestrator currently imports the first/primary disk. Multi-disk OVAs are on the roadmap.
 
 ## Common issues
 
@@ -50,4 +50,4 @@ Note: OVA files may contain multiple disks. ProxMigrate currently imports the fi
 
 **Upload fails midway** — Usually a network interruption. Re-select the file and upload again. The failed partial upload is automatically cleaned up.
 
-**"Not enough disk space"** — The ProxMigrate server's temp directory (configured in wizard step 5) doesn't have enough space. Free up space or change the temp directory to a larger volume.
+**"Not enough disk space"** — The ProxOrchestrator server's temp directory (configured in wizard step 5) doesn't have enough space. Free up space or change the temp directory to a larger volume.

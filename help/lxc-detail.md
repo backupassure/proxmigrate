@@ -26,7 +26,7 @@ Running containers show real-time CPU utilization percentage, current memory usa
 ## Configuration sections
 
 ### General
-Basic container properties: CTID, hostname, OS type, architecture, and description. These can be changed in Proxmox's web UI directly — ProxMigrate reads but does not (currently) edit these fields.
+Basic container properties: CTID, hostname, OS type, architecture, and description. These can be changed in Proxmox's web UI directly — ProxOrchestrator reads but does not (currently) edit these fields.
 
 ### Options
 Container options and flags: privilege mode (unprivileged recommended for security), start-on-boot setting, startup order, protection flag, enabled features (e.g. nesting for Docker-in-LXC), hookscript path, lock state, and tags.
@@ -78,4 +78,4 @@ Click the delete button to remove a snapshot. This frees the disk space used by 
 
 ## Editing container configuration
 
-To edit container settings (add mounts, change CPU, etc.), use the Proxmox web UI directly. ProxMigrate currently provides read-only detail and power control only.
+To edit container settings (add mounts, change CPU, etc.), use the Proxmox web UI directly. ProxOrchestrator currently provides read-only detail and power control only.

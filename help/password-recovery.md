@@ -2,7 +2,7 @@
 
 ## Requirements
 
-Password recovery requires **email to be configured** in ProxMigrate. Without email, reset links cannot be sent.
+Password recovery requires **email to be configured** in ProxOrchestrator. Without email, reset links cannot be sent.
 
 To configure email, go to **Settings > Email** and set up either:
 - **SMTP** — standard email server

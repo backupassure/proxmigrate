@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}MFA Setup — ProxMigrate{% endblock %}
+{% block title %}MFA Setup — ProxOrchestrator{% endblock %}
 {% block page_title %}Multi-Factor Authentication{% endblock %}
 {% block help_slug %}mfa{% endblock %}
 
@@ -18,7 +18,7 @@
       </div>
     {% endif %}
 
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;">
       <div class="card-header">
         <i class="fas fa-shield-alt" style="color: var(--link-color);"></i>
         {% if already_enabled %}Re-configure MFA{% else %}Set Up MFA{% endif %}
@@ -68,7 +68,7 @@
     </div>
 
     {% if already_enabled and not enforced %}
-      <div class="proxmigrate-card">
+      <div class="proxorchestrator-card">
         <div class="card-header">
           <i class="fas fa-times-circle" style="color: var(--danger-color);"></i> Disable MFA
         </div>

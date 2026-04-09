@@ -26,7 +26,7 @@ Running VMs show real-time CPU utilization percentage and current memory usage a
 ## Configuration sections
 
 ### General
-Basic VM properties: VMID, name, OS type, and description. These can be changed in Proxmox's web UI directly — ProxMigrate reads but does not (currently) edit these fields.
+Basic VM properties: VMID, name, OS type, and description. These can be changed in Proxmox's web UI directly — ProxOrchestrator reads but does not (currently) edit these fields.
 
 ### Firmware & Boot
 Shows the BIOS type (SeaBIOS or OVMF), whether an EFI disk and TPM are configured, boot order, and start-on-boot status.
@@ -48,7 +48,7 @@ A table of all disk devices attached to the VM:
 - **Size** — Disk size
 - **Format** — `qcow2`, `raw`, etc.
 
-If you imported the VM with ProxMigrate, the primary disk should be `scsi0` (or `ide0` if you chose IDE during configuration) and format `qcow2`.
+If you imported the VM with ProxOrchestrator, the primary disk should be `scsi0` (or `ide0` if you chose IDE during configuration) and format `qcow2`.
 
 ### Network Interfaces
 Shows all NICs, their model, bridge, MAC address, and VLAN tag. If a VM isn't getting network access, verify the bridge shown here matches your physical network setup in Proxmox.
@@ -58,6 +58,6 @@ VGA type configured for the VM. This affects the console experience in Proxmox's
 
 ## Editing VM configuration
 
-To edit VM settings (add disks, change CPU, etc.), use the Proxmox web UI directly. ProxMigrate currently provides read-only detail and power control only. Full edit capability is planned for a future release.
+To edit VM settings (add disks, change CPU, etc.), use the Proxmox web UI directly. ProxOrchestrator currently provides read-only detail and power control only. Full edit capability is planned for a future release.
 
 To access the VM console (keyboard/screen), use Proxmox's noVNC console by clicking the VM in Proxmox's web UI → Console.

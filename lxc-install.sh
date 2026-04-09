@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
-# ProxMigrate LXC One-Liner Installer
-# Runs on the Proxmox VE host — creates a Debian LXC container and installs ProxMigrate inside it.
+# ProxOrchestrator LXC One-Liner Installer
+# Runs on the Proxmox VE host — creates a Debian LXC container and installs ProxOrchestrator inside it.
 #
 # Usage:
-#   bash -c "$(wget -qLO - https://github.com/backupassure/proxmigrate/raw/main/lxc-install.sh)"
+#   bash -c "$(wget -qLO - https://github.com/ForgedIO/ProxOrchestrator/raw/main/lxc-install.sh)"
 #
 # Or download and run:
-#   wget https://github.com/backupassure/proxmigrate/raw/main/lxc-install.sh
+#   wget https://github.com/ForgedIO/ProxOrchestrator/raw/main/lxc-install.sh
 #   bash lxc-install.sh
 #
 # Options:
 #   --id <n>         Container ID (default: next available)
-#   --hostname <s>   Container hostname (default: proxmigrate)
+#   --hostname <s>   Container hostname (default: proxorchestrator)
 #   --storage <s>    Proxmox storage for rootfs (default: auto-detect)
 #   --bridge <s>     Network bridge (default: vmbr0)
 #   --disk <n>       Rootfs size in GB (default: 16)
 #   --ram <n>        RAM in MB (default: 2048)
 #   --cores <n>      CPU cores (default: 2)
-#   --port <n>       ProxMigrate web UI port (default: 8443)
+#   --port <n>       ProxOrchestrator web UI port (default: 8443)
 #   --ip <cidr>      Static IP (e.g. 192.168.1.100/24) — default: DHCP
 #   --gateway <ip>   Default gateway (required with --ip)
 #   --dns <servers>  DNS servers (e.g. "192.168.1.78 8.8.8.8") — default: host DNS
@@ -30,9 +30,9 @@
 # What it does:
 #   1. Downloads a Debian 12 LXC template (if not already cached)
 #   2. Creates an unprivileged LXC container with sensible defaults
-#   3. Enables nesting (required for ProxMigrate's SSH/SFTP to Proxmox)
+#   3. Enables nesting (required for ProxOrchestrator's SSH/SFTP to Proxmox)
 #   4. Starts the container
-#   5. Clones the ProxMigrate repo inside the container
+#   5. Clones the ProxOrchestrator repo inside the container
 #   6. Runs install.sh inside the container
 #   7. Prints the access URL
 #
@@ -56,8 +56,8 @@ err()  { echo -e "${RD}[✗]${NC} $1" >&2; }
 header() {
     echo ""
     echo -e "${CY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${CY}  ⚡ ProxMigrate LXC Installer${NC}"
-    echo -e "${CY}  Self-hosted Proxmox VM Manager — by Backup Assure${NC}"
+    echo -e "${CY}  ⚡ ProxOrchestrator LXC Installer${NC}"
+    echo -e "${CY}  Self-hosted Proxmox VM Manager — by ForgedIO${NC}"
     echo -e "${CY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
 }
@@ -66,7 +66,7 @@ header() {
 # Defaults
 # ---------------------------------------------------------------------------
 CT_ID=""
-CT_HOSTNAME="proxmigrate"
+CT_HOSTNAME="proxorchestrator"
 CT_STORAGE=""  # Auto-detect if not specified
 CT_BRIDGE="vmbr0"
 CT_DISK=16
@@ -77,7 +77,7 @@ CT_IP="dhcp"
 CT_GW=""
 CT_DNS=""
 TEMPLATE="debian-12-standard"
-REPO_URL="https://github.com/backupassure/proxmigrate.git"
+REPO_URL="https://github.com/ForgedIO/ProxOrchestrator.git"
 REPO_BRANCH="main"
 
 # ---------------------------------------------------------------------------
@@ -101,13 +101,13 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  --id <n>         Container ID (default: next available)"
-            echo "  --hostname <s>   Container hostname (default: proxmigrate)"
+            echo "  --hostname <s>   Container hostname (default: proxorchestrator)"
             echo "  --storage <s>    Proxmox storage for rootfs (default: auto-detect)"
             echo "  --bridge <s>     Network bridge (default: vmbr0)"
             echo "  --disk <n>       Rootfs size in GB (default: 16)"
             echo "  --ram <n>        RAM in MB (default: 2048)"
             echo "  --cores <n>      CPU cores (default: 2)"
-            echo "  --port <n>       ProxMigrate web UI port (default: 8443)"
+            echo "  --port <n>       ProxOrchestrator web UI port (default: 8443)"
             echo "  --ip <cidr>      Static IP (e.g. 192.168.1.100/24) — default: DHCP"
             echo "  --gateway <ip>   Default gateway (required with --ip)"
             echo "  --dns <servers>  DNS servers (e.g. \"192.168.1.78 8.8.8.8\")"
@@ -146,7 +146,7 @@ info "Hostname: ${CT_HOSTNAME}"
 info "Storage: ${CT_STORAGE}"
 info "Disk: ${CT_DISK}GB | RAM: ${CT_RAM}MB | Cores: ${CT_CORES}"
 info "Network: ${CT_BRIDGE} | IP: ${CT_IP}"
-info "ProxMigrate port: ${CT_PORT}"
+info "ProxOrchestrator port: ${CT_PORT}"
 echo ""
 
 # Auto-detect storage if not specified — find first active storage that supports rootdir
@@ -264,29 +264,29 @@ fi
 msg "Container is running."
 
 # ---------------------------------------------------------------------------
-# Install ProxMigrate inside the container
+# Install ProxOrchestrator inside the container
 # ---------------------------------------------------------------------------
-info "Installing ProxMigrate inside container ${CT_ID}..."
+info "Installing ProxOrchestrator inside container ${CT_ID}..."
 
 # Install prerequisites
 pct exec "${CT_ID}" -- bash -c "apt-get update -qq && apt-get install -y -qq git sudo curl" >/dev/null 2>&1
 msg "Prerequisites installed (git, sudo, curl)."
 
 # Clone the repository
-info "Cloning ProxMigrate repository..."
-pct exec "${CT_ID}" -- bash -c "git clone -b ${REPO_BRANCH} ${REPO_URL} /opt/proxmigrate-src" 2>&1 | tail -1
+info "Cloning ProxOrchestrator repository..."
+pct exec "${CT_ID}" -- bash -c "git clone -b ${REPO_BRANCH} ${REPO_URL} /opt/proxorchestrator-src" 2>&1 | tail -1
 
 # Run install.sh inside the container
 info "Running install.sh (this will take a few minutes)..."
 echo ""
-pct exec "${CT_ID}" -- bash -c "cd /opt/proxmigrate-src && bash install.sh --port ${CT_PORT}" 2>&1
+pct exec "${CT_ID}" -- bash -c "cd /opt/proxorchestrator-src && bash install.sh --port ${CT_PORT}" 2>&1
 
 # ---------------------------------------------------------------------------
 # Done
 # ---------------------------------------------------------------------------
 echo ""
 echo -e "${CY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${GN}  ⚡ ProxMigrate installed successfully!${NC}"
+echo -e "${GN}  ⚡ ProxOrchestrator installed successfully!${NC}"
 echo -e "${CY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
@@ -299,9 +299,9 @@ else
 fi
 
 if [[ -n "${CT_ACTUAL_IP}" ]]; then
-    echo -e "  Access ProxMigrate at: ${GN}https://${CT_ACTUAL_IP}:${CT_PORT}${NC}"
+    echo -e "  Access ProxOrchestrator at: ${GN}https://${CT_ACTUAL_IP}:${CT_PORT}${NC}"
 else
-    echo -e "  Access ProxMigrate at: ${GN}https://<container-ip>:${CT_PORT}${NC}"
+    echo -e "  Access ProxOrchestrator at: ${GN}https://<container-ip>:${CT_PORT}${NC}"
     echo -e "  (run 'pct exec ${CT_ID} -- hostname -I' to find the IP)"
 fi
 
@@ -311,5 +311,5 @@ echo -e "  Hostname:       ${CT_HOSTNAME}"
 echo -e "  Default login:  ${YW}admin / admin${NC} (you'll be prompted to change it)"
 echo ""
 echo -e "  To enter the container:  ${BL}pct enter ${CT_ID}${NC}"
-echo -e "  To update ProxMigrate:   ${BL}pct exec ${CT_ID} -- bash -c 'cd /opt/proxmigrate-src && git pull && sudo ./update.sh'${NC}"
+echo -e "  To update ProxOrchestrator:   ${BL}pct exec ${CT_ID} -- bash -c 'cd /opt/proxorchestrator-src && git pull && sudo ./update.sh'${NC}"
 echo ""

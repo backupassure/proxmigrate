@@ -206,7 +206,7 @@ HARDWARE_PRESETS = {
     ],
     "Appliances": [
         {
-            "key": "backupassure-pro",
+            "key": "forgedlabs-pro",
             "label": "BackupAssure — Pro",
             "config": {
                 "cpu_type": "host", "cores": 4, "sockets": 1,
@@ -218,7 +218,7 @@ HARDWARE_PRESETS = {
             },
         },
         {
-            "key": "backupassure-standard",
+            "key": "forgedlabs-standard",
             "label": "BackupAssure — Standard",
             "config": {
                 "cpu_type": "host", "cores": 4, "sockets": 1,

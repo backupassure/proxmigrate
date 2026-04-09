@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load vm_filters %}
-{% block title %}{{ ct.name }} — LXC Details — ProxMigrate{% endblock %}
+{% block title %}{{ ct.name }} — LXC Details — ProxOrchestrator{% endblock %}
 {% block page_title %}{{ ct.name }}{% endblock %}
 {% block help_slug %}lxc-detail{% endblock %}
 
@@ -73,7 +73,7 @@
 
   {# General #}
   <div class="column is-6">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header"><i class="fas fa-info-circle" style="color: var(--link-color);"></i> General</div>
       <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
@@ -102,7 +102,7 @@
 
   {# Options #}
   <div class="column is-6">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header"><i class="fas fa-cogs" style="color: var(--purple-color);"></i> Options</div>
       <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
@@ -161,7 +161,7 @@
 
   {# CPU #}
   <div class="column is-6">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header"><i class="fas fa-microchip" style="color: var(--success-color);"></i> CPU</div>
       <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
@@ -182,7 +182,7 @@
 
   {# Memory #}
   <div class="column is-6">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header"><i class="fas fa-memory" style="color: var(--warning-color);"></i> Memory</div>
       <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
@@ -199,7 +199,7 @@
 
   {# DNS #}
   <div class="column is-6">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header"><i class="fas fa-globe" style="color: var(--link-color);"></i> DNS</div>
       <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
@@ -224,7 +224,7 @@
 
   {# Storage (replaces Disks) #}
   <div class="column is-12">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header"><i class="fas fa-hdd" style="color: var(--success-color);"></i> Storage</div>
       <div style="overflow-x: auto;">
         {% if ct.storage_items %}
@@ -255,7 +255,7 @@
 
   {# Network Interfaces #}
   <div class="column is-12">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header"><i class="fas fa-ethernet" style="color: var(--link-color);"></i> Network Interfaces</div>
       <div style="overflow-x: auto;">
         {% if ct.networks %}
@@ -298,7 +298,7 @@
 
   {# ── Snapshots ── #}
   <div class="column is-12">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header">
         <i class="fas fa-camera" style="color: var(--link-color);"></i> Snapshots
       </div>

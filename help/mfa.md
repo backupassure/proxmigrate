@@ -2,7 +2,7 @@
 
 ## Overview
 
-MFA adds a second layer of security to your ProxMigrate account. After entering your password, you'll be asked for a 6-digit code from an authenticator app.
+MFA adds a second layer of security to your ProxOrchestrator account. After entering your password, you'll be asked for a 6-digit code from an authenticator app.
 
 ## Setting Up MFA
 
@@ -38,7 +38,7 @@ If MFA is not globally enforced, you can disable it from the MFA Setup page. You
 
 ## Important Notes
 
-- **Entra ID users** — MFA is managed by your Azure AD tenant, not ProxMigrate
-- **LDAP users** — MFA in ProxMigrate is separate from any MFA on your directory server
+- **Entra ID users** — MFA is managed by your Azure AD tenant, not ProxOrchestrator
+- **LDAP users** — MFA in ProxOrchestrator is separate from any MFA on your directory server
 - Recovery codes are shown **once** at setup — save them immediately
 - Each recovery code can only be used **once**

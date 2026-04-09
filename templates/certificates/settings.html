@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Certificate Management — ProxMigrate{% endblock %}
+{% block title %}Certificate Management — ProxOrchestrator{% endblock %}
 {% block page_title %}Certificate Management{% endblock %}
 {% block help_slug %}settings-certificates{% endblock %}
 
@@ -21,7 +21,7 @@
   <div class="column is-5">
 
     {# Current Certificate #}
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;">
       <div class="card-header">
         <i class="fas fa-certificate" style="color: var(--link-color);"></i> Current TLS Certificate
       </div>
@@ -114,7 +114,7 @@
 
     {# Pending CSR #}
     {% if pending_csr %}
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;border-left: 4px solid var(--link-color);border-radius: 0 10px 10px 0;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;border-left: 4px solid var(--link-color);border-radius: 0 10px 10px 0;">
       <div class="card-header">
         <i class="fas fa-file-alt" style="color: var(--link-color);"></i> Pending CSR
       </div>
@@ -132,13 +132,13 @@
     {% endif %}
 
     {# HTTPS Port #}
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header">
         <i class="fas fa-network-wired" style="color: var(--text-muted);"></i> HTTPS Port
       </div>
       <div class="card-body">
         <p style="font-size: 0.82rem;color: var(--text-semi);margin-bottom: 1rem;">
-          ProxMigrate is currently accessible on port <strong>{{ current_port }}</strong>.
+          ProxOrchestrator is currently accessible on port <strong>{{ current_port }}</strong>.
           Changing this will update the nginx configuration and redirect your browser to the new port.
         </p>
         <form method="post" action="{% url 'cert_change_port' %}">
@@ -209,7 +209,7 @@
 
     {# ===== Tab: Generate CSR ===== #}
     <div class="tab-pane is-active" id="tab-generate-csr">
-      <div class="proxmigrate-card" style="border-radius: 0 10px 10px 10px;">
+      <div class="proxorchestrator-card" style="border-radius: 0 10px 10px 10px;">
         <div class="card-header">
           <i class="fas fa-file-signature" style="color: var(--link-color);"></i> Generate a Certificate Signing Request
         </div>
@@ -218,7 +218,7 @@
           <div class="info-box" style="margin-bottom: 1.25rem;">
             <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
             <div style="font-size: 0.82rem;">
-              ProxMigrate will generate an RSA 2048-bit private key and CSR. The private key stays on this server.
+              ProxOrchestrator will generate an RSA 2048-bit private key and CSR. The private key stays on this server.
               Submit the CSR to your Certificate Authority, then upload the signed certificate using the <strong>Upload Signed Cert</strong> tab.
             </div>
           </div>
@@ -240,10 +240,10 @@
                 <div class="field">
                   <label class="label form-label">Common Name (CN) <span style="color: var(--danger-color);">*</span></label>
                   <div class="control">
-                    <input class="input" type="text" name="cn" placeholder="proxmigrate.example.com"
+                    <input class="input" type="text" name="cn" placeholder="proxorchestrator.example.com"
                            required maxlength="64" style="font-family: monospace;">
                   </div>
-                  <p class="field-hint">Hostname or IP used to reach ProxMigrate.</p>
+                  <p class="field-hint">Hostname or IP used to reach ProxOrchestrator.</p>
                 </div>
               </div>
               <div class="column">
@@ -276,7 +276,7 @@
                   <label class="label form-label">DNS SANs</label>
                   <div class="control">
                     <textarea class="textarea is-small" name="dns_sans" rows="3"
-                      placeholder="proxmigrate.example.com&#10;pm.internal.local"
+                      placeholder="proxorchestrator.example.com&#10;pm.internal.local"
                       style="font-family: monospace;font-size: 0.82rem;resize: vertical;"></textarea>
                   </div>
                   <p class="field-hint">One hostname per line (or comma-separated). The CN is added automatically.</p>
@@ -307,7 +307,7 @@
 
     {# ===== Tab: Upload Signed Cert ===== #}
     <div class="tab-pane" id="tab-upload-signed" style="display: none;">
-      <div class="proxmigrate-card" style="border-radius: 0 10px 10px 10px;">
+      <div class="proxorchestrator-card" style="border-radius: 0 10px 10px 10px;">
         <div class="card-header">
           <i class="fas fa-upload" style="color: var(--link-color);"></i> Upload CA-Signed Certificate
         </div>
@@ -324,7 +324,7 @@
           <div class="info-box is-success" style="margin-bottom: 1.25rem;">
             <div class="info-box-icon"><i class="fas fa-check-circle"></i></div>
             <div style="font-size: 0.82rem;">
-              A CSR private key is stored on this server. Upload the signed certificate from your CA and ProxMigrate will verify it matches the key before installing.
+              A CSR private key is stored on this server. Upload the signed certificate from your CA and ProxOrchestrator will verify it matches the key before installing.
             </div>
           </div>
           {% endif %}
@@ -414,7 +414,7 @@
 
     {# ===== Tab: Upload Cert + Key ===== #}
     <div class="tab-pane" id="tab-upload-own" style="display: none;">
-      <div class="proxmigrate-card" style="border-radius: 0 10px 10px 10px;">
+      <div class="proxorchestrator-card" style="border-radius: 0 10px 10px 10px;">
         <div class="card-header">
           <i class="fas fa-key" style="color: var(--link-color);"></i> Upload Certificate &amp; Private Key
         </div>
@@ -423,7 +423,7 @@
           <div class="info-box" style="margin-bottom: 1.25rem;">
             <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
             <div style="font-size: 0.82rem;">
-              Upload a certificate and private key you manage yourself. Both files must be in <strong>PEM format</strong> and the key must not be password-protected. ProxMigrate will verify the cert and key match before installing.
+              Upload a certificate and private key you manage yourself. Both files must be in <strong>PEM format</strong> and the key must not be password-protected. ProxOrchestrator will verify the cert and key match before installing.
             </div>
           </div>
 
@@ -539,7 +539,7 @@
 
     {# ===== Tab: Self-Signed ===== #}
     <div class="tab-pane" id="tab-self-signed" style="display: none;">
-      <div class="proxmigrate-card" style="border-radius: 0 10px 10px 10px;">
+      <div class="proxorchestrator-card" style="border-radius: 0 10px 10px 10px;">
         <div class="card-header">
           <i class="fas fa-magic" style="color: var(--text-muted);"></i> Generate Self-Signed Certificate
         </div>
@@ -575,7 +575,7 @@
 
     {# ===== Tab: Certificate Automation (ACME) ===== #}
     <div class="tab-pane" id="tab-acme" style="display:none;">
-      <div class="proxmigrate-card" style="border-radius:0 10px 10px 10px;">
+      <div class="proxorchestrator-card" style="border-radius:0 10px 10px 10px;">
         <div class="card-header">
           <i class="fas fa-lock" style="color:#3273dc;"></i> Certificate Automation (ACME)
         </div>
@@ -692,7 +692,7 @@
             </div>
 
             {% if acme.dns_challenge_pending %}
-            <div class="proxmigrate-card" style="margin-top:1.25rem;border-left:4px solid #f59e0b;border-radius:0 10px 10px 0;">
+            <div class="proxorchestrator-card" style="margin-top:1.25rem;border-left:4px solid #f59e0b;border-radius:0 10px 10px 0;">
               <div class="card-header" style="background:#fffbeb;">
                 <i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i> DNS Record Required
               </div>
@@ -794,7 +794,7 @@
                 </label>
                 <div class="control">
                   <input class="input" type="text" name="domain" required
-                         placeholder="proxmigrate.example.com"
+                         placeholder="proxorchestrator.example.com"
                          style="font-family:monospace;">
                 </div>
                 <p class="field-hint">The fully qualified domain name for the certificate.</p>

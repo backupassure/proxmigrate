@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Deploying {{ job.app_name }} — ProxMigrate{% endblock %}
+{% block title %}Deploying {{ job.app_name }} — ProxOrchestrator{% endblock %}
 {% block page_title %}Deploying Community Script{% endblock %}
 {% block help_slug %}lxc-community-scripts{% endblock %}
 
@@ -27,7 +27,7 @@
   <div class="column is-8 is-offset-2">
 
     {# ===== Header card ===== #}
-    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom:1.5rem;">
       <div class="card-body" style="padding:1.5rem;">
         <div style="display:flex;align-items:center;gap:1rem;">
           {% if job.stage == 'DONE' %}
@@ -82,7 +82,7 @@
     {% include "lxc/partials/community_job_status.html" %}
 
     {# ===== Jump to Console Action (Revealed when CTID detected) ===== #}
-    <div id="ct-console-jump" class="proxmigrate-card" style="margin-top:1rem; display:none;">
+    <div id="ct-console-jump" class="proxorchestrator-card" style="margin-top:1rem; display:none;">
       <div class="card-body" style="padding:1rem; display:flex; align-items:center; justify-content:space-between; background:var(--bg-info-light, #eff6ff); border:1px solid var(--link-color, #3273dc); border-radius:8px;">
         <div style="display:flex; align-items:center; gap:0.75rem;">
           <div style="width:36px; height:36px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; color:var(--link-color, #3273dc);">
@@ -101,7 +101,7 @@
     </div>
 
     {# ===== Interactive Terminal ===== #}
-    <div class="proxmigrate-card" style="margin-top:1rem;">
+    <div class="proxorchestrator-card" style="margin-top:1rem;">
       <div class="card-header">
         <i class="fas fa-terminal" style="color:var(--text-muted, #7a7a7a);"></i>
         Terminal
@@ -126,7 +126,7 @@
 
     {# ===== Terminal state actions ===== #}
     {% if job.stage == 'DONE' %}
-      <div class="proxmigrate-card" style="margin-top:1.5rem;">
+      <div class="proxorchestrator-card" style="margin-top:1.5rem;">
         <div class="card-body" style="padding:1.5rem;text-align:center;">
           <i class="fas fa-check-circle" style="font-size:2rem;color:var(--success-color, #48c78e);margin-bottom:1rem;display:block;"></i>
           <h3 style="font-size:1.1rem;font-weight:700;color:var(--text-header, #1a1a2e);margin-bottom:0.5rem;">{{ job.app_name }} Deployed Successfully!</h3>
@@ -148,7 +148,7 @@
       </div>
 
     {% elif job.stage == 'FAILED' %}
-      <div class="proxmigrate-card" style="margin-top:1.5rem;border-left:4px solid var(--danger-color, #f14668);border-radius:0 10px 10px 0;">
+      <div class="proxorchestrator-card" style="margin-top:1.5rem;border-left:4px solid var(--danger-color, #f14668);border-radius:0 10px 10px 0;">
         <div class="card-body" style="padding:1.5rem;">
           <h3 style="font-size:1rem;font-weight:700;color:var(--text-danger-dark, #cc0f35);margin-bottom:0.75rem;">
             <i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i>Script Deployment Failed
@@ -170,7 +170,7 @@
       </div>
 
     {% elif job.stage == 'CANCELLED' %}
-      <div class="proxmigrate-card" style="margin-top:1.5rem;border-left:4px solid var(--text-warning-dark, #b45309);border-radius:0 10px 10px 0;">
+      <div class="proxorchestrator-card" style="margin-top:1.5rem;border-left:4px solid var(--text-warning-dark, #b45309);border-radius:0 10px 10px 0;">
         <div class="card-body" style="padding:1.5rem;text-align:center;">
           <i class="fas fa-ban" style="font-size:1.5rem;color:var(--text-warning-dark, #b45309);margin-bottom:0.75rem;display:block;"></i>
           <h3 style="font-size:1rem;font-weight:700;color:var(--text-warning-dark, #b45309);margin-bottom:0.75rem;">Deployment Cancelled</h3>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Authentication Settings — ProxMigrate{% endblock %}
+{% block title %}Authentication Settings — ProxOrchestrator{% endblock %}
 {% block page_title %}Authentication Settings{% endblock %}
 {% block help_slug %}settings-auth-ldap{% endblock %}
 
@@ -42,7 +42,7 @@
 
   {# ===== Tab 1: Local Accounts ===== #}
   <div class="tab-pane {% if active_tab == 'local' or not active_tab %}is-active{% endif %}" id="tab-local">
-    <div class="proxmigrate-card" style="border-radius: 0 10px 10px 10px;">
+    <div class="proxorchestrator-card" style="border-radius: 0 10px 10px 10px;">
       <div class="card-header">
         <i class="fas fa-user" style="color: var(--link-color);"></i> Local Authentication
       </div>
@@ -56,7 +56,7 @@
         </div>
 
         <p style="font-size: 0.875rem;color: var(--text-semi);margin-bottom: 1.25rem;">
-          Local accounts are stored in ProxMigrate's database. Use the User Management page to create, edit, and deactivate local users.
+          Local accounts are stored in ProxOrchestrator's database. Use the User Management page to create, edit, and deactivate local users.
         </p>
 
         <a href="{% url 'user_list' %}" class="button is-primary" style="font-weight: 600;">
@@ -70,7 +70,7 @@
 
   {# ===== Tab: MFA ===== #}
   <div class="tab-pane {% if active_tab == 'mfa' %}is-active{% endif %}" id="tab-mfa">
-    <div class="proxmigrate-card" style="border-radius: 0 10px 10px 10px;">
+    <div class="proxorchestrator-card" style="border-radius: 0 10px 10px 10px;">
       <div class="card-header">
         <i class="fas fa-shield-alt" style="color: var(--warning-color);"></i> Multi-Factor Authentication
       </div>
@@ -155,7 +155,7 @@
 
   {# ===== Tab 2: LDAP ===== #}
   <div class="tab-pane {% if active_tab == 'ldap' %}is-active{% endif %}" id="tab-ldap">
-    <div class="proxmigrate-card" style="border-radius: 0 10px 10px 10px;">
+    <div class="proxorchestrator-card" style="border-radius: 0 10px 10px 10px;">
       <div class="card-header">
         <i class="fas fa-building" style="color: var(--warning-color);"></i> LDAP / Active Directory
       </div>
@@ -215,7 +215,7 @@
                 <div class="control">
                   <input class="input is-monospace" type="text" name="bind_dn"
                     value="{{ ldap_config.bind_dn|default:'' }}"
-                    placeholder="CN=proxmigrate,OU=ServiceAccounts,DC=example,DC=com">
+                    placeholder="CN=proxorchestrator,OU=ServiceAccounts,DC=example,DC=com">
                 </div>
               </div>
             </div>
@@ -262,7 +262,7 @@
                 <div class="control">
                   <input class="input is-monospace" type="text" name="require_group"
                     value="{{ ldap_config.require_group|default:'' }}"
-                    placeholder="CN=ProxMigrateUsers,OU=Groups,DC=example,DC=com">
+                    placeholder="CN=ProxOrchestratorUsers,OU=Groups,DC=example,DC=com">
                 </div>
                 <p class="field-hint">Only allow users who are members of this group. Leave blank to allow all LDAP users (or only the Admin Group if one is set).</p>
               </div>
@@ -273,7 +273,7 @@
                 <div class="control">
                   <input class="input is-monospace" type="text" name="admin_group"
                     value="{{ ldap_config.admin_group|default:'' }}"
-                    placeholder="CN=ProxMigrateAdmins,OU=Groups,DC=example,DC=com">
+                    placeholder="CN=ProxOrchestratorAdmins,OU=Groups,DC=example,DC=com">
                 </div>
                 <p class="field-hint">Members of this group will be granted admin access automatically.</p>
               </div>
@@ -319,7 +319,7 @@
 
   {# ===== Tab 3: Entra ID ===== #}
   <div class="tab-pane {% if active_tab == 'entra' %}is-active{% endif %}" id="tab-entra">
-    <div class="proxmigrate-card" style="border-radius: 0 10px 10px 10px;">
+    <div class="proxorchestrator-card" style="border-radius: 0 10px 10px 10px;">
       <div class="card-header">
         <span style="display: inline-flex;align-items: center;gap: 0.5rem;">
           <svg width="16" height="16" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
@@ -379,7 +379,7 @@
               <li>
                 <div class="step-guide-num">2</div>
                 <div class="step-guide-text">
-                  Name: <code>ProxMigrate</code>. Supported account types: <strong>Accounts in this organizational directory only</strong> (or multi-tenant if needed). Add the <strong>Redirect URI</strong> shown above.
+                  Name: <code>ProxOrchestrator</code>. Supported account types: <strong>Accounts in this organizational directory only</strong> (or multi-tenant if needed). Add the <strong>Redirect URI</strong> shown above.
                 </div>
               </li>
               <li>

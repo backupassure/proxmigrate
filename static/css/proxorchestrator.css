@@ -1,5 +1,5 @@
 /* ==========================================================================
-   ProxMigrate — Custom CSS
+   ProxOrchestrator — Custom CSS
    Complements Bulma CSS framework
    ========================================================================== */
 
@@ -136,7 +136,7 @@
 [data-theme='dark'] strong { color: var(--text-main) !important; }
 
 [data-theme='dark'] .card,
-[data-theme='dark'] .proxmigrate-card,
+[data-theme='dark'] .proxorchestrator-card,
 [data-theme='dark'] .stat-card { 
   background-color: var(--bg-card) !important; 
   color: var(--text-main) !important; 
@@ -144,7 +144,7 @@
 }
 
 [data-theme='dark'] .card-header,
-[data-theme='dark'] .proxmigrate-card .card-header { 
+[data-theme='dark'] .proxorchestrator-card .card-header { 
   background-color: var(--bg-card) !important; 
   border-bottom-color: var(--border-main) !important; 
   color: var(--text-header) !important;
@@ -287,9 +287,9 @@
 
 .sidebar-logo .logo-title {
   color: var(--text-sidebar-active);
-  font-size: 1.25rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .sidebar-logo .logo-subtitle {
@@ -704,7 +704,7 @@
 /* --------------------------------------------------------------------------
    Cards
    -------------------------------------------------------------------------- */
-.proxmigrate-card {
+.proxorchestrator-card {
   border-radius: 10px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   border: 1px solid var(--border-main);
@@ -712,7 +712,7 @@
   margin-bottom: 1.5rem;
 }
 
-.proxmigrate-card .card-header {
+.proxorchestrator-card .card-header {
   border-bottom: 1px solid var(--border-main);
   padding: 1rem 1.5rem;
   font-weight: 600;
@@ -724,7 +724,7 @@
   border-radius: 10px 10px 0 0;
 }
 
-.proxmigrate-card .card-body {
+.proxorchestrator-card .card-body {
   padding: 1.5rem;
 }
 

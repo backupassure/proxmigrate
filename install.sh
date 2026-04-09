@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ProxMigrate installer
+# ProxOrchestrator installer
 # Usage: sudo ./install.sh [--port <n>]
 set -euo pipefail
 
@@ -7,8 +7,8 @@ set -euo pipefail
 # Constants
 # ---------------------------------------------------------------------------
 
-APP_USER="proxmigrate"
-APP_HOME="/opt/proxmigrate"
+APP_USER="proxorchestrator"
+APP_HOME="/opt/proxorchestrator"
 VENV="${APP_HOME}/venv"
 PYTHON="${VENV}/bin/python"
 PIP="${VENV}/bin/pip"
@@ -16,7 +16,7 @@ CELERY="${VENV}/bin/celery"
 GUNICORN="${VENV}/bin/gunicorn"
 CERTS_DIR="${APP_HOME}/certs"
 SSH_DIR="${APP_HOME}/.ssh"
-LOG_DIR="/var/log/proxmigrate"
+LOG_DIR="/var/log/proxorchestrator"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEFAULT_PORT=8443
 PORT="${DEFAULT_PORT}"
@@ -29,7 +29,7 @@ usage() {
     echo "Usage: sudo $0 [--port <1-65535>] [--help]"
     echo ""
     echo "Options:"
-    echo "  --port <n>   HTTPS port for ProxMigrate (default: ${DEFAULT_PORT})"
+    echo "  --port <n>   HTTPS port for ProxOrchestrator (default: ${DEFAULT_PORT})"
     echo "  --help       Show this help and exit"
     exit 0
 }
@@ -97,7 +97,7 @@ else
     echo ""
     echo "ERROR: No supported package manager found (apt-get, dnf, yum, zypper)." >&2
     echo ""
-    echo "ProxMigrate requires the following packages to be installed manually:"
+    echo "ProxOrchestrator requires the following packages to be installed manually:"
     echo "  - Python 3 with pip and venv"
     echo "  - python3-dev (or python3-devel)"
     echo "  - gcc"
@@ -168,7 +168,7 @@ case "${PKG_MANAGER}" in
         if [[ -f /usr/bin/pveversion ]]; then
             echo ""
             echo "  NOTE: Proxmox VE detected on this host."
-            echo "  ProxMigrate is designed to run on a SEPARATE server that connects to Proxmox"
+            echo "  ProxOrchestrator is designed to run on a SEPARATE server that connects to Proxmox"
             echo "  via SSH and REST API. Installing here is supported but not recommended."
             echo ""
         else
@@ -182,7 +182,7 @@ case "${PKG_MANAGER}" in
         if [[ -f /usr/bin/pveversion ]]; then
             echo ""
             echo "  NOTE: Proxmox VE detected on this host."
-            echo "  ProxMigrate is designed to run on a SEPARATE server that connects to Proxmox"
+            echo "  ProxOrchestrator is designed to run on a SEPARATE server that connects to Proxmox"
             echo "  via SSH and REST API. Installing here is supported but not recommended."
             echo ""
         fi
@@ -211,7 +211,7 @@ case "${PKG_MANAGER}" in
         if [[ -f /usr/bin/pveversion ]]; then
             echo ""
             echo "  NOTE: Proxmox VE detected on this host."
-            echo "  ProxMigrate is designed to run on a SEPARATE server that connects to Proxmox"
+            echo "  ProxOrchestrator is designed to run on a SEPARATE server that connects to Proxmox"
             echo "  via SSH and REST API. Installing here is supported but not recommended."
             echo ""
         fi
@@ -319,17 +319,17 @@ chmod 700 "${SSH_DIR}"
 # ---------------------------------------------------------------------------
 
 echo "==> Generating self-signed SSL certificate (10 years)..."
-if [[ ! -f "${CERTS_DIR}/proxmigrate.crt" ]]; then
+if [[ ! -f "${CERTS_DIR}/proxorchestrator.crt" ]]; then
     openssl req \
         -x509 \
         -nodes \
         -days 3650 \
         -newkey rsa:4096 \
-        -keyout "${CERTS_DIR}/proxmigrate.key" \
-        -out "${CERTS_DIR}/proxmigrate.crt" \
-        -subj "/CN=proxmigrate/O=ProxMigrate/C=US" \
+        -keyout "${CERTS_DIR}/proxorchestrator.key" \
+        -out "${CERTS_DIR}/proxorchestrator.crt" \
+        -subj "/CN=proxorchestrator/O=ProxOrchestrator/C=US" \
         2>/dev/null
-    chmod 600 "${CERTS_DIR}/proxmigrate.key"
+    chmod 600 "${CERTS_DIR}/proxorchestrator.key"
     chown -R "${APP_USER}:${APP_USER}" "${CERTS_DIR}"
     echo "    Certificate written to ${CERTS_DIR}/"
 else
@@ -346,7 +346,7 @@ if [[ ! -f "${SSH_DIR}/id_rsa" ]]; then
         -t rsa \
         -b 4096 \
         -N "" \
-        -C "proxmigrate@$(hostname -f 2>/dev/null || hostname)" \
+        -C "proxorchestrator@$(hostname -f 2>/dev/null || hostname)" \
         -f "${SSH_DIR}/id_rsa" \
         2>/dev/null
     chmod 600 "${SSH_DIR}/id_rsa"
@@ -377,7 +377,7 @@ print(key)
 # .env file
 # ---------------------------------------------------------------------------
 
-echo "==> Writing /opt/proxmigrate/.env..."
+echo "==> Writing /opt/proxorchestrator/.env..."
 ENV_FILE="${APP_HOME}/.env"
 
 if [[ ! -f "${ENV_FILE}" ]]; then
@@ -395,8 +395,8 @@ CELERY_RESULT_BACKEND=redis://127.0.0.1:6379/0
 # Where Django writes upload temp files during HTTP transfer.
 # /tmp is often a small RAM-backed tmpfs — if you import large disk images
 # (e.g. 15 GB qcow2) set this to a path on a disk with sufficient free space.
-# The directory must exist and be writable by the proxmigrate user.
-# Example: UPLOAD_TEMP_DIR=/data/proxmigrate/tmp
+# The directory must exist and be writable by the proxorchestrator user.
+# Example: UPLOAD_TEMP_DIR=/data/proxorchestrator/tmp
 EOF
     chmod 600 "${ENV_FILE}"
     chown "${APP_USER}:${APP_USER}" "${ENV_FILE}"
@@ -413,7 +413,7 @@ echo "==> Configuring Nginx..."
 
 if [[ "${PKG_MANAGER}" == "apt" ]]; then
     # apt-based: sites-available + sites-enabled symlink
-    NGINX_CONF_FILE="${NGINX_CONF_DIR}/proxmigrate"
+    NGINX_CONF_FILE="${NGINX_CONF_DIR}/proxorchestrator"
 
     sed \
         -e "s|{{ WEB_PORT }}|${PORT}|g" \
@@ -421,8 +421,8 @@ if [[ "${PKG_MANAGER}" == "apt" ]]; then
         "${APP_HOME}/deploy/nginx.conf.template" \
         > "${NGINX_CONF_FILE}"
 
-    if [[ ! -L "${NGINX_ENABLED_DIR}/proxmigrate" ]]; then
-        ln -s "${NGINX_CONF_FILE}" "${NGINX_ENABLED_DIR}/proxmigrate"
+    if [[ ! -L "${NGINX_ENABLED_DIR}/proxorchestrator" ]]; then
+        ln -s "${NGINX_CONF_FILE}" "${NGINX_ENABLED_DIR}/proxorchestrator"
     fi
 
     # Remove default nginx site if it conflicts on port 80/443
@@ -432,7 +432,7 @@ if [[ "${PKG_MANAGER}" == "apt" ]]; then
     fi
 else
     # dnf/yum/zypper: write directly to conf.d (no symlink needed)
-    NGINX_CONF_FILE="${NGINX_CONF_DIR}/proxmigrate.conf"
+    NGINX_CONF_FILE="${NGINX_CONF_DIR}/proxorchestrator.conf"
 
     sed \
         -e "s|{{ WEB_PORT }}|${PORT}|g" \
@@ -443,14 +443,14 @@ fi
 
 nginx -t 2>/dev/null && echo "    Nginx config valid."
 
-# Allow proxmigrate user to reload nginx without a password (needed for VM console WebSocket proxy)
-SUDOERS_FILE="/etc/sudoers.d/proxmigrate-nginx"
+# Allow proxorchestrator user to reload nginx without a password (needed for VM console WebSocket proxy)
+SUDOERS_FILE="/etc/sudoers.d/proxorchestrator-nginx"
 cat > "${SUDOERS_FILE}" <<EOF
 ${APP_USER} ALL=(ALL) NOPASSWD: /usr/sbin/nginx -s reload
 ${APP_USER} ALL=(ALL) NOPASSWD: /usr/sbin/nginx -t
-${APP_USER} ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/nginx/sites-available/proxmigrate
-${APP_USER} ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/nginx/conf.d/proxmigrate.conf
-${APP_USER} ALL=(ALL) NOPASSWD: /usr/bin/tee /opt/proxmigrate/deploy/acme-challenge.conf
+${APP_USER} ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/nginx/sites-available/proxorchestrator
+${APP_USER} ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/nginx/conf.d/proxorchestrator.conf
+${APP_USER} ALL=(ALL) NOPASSWD: /usr/bin/tee /opt/proxorchestrator/deploy/acme-challenge.conf
 EOF
 chmod 440 "${SUDOERS_FILE}"
 echo "    Sudoers rule written: ${SUDOERS_FILE}"
@@ -461,7 +461,7 @@ if [[ "${PKG_MANAGER}" =~ ^(dnf|yum)$ ]] && command -v getenforce &>/dev/null; t
     echo "==> SELinux status: ${SELINUX_STATUS}"
 
     if [[ "${SELINUX_STATUS}" == "Enforcing" || "${SELINUX_STATUS}" == "Permissive" ]]; then
-        echo "    Applying SELinux policy for ProxMigrate..."
+        echo "    Applying SELinux policy for ProxOrchestrator..."
 
         # Allow nginx (httpd_t) to proxy to the gunicorn Unix socket
         setsebool -P httpd_can_network_connect 1
@@ -481,7 +481,7 @@ if [[ "${PKG_MANAGER}" =~ ^(dnf|yum)$ ]] && command -v getenforce &>/dev/null; t
             echo "    Then run: semanage port -a -t http_port_t -p tcp ${PORT}"
         fi
 
-        # Fix file contexts under /opt/proxmigrate
+        # Fix file contexts under /opt/proxorchestrator
         if command -v restorecon &>/dev/null; then
             restorecon -R "${APP_HOME}"
             echo "    Restored SELinux file contexts on ${APP_HOME}"
@@ -495,9 +495,9 @@ fi
 
 echo "==> Installing systemd service units..."
 
-GUNICORN_SERVICE="/etc/systemd/system/proxmigrate-gunicorn.service"
-CELERY_SERVICE="/etc/systemd/system/proxmigrate-celery.service"
-DAPHNE_SERVICE="/etc/systemd/system/proxmigrate-daphne.service"
+GUNICORN_SERVICE="/etc/systemd/system/proxorchestrator-gunicorn.service"
+CELERY_SERVICE="/etc/systemd/system/proxorchestrator-celery.service"
+DAPHNE_SERVICE="/etc/systemd/system/proxorchestrator-daphne.service"
 
 cp "${APP_HOME}/deploy/gunicorn.service.template" "${GUNICORN_SERVICE}"
 cp "${APP_HOME}/deploy/celery.service.template" "${CELERY_SERVICE}"
@@ -508,8 +508,8 @@ touch "${APP_HOME}/deploy/acme-challenge.conf"
 chown "${APP_USER}:${APP_USER}" "${APP_HOME}/deploy/acme-challenge.conf"
 
 # Create RuntimeDirectory parent so systemd tmpfiles doesn't complain
-mkdir -p /run/proxmigrate
-chown "${APP_USER}:${APP_USER}" /run/proxmigrate
+mkdir -p /run/proxorchestrator
+chown "${APP_USER}:${APP_USER}" /run/proxorchestrator
 
 # ---------------------------------------------------------------------------
 # Database migrations & static files
@@ -517,15 +517,15 @@ chown "${APP_USER}:${APP_USER}" /run/proxmigrate
 
 echo "==> Running database migrations..."
 sudo -u "${APP_USER}" \
-    DJANGO_SETTINGS_MODULE=proxmigrate.settings.production \
+    DJANGO_SETTINGS_MODULE=proxorchestrator.settings.production \
     "${PYTHON}" "${APP_HOME}/manage.py" migrate --noinput \
-    --settings=proxmigrate.settings.production
+    --settings=proxorchestrator.settings.production
 
 echo "==> Collecting static files..."
 sudo -u "${APP_USER}" \
-    DJANGO_SETTINGS_MODULE=proxmigrate.settings.production \
+    DJANGO_SETTINGS_MODULE=proxorchestrator.settings.production \
     "${PYTHON}" "${APP_HOME}/manage.py" collectstatic --noinput \
-    --settings=proxmigrate.settings.production
+    --settings=proxorchestrator.settings.production
 
 # ---------------------------------------------------------------------------
 # Frontend vendor assets (Bulma CSS + FontAwesome)
@@ -577,9 +577,9 @@ chown -R "${APP_USER}:${APP_USER}" "${VENDOR_STATIC}"
 
 # Re-run collectstatic to pick up vendor assets
 sudo -u "${APP_USER}" \
-    DJANGO_SETTINGS_MODULE=proxmigrate.settings.production \
+    DJANGO_SETTINGS_MODULE=proxorchestrator.settings.production \
     "${PYTHON}" "${APP_HOME}/manage.py" collectstatic --noinput \
-    --settings=proxmigrate.settings.production \
+    --settings=proxorchestrator.settings.production \
     2>&1 | tail -2
 
 # ---------------------------------------------------------------------------
@@ -593,9 +593,9 @@ echo ""
 DEFAULT_ADMIN_PASS="Password!"
 FORCE_CHANGE=false
 
-if [[ -n "${PROXMIGRATE_ADMIN_USER:-}" && -n "${PROXMIGRATE_ADMIN_PASS:-}" ]]; then
-    ADMIN_USER="${PROXMIGRATE_ADMIN_USER}"
-    ADMIN_PASS="${PROXMIGRATE_ADMIN_PASS}"
+if [[ -n "${PROXORCHESTRATOR_ADMIN_USER:-}" && -n "${PROXORCHESTRATOR_ADMIN_PASS:-}" ]]; then
+    ADMIN_USER="${PROXORCHESTRATOR_ADMIN_USER}"
+    ADMIN_PASS="${PROXORCHESTRATOR_ADMIN_PASS}"
     if [[ "${ADMIN_PASS}" == "${DEFAULT_ADMIN_PASS}" ]]; then
         FORCE_CHANGE=true
         echo "    Using credentials from environment variables (default password — will force change on first login)."
@@ -634,17 +634,17 @@ sudo -u "${APP_USER}" \
     DJANGO_SUPERUSER_USERNAME="${ADMIN_USER}" \
     DJANGO_SUPERUSER_PASSWORD="${ADMIN_PASS}" \
     DJANGO_SUPERUSER_EMAIL="${ADMIN_EMAIL}" \
-    DJANGO_SETTINGS_MODULE=proxmigrate.settings.production \
+    DJANGO_SETTINGS_MODULE=proxorchestrator.settings.production \
     "${PYTHON}" "${APP_HOME}/manage.py" createsuperuser \
     --noinput \
-    --settings=proxmigrate.settings.production \
+    --settings=proxorchestrator.settings.production \
     2>/dev/null || echo "    (Superuser '${ADMIN_USER}' may already exist — skipping.)"
 
 if [[ "${FORCE_CHANGE}" == "true" ]]; then
     sudo -u "${APP_USER}" \
-        DJANGO_SETTINGS_MODULE=proxmigrate.settings.production \
+        DJANGO_SETTINGS_MODULE=proxorchestrator.settings.production \
         "${PYTHON}" "${APP_HOME}/manage.py" set_must_change_password "${ADMIN_USER}" \
-        --settings=proxmigrate.settings.production \
+        --settings=proxorchestrator.settings.production \
         2>/dev/null || true
 fi
 
@@ -655,7 +655,7 @@ fi
 echo "==> Enabling and starting services..."
 systemctl daemon-reload
 
-for SVC in "${REDIS_SVC}" nginx proxmigrate-gunicorn proxmigrate-celery proxmigrate-daphne; do
+for SVC in "${REDIS_SVC}" nginx proxorchestrator-gunicorn proxorchestrator-celery proxorchestrator-daphne; do
     systemctl enable "${SVC}" 2>/dev/null || true
     systemctl restart "${SVC}" 2>/dev/null || systemctl start "${SVC}" 2>/dev/null || true
     echo "    ${SVC}: $(systemctl is-active "${SVC}" 2>/dev/null || echo 'unknown')"
@@ -669,7 +669,7 @@ PRIMARY_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
 
 echo ""
 echo "============================================================"
-echo "  ProxMigrate installation complete!"
+echo "  ProxOrchestrator installation complete!"
 echo "============================================================"
 echo ""
 echo "  Access URL : https://${PRIMARY_IP}:${PORT}"

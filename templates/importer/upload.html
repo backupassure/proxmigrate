@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Import VM — ProxMigrate{% endblock %}
+{% block title %}Import VM — ProxOrchestrator{% endblock %}
 {% block page_title %}Import VM{% endblock %}
 {% block help_slug %}importer-upload{% endblock %}
 
@@ -8,7 +8,7 @@
 
   {# ===== LEFT: Upload area ===== #}
   <div class="column is-8">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header">
         <i class="fas fa-upload" style="color: var(--link-color);"></i> Upload Disk Image
       </div>
@@ -100,7 +100,7 @@
   <div class="column is-4">
 
     {# Supported formats #}
-    <div class="proxmigrate-card" style="margin-bottom: 1rem;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1rem;">
       <div class="card-header">
         <i class="fas fa-info-circle" style="color: var(--text-muted);"></i> Supported Formats
       </div>
@@ -149,7 +149,7 @@
     </div>
 
     {# What happens next #}
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header">
         <i class="fas fa-list-ol" style="color: var(--text-muted);"></i> What Happens Next?
       </div>
@@ -158,7 +158,7 @@
           <li style="padding: 0.6rem 0;border-bottom: 1px solid var(--bg-main);">
             <div class="step-guide-num" style="background: var(--link-color);width: 24px;height: 24px;font-size: 0.72rem;">1</div>
             <div class="step-guide-text" style="font-size: 0.83rem;">
-              <strong>Upload</strong> — Your disk image is uploaded to the ProxMigrate server.
+              <strong>Upload</strong> — Your disk image is uploaded to the ProxOrchestrator server.
             </div>
           </li>
           <li style="padding: 0.6rem 0;border-bottom: 1px solid var(--bg-main);">
@@ -170,7 +170,7 @@
           <li style="padding: 0.6rem 0;">
             <div class="step-guide-num" style="background: var(--link-color);width: 24px;height: 24px;font-size: 0.72rem;">3</div>
             <div class="step-guide-text" style="font-size: 0.83rem;">
-              <strong>Deploy</strong> — ProxMigrate converts, transfers, and creates your VM on Proxmox automatically.
+              <strong>Deploy</strong> — ProxOrchestrator converts, transfers, and creates your VM on Proxmox automatically.
             </div>
           </li>
         </ol>

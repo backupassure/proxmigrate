@@ -1,6 +1,6 @@
 # Container Export & Import
 
-This page is the hub for managing container `.px` packages — portable archives that let you move LXC containers between Proxmox servers running ProxMigrate.
+This page is the hub for managing container `.px` packages — portable archives that let you move LXC containers between Proxmox servers running ProxOrchestrator.
 
 ## Exporting a container
 
@@ -24,7 +24,7 @@ You can delete any export job by clicking the trash icon.
 
 ## Importing a container
 
-To import a container from a `.px` package exported by another ProxMigrate instance:
+To import a container from a `.px` package exported by another ProxOrchestrator instance:
 
 1. Click **Import Container Package** in the page header (or use the upload card on the right)
 2. Upload the `.px` file
@@ -44,7 +44,7 @@ Recent imports are shown below the exports table with their status. Completed im
 
 ## Important notes
 
-- Only `.px` packages exported from ProxMigrate are accepted for import
+- Only `.px` packages exported from ProxOrchestrator are accepted for import
 - The imported container gets a new CTID (auto-assigned or manually specified)
 - Network settings (bridge, IP) should be adjusted to match the destination environment
 - Container data (files inside the rootfs) is preserved exactly as exported

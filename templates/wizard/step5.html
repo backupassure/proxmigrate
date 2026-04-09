@@ -121,8 +121,8 @@
                   type="text"
                   name="proxmox_temp_dir"
                   id="id_proxmox_temp_dir"
-                  value="{{ form.proxmox_temp_dir.value|default:'/var/tmp/proxmigrate/' }}"
-                  placeholder="/var/tmp/proxmigrate/"
+                  value="{{ form.proxmox_temp_dir.value|default:'/var/tmp/proxorchestrator/' }}"
+                  placeholder="/var/tmp/proxorchestrator/"
                 >
                 <span class="icon is-left"><i class="fas fa-folder" style="color: var(--text-muted);"></i></span>
               </div>
@@ -203,7 +203,7 @@
               </div>
             </div>
             <p class="field-hint" style="margin-top: 0.25rem;">
-              ProxMigrate auto-selects VMIDs within this range. Proxmox reserves 100–999 by
+              ProxOrchestrator auto-selects VMIDs within this range. Proxmox reserves 100–999 by
               convention; 900–999 or 1000+ is a safe starting range if those are free.
             </p>
           </div>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Container Inventory — ProxMigrate{% endblock %}
+{% block title %}Container Inventory — ProxOrchestrator{% endblock %}
 {% block page_title %}Container Inventory{% endblock %}
 {% block help_slug %}lxc{% endblock %}
 
@@ -61,7 +61,7 @@
 </div>
 
 {# ===== Container Table — polls every 10s for live status ===== #}
-<div id="ct-table-wrapper" class="proxmigrate-card"
+<div id="ct-table-wrapper" class="proxorchestrator-card"
      hx-get="{% url 'lxc_list' %}"
      hx-trigger="every 10s"
      hx-select="#ct-table-wrapper"

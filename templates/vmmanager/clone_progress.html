@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Cloning {{ clone_task.source_name }} — ProxMigrate{% endblock %}
+{% block title %}Cloning {{ clone_task.source_name }} — ProxOrchestrator{% endblock %}
 {% block page_title %}Cloning VM{% endblock %}
 {% block help_slug %}vm-clone{% endblock %}
 
@@ -8,7 +8,7 @@
   <div class="column is-8 is-offset-2">
 
     {# ===== Header card ===== #}
-    <div class="proxmigrate-card" style="margin-bottom:1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom:1.5rem;">
       <div class="card-body" style="padding:1.5rem;">
         <div style="display:flex;align-items:center;gap:1rem;">
           <div id="progress-icon"
@@ -33,7 +33,7 @@
     </div>
 
     {# ===== Progress area ===== #}
-    <div id="clone-progress" class="proxmigrate-card">
+    <div id="clone-progress" class="proxorchestrator-card">
       <div class="card-body" style="padding:2rem;text-align:center;">
         <span class="spinner" style="width:2.5rem;height:2.5rem;border-width:3px;display:inline-block;margin-bottom:1rem;"></span>
         <p id="progress-text" style="font-weight:600;font-size:1.05rem;color:var(--text-main, #1a1a2e);">Cloning VM...</p>
@@ -98,7 +98,7 @@
     var actions = document.getElementById('clone-actions');
     actions.style.display = 'block';
     actions.innerHTML =
-      '<div class="proxmigrate-card">' +
+      '<div class="proxorchestrator-card">' +
         '<div class="card-body" style="padding:1.5rem;text-align:center;">' +
           '<div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">' +
             '<a href="/vm/' + newVmid + '/" class="button is-primary is-medium" style="font-weight:600;">' +

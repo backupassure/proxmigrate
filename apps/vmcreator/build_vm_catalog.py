@@ -396,7 +396,7 @@ def write_json(data: object, path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Build the VM community scripts catalog for ProxMigrate."
+        description="Build the VM community scripts catalog for ProxOrchestrator."
     )
     parser.add_argument(
         "--repo-path",
@@ -428,7 +428,7 @@ def main() -> None:
         if args.repo_path:
             repo_path = Path(args.repo_path)
         else:
-            tmp_dir = tempfile.mkdtemp(prefix="proxmigrate-vm-catalog-")
+            tmp_dir = tempfile.mkdtemp(prefix="proxorchestrator-vm-catalog-")
             repo_path = Path(clone_repo(tmp_dir))
 
         vm_dir = repo_path / "vm"

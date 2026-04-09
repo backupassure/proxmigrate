@@ -828,7 +828,7 @@ def cancel_job(request, job_id):
         return redirect("dashboard")
 
     if job.task_id:
-        from proxmigrate.celery import app as celery_app
+        from proxorchestrator.celery import app as celery_app
         celery_app.control.revoke(job.task_id, terminate=True, signal="SIGTERM")
         logger.info("cancel_job: revoked Celery task %s for LxcCreateJob %d", job.task_id, job.pk)
 

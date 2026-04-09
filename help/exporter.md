@@ -1,20 +1,20 @@
 # VM Export (Phase 2)
 
-The VM Export feature is planned for Phase 2 of ProxMigrate development. This page describes what the feature will do.
+The VM Export feature is planned for Phase 2 of ProxOrchestrator development. This page describes what the feature will do.
 
 ## What is VM Export?
 
 VM Export allows you to package a Proxmox VM (its disk image and configuration) into a portable archive that can be:
 - Stored as a backup independent of Proxmox's built-in backup system
 - Shared with another team or organization
-- Imported into a different Proxmox server using ProxMigrate's import function
+- Imported into a different Proxmox server using ProxOrchestrator's import function
 - Uploaded to cloud object storage (S3, Azure Blob, etc.)
 - Converted to a different hypervisor format (VMware, Hyper-V)
 
 ## Planned features
 
 ### Portable Packages
-Export any VM as a versioned, compressed archive containing the qcow2 disk image and a metadata JSON file with the full VM configuration. These `.proxmigrate` packages can be imported back into any ProxMigrate instance.
+Export any VM as a versioned, compressed archive containing the qcow2 disk image and a metadata JSON file with the full VM configuration. These `.proxorchestrator` packages can be imported back into any ProxOrchestrator instance.
 
 ### Format Options
 Choose the output format for exported disks:
@@ -54,8 +54,8 @@ qemu-img convert -O vmdk /var/lib/vz/images/{vmid}/vm-{vmid}-disk-0.qcow2 output
 
 ## Help shape Phase 2
 
-ProxMigrate is open source and community-driven. If VM Export is important to you:
-1. Star the project on [GitHub](https://github.com/backupassure/proxmigrate)
+ProxOrchestrator is open source and community-driven. If VM Export is important to you:
+1. Star the project on [GitHub](https://github.com/ForgedIO/ProxOrchestrator)
 2. Open a feature request describing your use case
 3. Consider contributing — the codebase is Django + Celery, contributions welcome
 

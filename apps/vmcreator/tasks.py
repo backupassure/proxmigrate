@@ -27,7 +27,7 @@ def _check_cancelled(job):
     if job.stage == VmCreateJob.STAGE_CANCELLED:
         raise JobCancelled(f"VmCreateJob {job.pk} was cancelled by user")
 
-UPLOAD_ROOT = getattr(settings, "UPLOAD_ROOT", "/opt/proxmigrate/uploads")
+UPLOAD_ROOT = getattr(settings, "UPLOAD_ROOT", "/opt/proxorchestrator/uploads")
 
 
 def build_net_arg(vm_config):

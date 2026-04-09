@@ -60,7 +60,7 @@ def dashboard(request):
 
         # Check SSH key on disk (fast — no network)
         ssh_key_paths = [
-            "/opt/proxmigrate/.ssh/id_rsa",
+            "/opt/proxorchestrator/.ssh/id_rsa",
             os.path.expanduser("~/.ssh/id_rsa"),
         ]
         ssh_key_ok = any(os.path.exists(p) for p in ssh_key_paths)
@@ -354,7 +354,7 @@ def password_reset_request(request):
             protocol = "https" if request.is_secure() else "http"
             reset_url = f"{protocol}://{request.get_host()}/reset-password/{uid}/{token}/"
 
-            subject = "ProxMigrate — Password Reset"
+            subject = "ProxOrchestrator — Password Reset"
             body = render_to_string("core/email/password_reset.txt", {
                 "user": user,
                 "reset_url": reset_url,
@@ -568,7 +568,7 @@ def mfa_email_recovery(request):
 
                     try:
                         send_mail(
-                            "ProxMigrate — MFA Recovery Code",
+                            "ProxOrchestrator — MFA Recovery Code",
                             render_to_string("core/email/mfa_bypass_code.txt", {
                                 "user": user,
                                 "code": code,
@@ -607,7 +607,7 @@ def mfa_setup(request):
     # Build provisioning URI and QR code
     name = request.user.email or request.user.username
     totp = pyotp.TOTP(pending_secret)
-    uri = totp.provisioning_uri(name=name, issuer_name="ProxMigrate")
+    uri = totp.provisioning_uri(name=name, issuer_name="ProxOrchestrator")
 
     img = qrcode.make(uri, box_size=6, border=2)
     buf = io.BytesIO()

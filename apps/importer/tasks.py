@@ -30,7 +30,7 @@ def _check_cancelled(job):
     if job.stage == ImportJob.STAGE_CANCELLED:
         raise JobCancelled(f"ImportJob {job.pk} was cancelled by user")
 
-UPLOAD_ROOT = getattr(settings, "UPLOAD_ROOT", "/opt/proxmigrate/uploads")
+UPLOAD_ROOT = getattr(settings, "UPLOAD_ROOT", "/opt/proxorchestrator/uploads")
 
 # Map file extensions to qemu-img format names
 _EXT_TO_FORMAT = {

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Clone {{ ct_name }} — ProxMigrate{% endblock %}
+{% block title %}Clone {{ ct_name }} — ProxOrchestrator{% endblock %}
 {% block page_title %}Clone Container{% endblock %}
 {% block help_slug %}lxc-clone{% endblock %}
 
@@ -21,7 +21,7 @@
     {% endif %}
 
     {# ── Source container summary ── #}
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;">
       <div class="card-body" style="padding: 1.25rem 1.5rem;">
         <div style="display: flex;align-items: center;gap: 1rem;">
           <div style="width: 44px;height: 44px;border-radius: 8px;background: var(--bg-info-light);display: flex;align-items: center;justify-content: center;flex-shrink: 0;">
@@ -146,7 +146,7 @@
 
   {# Right column: info card #}
   <div class="column is-5">
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header">
         <i class="fas fa-info-circle" style="color: var(--link-color);"></i> About Container Clone
       </div>

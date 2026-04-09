@@ -1,6 +1,6 @@
 {
   "private": true,
-  "description": "Frontend dependencies for ProxMigrate",
+  "description": "Frontend dependencies for ProxOrchestrator",
   "scripts": {
     "postinstall": "node scripts/copy-xterm.js"
   },

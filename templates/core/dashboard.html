@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — ProxMigrate{% endblock %}
+{% block title %}Dashboard — ProxOrchestrator{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 {% block help_slug %}dashboard{% endblock %}
 
@@ -14,7 +14,7 @@
 
 {# ===== SETUP REQUIRED BANNER ===== #}
 {% if not wizard_complete %}
-<div class="proxmigrate-card setup-required-card" style="margin-bottom: 2rem;">
+<div class="proxorchestrator-card setup-required-card" style="margin-bottom: 2rem;">
   <div class="card-body" style="padding: 2rem;">
     <div style="display: flex;align-items: flex-start;gap: 1.5rem;">
       <div style="width: 56px;height: 56px;border-radius: 14px;background: var(--bg-info-light);display: flex;align-items: center;justify-content: center;flex-shrink: 0;">
@@ -23,7 +23,7 @@
       <div style="flex: 1;">
         <h2 style="font-size: 1.15rem;font-weight: 700;color: var(--text-header);margin-bottom: 0.4rem;">Setup Required</h2>
         <p style="color: var(--text-muted);font-size: 0.9rem;margin-bottom: 1.25rem;line-height: 1.6;">
-          ProxMigrate hasn't been connected to your Proxmox server yet. Run the setup wizard to configure your Proxmox host, SSH key authentication, API token, and default settings.
+          ProxOrchestrator hasn't been connected to your Proxmox server yet. Run the setup wizard to configure your Proxmox host, SSH key authentication, API token, and default settings.
         </p>
         <a href="{% url 'wizard_step1' %}" class="button is-primary" style="font-weight: 600;">
           <span class="icon"><i class="fas fa-magic"></i></span>
@@ -151,7 +151,7 @@
 {# ===== QUICK ACTIONS ===== #}
 <div class="columns" style="margin-top: 1.5rem;">
   <div class="column is-4">
-    <div class="proxmigrate-card" style="height: 100%;">
+    <div class="proxorchestrator-card" style="height: 100%;">
       <div class="card-header">
         <i class="fas fa-bolt" style="color: var(--warning-color);"></i> Quick Actions
       </div>
@@ -178,7 +178,7 @@
 
   {# ===== RECENT JOBS ===== #}
   <div class="column is-8">
-    <div class="proxmigrate-card" style="height: 100%;">
+    <div class="proxorchestrator-card" style="height: 100%;">
       <div class="card-header">
         <i class="fas fa-history" style="color: var(--link-color);"></i> Recent Jobs
       </div>
@@ -228,7 +228,7 @@
 </div>
 
 {# ===== SYSTEM INFO ===== #}
-<div class="proxmigrate-card" style="margin-top: 0.5rem;">
+<div class="proxorchestrator-card" style="margin-top: 0.5rem;">
   <div class="card-header">
     <i class="fas fa-info-circle" style="color: var(--text-muted);"></i> System Information
   </div>

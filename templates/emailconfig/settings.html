@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Email Settings — ProxMigrate{% endblock %}
+{% block title %}Email Settings — ProxOrchestrator{% endblock %}
 {% block page_title %}Email Settings{% endblock %}
 {% block help_slug %}email-settings{% endblock %}
 
@@ -33,7 +33,7 @@
     {% endif %}
 
     {# ── Delivery method selector ── #}
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;">
       <div class="card-header">
         <i class="fas fa-paper-plane" style="color: var(--link-color);margin-right: 0.5rem;"></i>
         Delivery Method
@@ -96,7 +96,7 @@
     {# SMTP Form                                                              #}
     {# ══════════════════════════════════════════════════════════════════════ #}
     <div id="pane-smtp" class="{% if config and config.backend_type == 'graph' %}is-hidden{% endif %}">
-      <div class="proxmigrate-card">
+      <div class="proxorchestrator-card">
         <div class="card-header">
           <i class="fas fa-envelope" style="color: var(--link-color);margin-right: 0.5rem;"></i>
           SMTP Configuration
@@ -112,7 +112,7 @@
                   <div class="control has-icons-left">
                     <input class="input" type="email" name="from_email"
                            value="{{ config.from_email|default:'' }}"
-                           placeholder="proxmigrate@example.com">
+                           placeholder="proxorchestrator@example.com">
                     <span class="icon is-left"><i class="fas fa-at"></i></span>
                   </div>
                   <p class="field-hint">Sender address shown on all outgoing emails.</p>
@@ -239,7 +239,7 @@
     {# Microsoft Graph API Form                                               #}
     {# ══════════════════════════════════════════════════════════════════════ #}
     <div id="pane-graph" class="{% if not config or config.backend_type != 'graph' %}is-hidden{% endif %}">
-      <div class="proxmigrate-card">
+      <div class="proxorchestrator-card">
         <div class="card-header">
           <i class="fab fa-microsoft" style="color: var(--link-color);margin-right: 0.5rem;"></i>
           Microsoft Graph API
@@ -262,7 +262,7 @@
                   <div class="step-guide-num">1</div>
                   <div class="step-guide-text">
                     Go to <strong>portal.azure.com</strong> &rarr; <strong>Microsoft Entra ID</strong> &rarr; <strong>App registrations</strong> &rarr; <strong>New registration</strong>.
-                    Name it something descriptive like <code>ProxMigrate Mail</code>.
+                    Name it something descriptive like <code>ProxOrchestrator Mail</code>.
                     Supported account types: <strong>Accounts in this organizational directory only</strong>.
                     No redirect URI is needed — this app uses application permissions, not user sign-in.
                   </div>
@@ -293,7 +293,7 @@
                           <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);font-family: monospace;">Mail.Send</td>
                           <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);">Application</td>
                           <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);"><span class="tag is-warning is-light" style="font-size: 0.72rem;">Required</span></td>
-                          <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);">Allows ProxMigrate to send email as the configured From mailbox</td>
+                          <td style="padding: 0.35rem 0.6rem;border: 1px solid var(--border-main);">Allows ProxOrchestrator to send email as the configured From mailbox</td>
                         </tr>
                       </tbody>
                     </table>
@@ -315,7 +315,7 @@ New-ApplicationAccessPolicy `
   -AppId "&lt;your-client-id&gt;" `
   -PolicyScopeGroupId "&lt;mailbox@yourcompany.com&gt;" `
   -AccessRight RestrictAccess `
-  -Description "Restrict ProxMigrate to send from one mailbox"</code></pre>
+  -Description "Restrict ProxOrchestrator to send from one mailbox"</code></pre>
                     <p style="margin-top: 0.4rem;color: var(--text-muted);">This is optional but strongly recommended for production. A shared mailbox (e.g. <code>alerts@yourcompany.com</code>) works well as the From address.</p>
                   </div>
                 </li>

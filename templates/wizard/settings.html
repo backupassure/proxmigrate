@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Proxmox Settings — ProxMigrate{% endblock %}
+{% block title %}Proxmox Settings — ProxOrchestrator{% endblock %}
 {% block page_title %}Proxmox Settings{% endblock %}
 {% block help_slug %}{{ help_slug }}{% endblock %}
 
@@ -8,7 +8,7 @@
   <div class="column is-7">
 
     {# ===== Connection ===== #}
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;">
       <div class="card-header">
         <i class="fas fa-plug" style="color: var(--link-color);"></i> Connection
         {% if api_ok %}
@@ -123,7 +123,7 @@
     </div>
 
     {# ===== API Token ===== #}
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;">
       <div class="card-header">
         <i class="fas fa-id-badge" style="color: var(--warning-color);"></i> API Token
       </div>
@@ -159,7 +159,7 @@
                 type="text"
                 name="api_token_id"
                 value="{{ config.api_token_id|default:'' }}"
-                placeholder="root@pam!proxmigrate"
+                placeholder="root@pam!proxorchestrator"
                 required
               >
               <span class="icon is-left"><i class="fas fa-tag" style="color: var(--text-muted);"></i></span>
@@ -207,7 +207,7 @@
     </div>
 
     {# ===== Server Settings ===== #}
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;">
       <div class="card-header">
         <i class="fas fa-hdd" style="color: var(--primary-color);"></i> Server Settings
       </div>
@@ -248,7 +248,7 @@
               <span class="icon is-left"><i class="fas fa-palette" style="color: var(--text-muted);"></i></span>
             </div>
             <p class="field-hint">
-              Choose how ProxMigrate looks. This setting is saved to your browser.
+              Choose how ProxOrchestrator looks. This setting is saved to your browser.
             </p>
           </div>
 
@@ -278,7 +278,7 @@
             <p class="field-hint">
               Where this server writes large upload temp files during HTTP transfer.
               <strong>/tmp is often a small RAM-backed tmpfs</strong> — if you import images larger than your available RAM,
-              set this to a directory on a disk with enough free space (e.g. <code>/data/proxmigrate/tmp</code>).
+              set this to a directory on a disk with enough free space (e.g. <code>/data/proxorchestrator/tmp</code>).
               The directory will be created automatically. Changes apply immediately without a restart.
             </p>
           </div>
@@ -298,7 +298,7 @@
   <div class="column is-5">
 
     {# ===== SSH Key ===== #}
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;">
       <div class="card-header">
         <i class="fas fa-key" style="color: var(--success-color);"></i> SSH Key
       </div>
@@ -395,7 +395,7 @@
     </div>
 
     {# ===== VM Defaults ===== #}
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header">
         <i class="fas fa-sliders-h" style="color: var(--purple-color);"></i> VM Defaults
       </div>
@@ -492,8 +492,8 @@
             <label class="label" style="font-weight: 600;color:  var(--text-header);font-size: 0.875rem;">Proxmox Temp Directory</label>
             <div class="control" style="display: flex;gap: 0.5rem;align-items: center;">
               <input class="input is-monospace" type="text" name="proxmox_temp_dir" id="temp-dir-input"
-                value="{{ config.proxmox_temp_dir|default:'/var/tmp/proxmigrate/' }}"
-                placeholder="/var/tmp/proxmigrate/" style="flex: 1;">
+                value="{{ config.proxmox_temp_dir|default:'/var/tmp/proxorchestrator/' }}"
+                placeholder="/var/tmp/proxorchestrator/" style="flex: 1;">
               {% if api_ok %}
                 <button type="button" class="button is-light is-small"
                   hx-get="{% url 'wizard_step5_browse' %}?path={{ config.proxmox_temp_dir|default:'/var/tmp' }}&field=proxmox_temp_dir"
@@ -555,7 +555,7 @@
               </div>
             </div>
             <p class="field-hint" style="margin-top: 0.25rem;">
-              ProxMigrate auto-selects VMIDs within this range when creating VMs.
+              ProxOrchestrator auto-selects VMIDs within this range when creating VMs.
             </p>
           </div>
 
@@ -594,7 +594,7 @@
   <div class="column is-5">
 
     {# Re-run Wizard card #}
-    <div class="proxmigrate-card" style="margin-bottom: 1.5rem;border: 1px solid rgba(245,158,11,0.3);">
+    <div class="proxorchestrator-card" style="margin-bottom: 1.5rem;border: 1px solid rgba(245,158,11,0.3);">
       <div class="card-header" style="background: rgba(245,158,11,0.08);">
         <i class="fas fa-redo" style="color: var(--warning-color);"></i> Re-run Setup Wizard
       </div>
@@ -621,7 +621,7 @@
     </div>
 
     {# Quick status card #}
-    <div class="proxmigrate-card">
+    <div class="proxorchestrator-card">
       <div class="card-header">
         <i class="fas fa-info-circle" style="color: var(--link-color);"></i> Current Status
       </div>
@@ -782,13 +782,13 @@
 
   // Dark Mode Theme Switcher
   function updateTheme(theme) {
-    localStorage.setItem('proxmigrate_theme', theme);
+    localStorage.setItem('proxorchestrator_theme', theme);
     if (window.applyTheme) window.applyTheme(theme);
   }
 
   // Initialize theme selector
   (function() {
-    const savedTheme = localStorage.getItem('proxmigrate_theme') || 'system';
+    const savedTheme = localStorage.getItem('proxorchestrator_theme') || 'system';
     const selector = document.getElementById('theme-selector');
     if (selector) {
       selector.value = savedTheme;

@@ -13,17 +13,17 @@ from apps.certificates.acme import AcmeError
 
 logger = logging.getLogger(__name__)
 
-CERT_DIR = "/opt/proxmigrate/certs"
-CERT_FILE = os.path.join(CERT_DIR, "proxmigrate.crt")
-KEY_FILE = os.path.join(CERT_DIR, "proxmigrate.key")
+CERT_DIR = "/opt/proxorchestrator/certs"
+CERT_FILE = os.path.join(CERT_DIR, "proxorchestrator.crt")
+KEY_FILE = os.path.join(CERT_DIR, "proxorchestrator.key")
 CHALLENGE_DIR = os.path.join(CERT_DIR, "acme-challenge")
-ACME_NGINX_CONF = "/opt/proxmigrate/deploy/acme-challenge.conf"
+ACME_NGINX_CONF = "/opt/proxorchestrator/deploy/acme-challenge.conf"
 
 ACME_NGINX_BLOCK = """server {
     listen 80;
     server_name _;
     location /.well-known/acme-challenge/ {
-        alias /opt/proxmigrate/certs/acme-challenge/;
+        alias /opt/proxorchestrator/certs/acme-challenge/;
     }
     location / {
         return 301 https://$host$request_uri;
@@ -560,15 +560,15 @@ def _auto_trigger_dns01_renewal(config, days_remaining):
             )
             if staff_emails:
                 send_mail(
-                    f"[ProxMigrate] DNS record needed for certificate renewal",
-                    f"ProxMigrate needs to renew its TLS certificate "
+                    f"[ProxOrchestrator] DNS record needed for certificate renewal",
+                    f"ProxOrchestrator needs to renew its TLS certificate "
                     f"({days_remaining} days remaining).\n\n"
                     f"Please create or update this DNS TXT record:\n\n"
                     f"  Name:  _acme-challenge.{config.domain}\n"
                     f"  Value: {txt_value}\n\n"
-                    f"Then log in to ProxMigrate and click "
+                    f"Then log in to ProxOrchestrator and click "
                     f"'I've Created the DNS Record' on the Certificates page.\n\n"
-                    f"— ProxMigrate",
+                    f"— ProxOrchestrator",
                     None,
                     staff_emails,
                     fail_silently=True,
@@ -605,15 +605,15 @@ def _send_expiry_alerts(config, days_remaining):
         if days_remaining <= days_threshold and not getattr(config, flag_field):
             urgency = "URGENT: " if days_threshold == 7 else ""
             subject = (
-                f"[ProxMigrate] {urgency}TLS certificate expires "
+                f"[ProxOrchestrator] {urgency}TLS certificate expires "
                 f"in {days_remaining} days"
             )
             body = (
-                f"The TLS certificate for ProxMigrate expires in "
+                f"The TLS certificate for ProxOrchestrator expires in "
                 f"{days_remaining} days.\n\n"
-                f"Please log in to ProxMigrate and visit Settings > "
+                f"Please log in to ProxOrchestrator and visit Settings > "
                 f"Certificates to renew.\n\n"
-                f"— ProxMigrate"
+                f"— ProxOrchestrator"
             )
 
             try:

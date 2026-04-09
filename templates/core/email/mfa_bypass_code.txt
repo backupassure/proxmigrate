@@ -1,6 +1,6 @@
 Hi {{ user.get_full_name|default:user.username }},
 
-Your MFA recovery code for ProxMigrate is:
+Your MFA recovery code for ProxOrchestrator is:
 
     {{ code }}
 
@@ -8,4 +8,4 @@ This code expires in 5 minutes and can only be used once.
 
 If you did not request this code, someone may have your password. Consider changing it immediately.
 
-— ProxMigrate
+— ProxOrchestrator

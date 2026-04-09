@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}User Management — ProxMigrate{% endblock %}
+{% block title %}User Management — ProxOrchestrator{% endblock %}
 {% block page_title %}User Management{% endblock %}
 {% block help_slug %}settings-auth-ldap{% endblock %}
 
@@ -22,7 +22,7 @@
   {% endfor %}
 {% endif %}
 
-<div class="proxmigrate-card">
+<div class="proxorchestrator-card">
   <div class="card-header">
     <i class="fas fa-users" style="color: var(--link-color);"></i> All Users
     <span style="margin-left: 0.5rem;font-size: 0.8rem;color: var(--text-muted);font-weight: 400;">({{ users|length }} total)</span>

@@ -6,7 +6,7 @@ This screen lets you configure all the settings for the new VM that will be crea
 
 **VM Name** — The name Proxmox will display for this VM. Use only letters, numbers, and hyphens. No spaces or special characters. This becomes the VM's hostname in Proxmox.
 
-**VMID** — The numeric identifier for the VM in Proxmox. ProxMigrate pre-fills this with the next available ID from your configured VMID pool. A live check validates the VMID as you type — green means it's available, red means it's already in use.
+**VMID** — The numeric identifier for the VM in Proxmox. ProxOrchestrator pre-fills this with the next available ID from your configured VMID pool. A live check validates the VMID as you type — green means it's available, red means it's already in use.
 
 **Target Node** — Which Proxmox cluster node will host this VM. Defaults to your configured default node.
 
