@@ -287,9 +287,9 @@
 
 .sidebar-logo .logo-title {
   color: var(--text-sidebar-active);
-  font-size: 1.25rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .sidebar-logo .logo-subtitle {
