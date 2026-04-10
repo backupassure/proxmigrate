@@ -113,7 +113,12 @@
   {# Options #}
   <div class="column is-6">
     <div class="proxorchestrator-card">
-      <div class="card-header"><i class="fas fa-cogs" style="color: var(--purple-color);"></i> Options</div>
+      <div class="card-header" style="display: flex;justify-content: space-between;align-items: center;">
+        <span><i class="fas fa-cogs" style="color: var(--purple-color);"></i> Options</span>
+        <button class="button is-small is-white" onclick="openLxcSettingsModal('options')" title="Edit container options">
+          <i class="fas fa-pencil-alt" style="font-size: 0.7rem;color: var(--text-muted);"></i>
+        </button>
+      </div>
       <div class="card-body" style="padding: 1rem 1.5rem;">
         <div class="cert-detail-row">
           <div class="cert-detail-label">Unprivileged</div>
@@ -366,6 +371,99 @@
   </div>
 </div>
 
+{# -- Options -- #}
+<div class="modal" id="lxc-settings-modal-options">
+  <div class="modal-background" onclick="closeLxcSettingsModal('options')"></div>
+  <div class="modal-card" style="max-width:560px;border-radius:12px;">
+    <header class="modal-card-head" style="background:var(--purple-color, #7c3aed);border-radius:12px 12px 0 0;">
+      <p class="modal-card-title" style="color:#fff;font-size:1rem;font-weight:600;"><i class="fas fa-cogs"></i>&nbsp; Container Options</p>
+      <button class="delete" onclick="closeLxcSettingsModal('options')"></button>
+    </header>
+    <form method="post" action="{% url 'lxc_update_settings' ct.vmid %}">
+      {% csrf_token %}
+      <input type="hidden" name="section" value="options">
+      <section class="modal-card-body">
+        {% if ct.status == 'running' %}
+        <div class="notification is-warning is-light" style="padding:0.5rem 0.75rem;font-size:0.82rem;margin-bottom:1rem;">
+          <i class="fas fa-exclamation-triangle"></i> Container is running. Feature changes require a restart to take effect.
+        </div>
+        {% endif %}
+
+        <div class="notification is-info is-light" style="padding:0.5rem 0.75rem;font-size:0.78rem;margin-bottom:1rem;">
+          <i class="fas fa-info-circle"></i> <strong>Unprivileged</strong> ({% if ct.unprivileged %}Yes{% else %}No{% endif %}) is set at container creation and cannot be changed afterwards. To switch, back up and restore the container with the opposite flag.
+        </div>
+
+        <div class="field">
+          <label class="checkbox" style="font-size:0.85rem;">
+            <input type="checkbox" name="onboot" value="1"{% if ct.onboot %} checked{% endif %}>
+            Start at boot
+          </label>
+          <p class="help">Automatically start this container when the Proxmox host boots.</p>
+        </div>
+
+        <div class="field">
+          <label class="checkbox" style="font-size:0.85rem;">
+            <input type="checkbox" name="protection" value="1"{% if ct.protection %} checked{% endif %}>
+            Protection
+          </label>
+          <p class="help">Prevents accidental deletion of the container and its disks.</p>
+        </div>
+
+        <div class="field">
+          <label class="label" style="font-size:0.85rem;">Startup Order</label>
+          <div class="control">
+            <input class="input" type="text" name="startup" value="{{ ct.startup }}" placeholder="order=1,up=30,down=30">
+          </div>
+          <p class="help"><code>order</code> = boot priority, <code>up</code>/<code>down</code> = seconds to wait after start/before stop. Leave empty for default.</p>
+        </div>
+
+        <div class="field">
+          <label class="label" style="font-size:0.85rem;">Features</label>
+          <div style="display:flex;flex-wrap:wrap;gap:1rem;">
+            <label class="checkbox" style="font-size:0.85rem;">
+              <input type="checkbox" name="feature_nesting" value="1"{% if ct.features_flags.nesting %} checked{% endif %}>
+              Nesting
+            </label>
+            <label class="checkbox" style="font-size:0.85rem;">
+              <input type="checkbox" name="feature_fuse" value="1"{% if ct.features_flags.fuse %} checked{% endif %}>
+              FUSE
+            </label>
+            <label class="checkbox" style="font-size:0.85rem;">
+              <input type="checkbox" name="feature_keyctl" value="1"{% if ct.features_flags.keyctl %} checked{% endif %}>
+              keyctl
+            </label>
+            <label class="checkbox" style="font-size:0.85rem;">
+              <input type="checkbox" name="feature_mknod" value="1"{% if ct.features_flags.mknod %} checked{% endif %}>
+              mknod
+            </label>
+          </div>
+          <p class="help"><strong>Nesting</strong> is required for Docker, systemd in unprivileged containers, etc. <strong>FUSE</strong> for FUSE-based filesystems. <strong>keyctl</strong> for unprivileged containers needing the keyring syscall.</p>
+        </div>
+
+        <div class="field">
+          <label class="label" style="font-size:0.85rem;">Tags</label>
+          <div class="control">
+            <input class="input" type="text" name="tags" value="{{ ct.tags }}" placeholder="production;web;customer-a">
+          </div>
+          <p class="help">Semicolon-separated tags for organisation in Proxmox.</p>
+        </div>
+
+        <div class="field">
+          <label class="label" style="font-size:0.85rem;">Hookscript</label>
+          <div class="control">
+            <input class="input" type="text" name="hookscript" value="{{ ct.hookscript }}" placeholder="local:snippets/hook.pl">
+          </div>
+          <p class="help">Optional volume reference to a hookscript executed at lifecycle events. Leave empty if unused.</p>
+        </div>
+      </section>
+      <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
+        <button type="button" class="button is-light" onclick="closeLxcSettingsModal('options')">Cancel</button>
+        <button type="submit" class="button is-primary" style="font-weight:600;">Save</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
 {# -- Memory -- #}
 <div class="modal" id="lxc-settings-modal-memory">
   <div class="modal-background" onclick="closeLxcSettingsModal('memory')"></div>
@@ -427,7 +525,7 @@
   }
   document.addEventListener('keydown', function(evt) {
     if (evt.key === 'Escape') {
-      ['general', 'cpu', 'memory'].forEach(function(s) { closeLxcSettingsModal(s); });
+      ['general', 'cpu', 'memory', 'options'].forEach(function(s) { closeLxcSettingsModal(s); });
     }
   });
 </script>

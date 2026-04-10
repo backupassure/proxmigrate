@@ -171,6 +171,12 @@ def _build_ct(raw_config, ct_status, node, vmid):
 
     features_raw = raw_config.get("features", "")
     features_list = _parse_features(features_raw)
+    # Per-flag booleans for the options editor
+    features_flags = {}
+    for part in features_raw.split(","):
+        if "=" in part:
+            k, v = part.split("=", 1)
+            features_flags[k.strip()] = v.strip() == "1"
 
     return {
         # Identity
@@ -196,6 +202,7 @@ def _build_ct(raw_config, ct_status, node, vmid):
         "unprivileged": bool(int(raw_config.get("unprivileged", 0))),
         "features": features_list,
         "features_raw": features_raw,
+        "features_flags": features_flags,
         "startup": raw_config.get("startup", ""),
         "hookscript": raw_config.get("hookscript", ""),
         "lock": raw_config.get("lock", ""),
@@ -954,6 +961,42 @@ def lxc_update_settings(request, vmid):
     elif section == "general":
         kwargs["description"] = request.POST.get("description", "")
 
+    elif section == "options":
+        # onboot / protection: simple bool flags
+        kwargs["onboot"] = 1 if request.POST.get("onboot") == "1" else 0
+        kwargs["protection"] = 1 if request.POST.get("protection") == "1" else 0
+
+        # startup order — free-form string like "order=1,up=30,down=30"
+        startup = request.POST.get("startup", "").strip()
+        if startup:
+            kwargs["startup"] = startup
+        else:
+            delete_keys.append("startup")
+
+        # features — rebuild from checkboxes
+        feature_flags = []
+        for flag in ("nesting", "fuse", "keyctl", "mknod"):
+            if request.POST.get(f"feature_{flag}") == "1":
+                feature_flags.append(f"{flag}=1")
+        if feature_flags:
+            kwargs["features"] = ",".join(feature_flags)
+        else:
+            delete_keys.append("features")
+
+        # tags — semicolon-separated
+        tags = request.POST.get("tags", "").strip()
+        if tags:
+            kwargs["tags"] = tags
+        else:
+            delete_keys.append("tags")
+
+        # hookscript — volume reference like "local:snippets/hook.pl"
+        hookscript = request.POST.get("hookscript", "").strip()
+        if hookscript:
+            kwargs["hookscript"] = hookscript
+        else:
+            delete_keys.append("hookscript")
+
     else:
         messages.error(request, "Unknown settings section.")
         return redirect("lxc_detail", vmid=vmid)
@@ -970,7 +1013,7 @@ def lxc_update_settings(request, vmid):
         api.update_lxc_config(node, vmid, **kwargs)
 
         status = api.get_lxc_status(node, vmid)
-        if status.get("status") == "running" and section in ("cpu", "memory"):
+        if status.get("status") == "running" and section in ("cpu", "memory", "options"):
             messages.warning(
                 request,
                 f"{section.title()} settings updated. A container restart may be required for all changes to take effect.",
