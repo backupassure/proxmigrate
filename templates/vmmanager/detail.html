@@ -610,14 +610,6 @@
 
 {% block extra_scripts %}
 <script>
-  // Add CSRF token to HTMX POST requests
-  document.addEventListener('htmx:configRequest', function(evt) {
-    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
-    if (csrfToken) {
-      evt.detail.headers['X-CSRFToken'] = csrfToken[1];
-    }
-  });
-
   // Reload page when VM status changes (e.g. stopped externally)
   // so action buttons (Delete, Start, Console) update correctly.
   var initialStatus = '{{ vm.status }}';

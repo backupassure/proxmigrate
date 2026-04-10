@@ -250,6 +250,18 @@
   }
 
   // -----------------------------------------------------------------------
+  // HTMX global CSRF — add token to all non-GET requests
+  // -----------------------------------------------------------------------
+  document.addEventListener('htmx:configRequest', function(evt) {
+    if (evt.detail.verb !== 'get') {
+      var csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
+      if (csrfToken) {
+        evt.detail.headers['X-CSRFToken'] = csrfToken[1];
+      }
+    }
+  });
+
+  // -----------------------------------------------------------------------
   // HTMX global event — show indicator on requests
   // -----------------------------------------------------------------------
   document.addEventListener('htmx:beforeRequest', function(evt) {

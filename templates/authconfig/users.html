@@ -262,10 +262,5 @@
     }, 100);
   }
 
-  // CSRF for HTMX
-  document.addEventListener('htmx:configRequest', function(evt) {
-    var csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
-    if (csrfToken) evt.detail.headers['X-CSRFToken'] = csrfToken[1];
-  });
 </script>
 {% endblock %}

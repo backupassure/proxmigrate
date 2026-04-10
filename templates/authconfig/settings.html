@@ -539,12 +539,5 @@
     navigator.clipboard.writeText(text).then(() => showToast('Redirect URI copied to clipboard', 'success'));
   }
 
-  // Add CSRF to HTMX
-  document.addEventListener('htmx:configRequest', function(evt) {
-    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
-    if (csrfToken) {
-      evt.detail.headers['X-CSRFToken'] = csrfToken[1];
-    }
-  });
 </script>
 {% endblock %}

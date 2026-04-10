@@ -319,16 +319,6 @@
 
 {% block extra_scripts %}
 <script>
-  // Add CSRF token to all HTMX POST requests
-  document.addEventListener('htmx:configRequest', function(evt) {
-    if (evt.detail.verb !== 'get') {
-      const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
-      if (csrfToken) {
-        evt.detail.headers['X-CSRFToken'] = csrfToken[1];
-      }
-    }
-  });
-
   // Prevent background table poll from overwriting pending action rows.
   // Track when the first pending row appeared so we can timeout after 60s.
   let vmPendingSince = 0;

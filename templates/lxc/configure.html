@@ -334,13 +334,5 @@
     fields.style.display = sel.value === 'static' ? '' : 'none';
   }
 
-  document.addEventListener('htmx:configRequest', function(evt) {
-    if (evt.detail.verb !== 'get') {
-      const csrfToken = document.cookie.match(/csrftoken=([^;]+)/);
-      if (csrfToken) {
-        evt.detail.headers['X-CSRFToken'] = csrfToken[1];
-      }
-    }
-  });
 </script>
 {% endblock %}

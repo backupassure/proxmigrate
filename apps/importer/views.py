@@ -13,6 +13,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
+from django.utils.html import escape
 from django.views.decorators.http import require_POST
 
 from apps.importer.forms import ALLOWED_EXTENSIONS
@@ -382,7 +383,7 @@ def upload_extra_disk(request, job_id):
     _name, ext = os.path.splitext(uploaded.name.lower())
     if ext not in ALLOWED_EXTENSIONS:
         return HttpResponse(
-            f'<span style="color:#cc0f35;">Unsupported file type: {ext}</span>',
+            f'<span style="color:#cc0f35;">Unsupported file type: {escape(ext)}</span>',
             status=400,
         )
 
