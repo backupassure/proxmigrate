@@ -1,0 +1,83 @@
+{# LXC network interfaces partial — swapped via HTMX on connect/disconnect #}
+<div id="lxc-network-table">
+
+  {% if net_error %}
+    <div class="notification is-warning is-light" style="margin-bottom:1rem;padding:0.75rem 1rem;font-size:0.85rem;">
+      <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i> {{ net_error }}
+    </div>
+  {% endif %}
+
+  {% if net_success %}
+    <div class="notification is-success is-light" style="margin-bottom:1rem;padding:0.75rem 1rem;font-size:0.85rem;">
+      <i class="fas fa-check-circle" style="margin-right:0.4rem;"></i> {{ net_success }}
+    </div>
+  {% endif %}
+
+  {% if networks %}
+  <table class="table is-fullwidth is-narrow" style="margin:0;font-size:0.875rem;">
+    <thead>
+      <tr style="background:var(--bg-header, #f5f7fa);">
+        <th style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:600;padding:0.75rem 1.5rem;">Interface</th>
+        <th style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:600;">Name</th>
+        <th style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:600;">Bridge</th>
+        <th style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:600;">MAC Address</th>
+        <th style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:600;">IP Config</th>
+        <th style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:600;">VLAN</th>
+        <th style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:600;">Firewall</th>
+        <th style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:600;">Status</th>
+        <th style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:600;text-align:right;padding-right:1.5rem;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for nic in networks %}
+      <tr{% if nic.link_down %} style="opacity:0.6;"{% endif %}>
+        <td style="font-family:monospace;font-size:0.82rem;padding-left:1.5rem;font-weight:600;">{{ nic.interface }}</td>
+        <td>{{ nic.name }}</td>
+        <td>{{ nic.bridge }}</td>
+        <td style="font-family:monospace;font-size:0.8rem;">{{ nic.mac }}</td>
+        <td style="font-size:0.82rem;">{{ nic.ip }}{% if nic.gateway %} <span style="color:var(--text-muted);">(gw {{ nic.gateway }})</span>{% endif %}</td>
+        <td>{{ nic.tag|default:"—" }}</td>
+        <td>{% if nic.firewall %}<span style="color:var(--success-color);">Yes</span>{% else %}No{% endif %}</td>
+        <td>
+          {% if nic.link_down %}
+            <span style="color:var(--danger-color, #f14668);font-size:0.78rem;font-weight:600;">
+              <i class="fas fa-unlink" style="margin-right:0.2rem;"></i>Disconnected
+            </span>
+          {% else %}
+            <span style="color:var(--success-color, #48c78e);font-size:0.78rem;font-weight:600;">
+              <i class="fas fa-link" style="margin-right:0.2rem;"></i>Connected
+            </span>
+          {% endif %}
+        </td>
+        <td style="text-align:right;padding-right:1.5rem;white-space:nowrap;">
+          {% if nic.link_down %}
+            <button class="button is-small is-success is-light" style="font-weight:600;"
+                    hx-post="{% url 'lxc_nic_toggle' vmid nic.interface %}"
+                    hx-target="#lxc-network-table"
+                    hx-swap="outerHTML"
+                    hx-vals='{"action": "connect"}'
+                    title="Connect this NIC">
+              <span class="icon is-small"><i class="fas fa-plug"></i></span>
+              <span>Connect</span>
+            </button>
+          {% else %}
+            <button class="button is-small is-warning is-light" style="font-weight:600;"
+                    hx-post="{% url 'lxc_nic_toggle' vmid nic.interface %}"
+                    hx-target="#lxc-network-table"
+                    hx-swap="outerHTML"
+                    hx-vals='{"action": "disconnect"}'
+                    hx-confirm="Disconnect {{ nic.interface }}? The container will lose network connectivity on this interface."
+                    title="Disconnect this NIC">
+              <span class="icon is-small"><i class="fas fa-unlink"></i></span>
+              <span>Disconnect</span>
+            </button>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div style="padding:1.5rem;color:var(--text-muted, #7a7a7a);font-size:0.875rem;">No network interface information available.</div>
+  {% endif %}
+</div>

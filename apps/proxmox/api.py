@@ -428,3 +428,24 @@ class ProxmoxAPI:
     def rollback_lxc_snapshot(self, node, vmid, snapname):
         """Rollback an LXC container to a snapshot. Returns task UPID string."""
         return self._post(f"/nodes/{node}/lxc/{vmid}/snapshot/{snapname}/rollback")
+
+    # ------------------------------------------------------------------
+    # LXC configuration
+    # ------------------------------------------------------------------
+
+    def update_lxc_config(self, node, vmid, **kwargs):
+        """Update LXC container configuration. Accepts arbitrary key=value pairs.
+
+        Uses PUT /nodes/{node}/lxc/{vmid}/config which applies most changes
+        immediately. CPU, memory, network and mountpoint changes typically
+        take effect without a restart.
+        """
+        return self._put(f"/nodes/{node}/lxc/{vmid}/config", kwargs)
+
+    def resize_lxc_mountpoint(self, node, vmid, disk, size):
+        """Resize an LXC mountpoint or rootfs. Size format: '+10G' or '50G'.
+
+        disk: 'rootfs', 'mp0', 'mp1', etc.
+        Note: Proxmox only allows growing volumes, never shrinking.
+        """
+        return self._put(f"/nodes/{node}/lxc/{vmid}/resize", {"disk": disk, "size": size})
