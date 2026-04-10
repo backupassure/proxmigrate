@@ -1,6 +1,6 @@
 # ProxOrchestrator
 
-**Version 1.1.2** — Build `2026-04-08.2`
+**Version 1.1.2** — Build `2026-04-10.1`
 
 > **To update an existing install:** `git pull origin main && sudo ./update.sh`
 
@@ -363,6 +363,12 @@ ProxOrchestrator handles template downloading, container creation, and optional 
 
 ## Changelog
 
+### v1.1.2 — 2026-04-10.1
+- **LXC settings editors** — pencil-edit modals on the container detail page for CPU (cores, cpulimit, cpuunits), memory (RAM, swap), and description; running-container restart warnings where relevant
+- **LXC options editor** — edit start-on-boot, protection, startup order, features (Nesting, FUSE, keyctl, mknod), tags, and hookscript from a dedicated modal; unprivileged shown read-only with a note explaining it can only be changed by container recreation
+- **LXC mountpoint management** — HTMX-loaded storage card with add (storage pool, size, mount path, backup flag), grow-only resize modal, and detach for mp0+ (rootfs is resize-only); mirrors VM disk UX
+- **LXC NIC connect/disconnect** — toggle `link_down` per interface from the container detail page; disconnected NICs render dimmed with status indicator
+
 ### v1.1.2 — 2026-04-08.2
 - **VM Community Scripts marketplace** — browse and deploy VM-based community scripts (Docker, Home Assistant OS, TrueNAS, Arch Linux, OpenWrt, OPNsense, and more) with one click from a searchable, categorized catalog; fully interactive WebSocket terminal with whiptail prompt support; resilient screen sessions survive browser disconnect and allow reattach; automatic VMID detection with jump-to-Proxmox-console button; in-app catalog refresh from upstream GitHub via Celery task; VM community script jobs shown on dashboard
 
@@ -555,12 +561,12 @@ sudo systemctl restart proxorchestrator-gunicorn proxorchestrator-celery
 - [x] Interactive WebSocket terminal for real-time deployment output
 - [x] Categorized browsing with search and catalog auto-update
 
-### LXC Management Enhancements
+### LXC Management Enhancements (complete)
 - [x] LXC kebab menu — state-aware dropdown with clone, export, delete in container inventory table
 - [x] LXC container delete — type-to-confirm CTID modal with async task polling
-- [ ] LXC settings editors — CPU, memory, network configuration from detail page
-- [ ] LXC disk management — add, resize, detach disks from container detail page
-- [ ] LXC NIC management — connect/disconnect network interfaces
+- [x] LXC settings editors — CPU (cores, limit, units), memory (RAM, swap), and description editable from the detail page
+- [x] LXC mountpoint management — add, resize, and detach mountpoints from the container detail page
+- [x] LXC NIC management — connect/disconnect network interfaces with link state toggle
 
 ### Phase 3 — Proxmox Monitoring & Alerting
 Turn ProxOrchestrator into a comprehensive Proxmox observability platform.

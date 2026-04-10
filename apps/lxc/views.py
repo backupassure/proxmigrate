@@ -171,6 +171,12 @@ def _build_ct(raw_config, ct_status, node, vmid):
 
     features_raw = raw_config.get("features", "")
     features_list = _parse_features(features_raw)
+    # Per-flag booleans for the options editor
+    features_flags = {}
+    for part in features_raw.split(","):
+        if "=" in part:
+            k, v = part.split("=", 1)
+            features_flags[k.strip()] = v.strip() == "1"
 
     return {
         # Identity
@@ -196,6 +202,7 @@ def _build_ct(raw_config, ct_status, node, vmid):
         "unprivileged": bool(int(raw_config.get("unprivileged", 0))),
         "features": features_list,
         "features_raw": features_raw,
+        "features_flags": features_flags,
         "startup": raw_config.get("startup", ""),
         "hookscript": raw_config.get("hookscript", ""),
         "lock": raw_config.get("lock", ""),
@@ -902,6 +909,410 @@ def lxc_delete(request, vmid):
         logger.error("lxc_delete vmid=%d: %s", vmid, exc)
         messages.error(request, f"Failed to delete container {vmid}: {exc.message}")
         return redirect("lxc_detail", vmid=vmid)
+
+
+# =========================================================================
+# LXC Settings (CPU, memory, general)
+# =========================================================================
+
+
+@login_required
+@require_POST
+def lxc_update_settings(request, vmid):
+    """Update LXC container configuration settings.
+
+    Handles three sections via the `section` POST field:
+      cpu     — cores, cpulimit, cpuunits
+      memory  — memory (MB), swap (MB)
+      general — description
+    """
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    section = request.POST.get("section", "")
+
+    kwargs = {}
+    delete_keys = []
+
+    if section == "cpu":
+        cores = request.POST.get("cores", "").strip()
+        cpulimit = request.POST.get("cpulimit", "").strip()
+        cpuunits = request.POST.get("cpuunits", "").strip()
+        if cores:
+            kwargs["cores"] = int(cores)
+        else:
+            delete_keys.append("cores")
+        # cpulimit empty or "0" means unlimited — delete the key
+        if cpulimit and cpulimit != "0":
+            kwargs["cpulimit"] = cpulimit
+        else:
+            delete_keys.append("cpulimit")
+        if cpuunits:
+            kwargs["cpuunits"] = int(cpuunits)
+        else:
+            delete_keys.append("cpuunits")
+
+    elif section == "memory":
+        memory_mb = request.POST.get("memory_mb", "").strip()
+        swap_mb = request.POST.get("swap_mb", "").strip()
+        if memory_mb:
+            kwargs["memory"] = int(memory_mb)
+        kwargs["swap"] = int(swap_mb) if swap_mb else 0
+
+    elif section == "general":
+        kwargs["description"] = request.POST.get("description", "")
+
+    elif section == "options":
+        # onboot / protection: simple bool flags
+        kwargs["onboot"] = 1 if request.POST.get("onboot") == "1" else 0
+        kwargs["protection"] = 1 if request.POST.get("protection") == "1" else 0
+
+        # startup order — free-form string like "order=1,up=30,down=30"
+        startup = request.POST.get("startup", "").strip()
+        if startup:
+            kwargs["startup"] = startup
+        else:
+            delete_keys.append("startup")
+
+        # features — rebuild from checkboxes
+        feature_flags = []
+        for flag in ("nesting", "fuse", "keyctl", "mknod"):
+            if request.POST.get(f"feature_{flag}") == "1":
+                feature_flags.append(f"{flag}=1")
+        if feature_flags:
+            kwargs["features"] = ",".join(feature_flags)
+        else:
+            delete_keys.append("features")
+
+        # tags — semicolon-separated
+        tags = request.POST.get("tags", "").strip()
+        if tags:
+            kwargs["tags"] = tags
+        else:
+            delete_keys.append("tags")
+
+        # hookscript — volume reference like "local:snippets/hook.pl"
+        hookscript = request.POST.get("hookscript", "").strip()
+        if hookscript:
+            kwargs["hookscript"] = hookscript
+        else:
+            delete_keys.append("hookscript")
+
+    else:
+        messages.error(request, "Unknown settings section.")
+        return redirect("lxc_detail", vmid=vmid)
+
+    if delete_keys:
+        kwargs["delete"] = ",".join(delete_keys)
+
+    if not kwargs:
+        messages.error(request, "No changes provided.")
+        return redirect("lxc_detail", vmid=vmid)
+
+    try:
+        api = config.get_api_client()
+        api.update_lxc_config(node, vmid, **kwargs)
+
+        status = api.get_lxc_status(node, vmid)
+        if status.get("status") == "running" and section in ("cpu", "memory", "options"):
+            messages.warning(
+                request,
+                f"{section.title()} settings updated. A container restart may be required for all changes to take effect.",
+            )
+        else:
+            messages.success(request, f"{section.title()} settings updated.")
+    except ProxmoxAPIError as exc:
+        logger.error("lxc_update_settings vmid=%d section=%s: %s", vmid, section, exc)
+        messages.error(request, f"Failed to update settings: {exc.message}")
+
+    return redirect("lxc_detail", vmid=vmid)
+
+
+# =========================================================================
+# LXC Mountpoint management
+# =========================================================================
+
+
+def _parse_ct_mp_full(interface, raw_value):
+    """Parse a mountpoint/rootfs string into a detail dict for the storage partial.
+
+    Handles both rootfs ("local-lvm:vm-103-disk-0,size=44G") and
+    mp0..mpN ("local-lvm:vm-103-disk-1,mp=/data,size=50G,backup=1").
+    """
+    if not raw_value:
+        return None
+    parts = raw_value.split(",")
+    location = parts[0]
+    options = {}
+    for p in parts[1:]:
+        if "=" in p:
+            k, v = p.split("=", 1)
+            options[k] = v
+    storage = location.split(":")[0] if ":" in location else location
+    volume = location.split(":", 1)[1] if ":" in location else ""
+    return {
+        "interface": interface,
+        "is_rootfs": interface == "rootfs",
+        "storage": storage,
+        "volume": volume,
+        "size": options.get("size", "—"),
+        "mp": options.get("mp", "/" if interface == "rootfs" else ""),
+        "backup": options.get("backup", "1") == "1",
+        "options_display": ", ".join(
+            f"{k}={v}" for k, v in options.items() if k not in ("size", "mp")
+        ),
+    }
+
+
+def _find_next_mp_slot(raw_config):
+    """Find the next available mpN slot (0-255)."""
+    used = set()
+    for key in raw_config:
+        if key.startswith("mp") and key[2:].isdigit():
+            used.add(int(key[2:]))
+    for n in range(256):
+        if n not in used:
+            return f"mp{n}"
+    return None
+
+
+@login_required
+def lxc_mountpoints(request, vmid):
+    """HTMX endpoint: return the LXC storage/mountpoints partial."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    mounts = []
+    storage_pools = []
+    error = None
+
+    try:
+        api = config.get_api_client()
+        raw_config = api.get_lxc_config(node, vmid)
+
+        rootfs = _parse_ct_mp_full("rootfs", raw_config.get("rootfs", ""))
+        if rootfs:
+            mounts.append(rootfs)
+        for key in sorted(raw_config.keys()):
+            if key.startswith("mp") and key[2:].isdigit():
+                parsed = _parse_ct_mp_full(key, raw_config[key])
+                if parsed:
+                    mounts.append(parsed)
+
+        all_storage = api.get_storage(node)
+        storage_pools = [
+            s for s in all_storage
+            if "rootdir" in (s.get("content", "") or "")
+            or "images" in (s.get("content", "") or "")
+        ]
+    except ProxmoxAPIError as exc:
+        logger.error("lxc_mountpoints vmid=%d: %s", vmid, exc)
+        error = exc.message
+
+    return render(request, "lxc/partials/lxc_storage.html", {
+        "vmid": vmid,
+        "mounts": mounts,
+        "storage_pools": storage_pools,
+        "mp_error": request.GET.get("error") or error,
+        "mp_success": request.GET.get("success"),
+    })
+
+
+@login_required
+@require_POST
+def lxc_mountpoint_add(request, vmid):
+    """Add a new mountpoint to an LXC container."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+
+    storage = request.POST.get("storage", "").strip()
+    size = request.POST.get("size", "").strip()
+    mp_path = request.POST.get("mp", "").strip()
+    backup = request.POST.get("backup") == "1"
+
+    if not storage or not size or not mp_path:
+        return redirect(f"/lxc/{vmid}/mountpoints/?error=Storage, size, and mount path are required.")
+
+    try:
+        size_int = int(size)
+        if size_int < 1:
+            raise ValueError
+    except ValueError:
+        return redirect(f"/lxc/{vmid}/mountpoints/?error=Size must be a positive integer (GB).")
+
+    if not mp_path.startswith("/"):
+        return redirect(f"/lxc/{vmid}/mountpoints/?error=Mount path must be absolute (start with /).")
+
+    try:
+        api = config.get_api_client()
+        raw_config = api.get_lxc_config(node, vmid)
+        slot = _find_next_mp_slot(raw_config)
+        if not slot:
+            return redirect(f"/lxc/{vmid}/mountpoints/?error=No free mountpoint slots available.")
+
+        mp_spec = f"{storage}:{size_int},mp={mp_path}"
+        if not backup:
+            mp_spec += ",backup=0"
+
+        api.update_lxc_config(node, vmid, **{slot: mp_spec})
+        time.sleep(1)
+        return redirect(f"/lxc/{vmid}/mountpoints/?success=Mountpoint {slot} added at {mp_path}.")
+    except ProxmoxAPIError as exc:
+        logger.error("lxc_mountpoint_add vmid=%d: %s", vmid, exc)
+        return redirect(f"/lxc/{vmid}/mountpoints/?error={exc.message}")
+
+
+@login_required
+@require_POST
+def lxc_mountpoint_resize(request, vmid):
+    """Resize an LXC mountpoint or rootfs (grow only)."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+
+    disk = request.POST.get("disk", "").strip()
+    add_gb = request.POST.get("add_gb", "").strip()
+
+    if not disk:
+        return redirect(f"/lxc/{vmid}/mountpoints/?error=Disk not specified.")
+
+    try:
+        add_val = int(add_gb)
+        if add_val < 1:
+            raise ValueError
+    except ValueError:
+        return redirect(f"/lxc/{vmid}/mountpoints/?error=Resize amount must be a positive integer (GB).")
+
+    try:
+        api = config.get_api_client()
+        api.resize_lxc_mountpoint(node, vmid, disk, f"+{add_val}G")
+        time.sleep(1)
+        return redirect(f"/lxc/{vmid}/mountpoints/?success={disk} grown by {add_val}GB.")
+    except ProxmoxAPIError as exc:
+        logger.error("lxc_mountpoint_resize vmid=%d disk=%s: %s", vmid, disk, exc)
+        return redirect(f"/lxc/{vmid}/mountpoints/?error={exc.message}")
+
+
+@login_required
+@require_POST
+def lxc_mountpoint_detach(request, vmid):
+    """Detach (delete) a mountpoint from an LXC container.
+
+    rootfs cannot be detached. Detaching an mpN both removes the entry
+    from config and unlinks the underlying volume — Proxmox does not have
+    an "unused" concept for LXC mountpoints like it does for VM disks.
+    """
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+
+    disk = request.POST.get("disk", "").strip()
+
+    if not disk or not disk.startswith("mp"):
+        return redirect(f"/lxc/{vmid}/mountpoints/?error=Only mountpoints (mpN) can be detached.")
+
+    try:
+        api = config.get_api_client()
+        api.update_lxc_config(node, vmid, delete=disk)
+        time.sleep(1)
+        return redirect(f"/lxc/{vmid}/mountpoints/?success={disk} detached.")
+    except ProxmoxAPIError as exc:
+        logger.error("lxc_mountpoint_detach vmid=%d disk=%s: %s", vmid, disk, exc)
+        return redirect(f"/lxc/{vmid}/mountpoints/?error={exc.message}")
+
+
+# =========================================================================
+# LXC Network interfaces
+# =========================================================================
+
+
+def _parse_ct_nic_full(interface, raw_value):
+    """Parse an LXC NIC string for the network management partial.
+
+    Format: name=eth0,bridge=vmbr0,hwaddr=AA:BB:..,ip=dhcp,firewall=1,tag=10,link_down=1
+    """
+    if not raw_value:
+        return None
+    opts = {}
+    for part in raw_value.split(","):
+        if "=" in part:
+            k, v = part.split("=", 1)
+            opts[k] = v
+    return {
+        "interface": interface,
+        "name": opts.get("name", "—"),
+        "bridge": opts.get("bridge", "—"),
+        "mac": opts.get("hwaddr", "—"),
+        "ip": opts.get("ip", "—"),
+        "gateway": opts.get("gw", ""),
+        "firewall": opts.get("firewall", "0") == "1",
+        "rate": opts.get("rate", ""),
+        "mtu": opts.get("mtu", ""),
+        "tag": opts.get("tag", ""),
+        "type": opts.get("type", ""),
+        "link_down": opts.get("link_down", "0") == "1",
+    }
+
+
+def _toggle_lxc_nic_link(raw_nic_value, disconnect):
+    """Toggle link_down in raw Proxmox LXC NIC config string."""
+    parts = raw_nic_value.split(",")
+    parts = [p for p in parts if not p.startswith("link_down=")]
+    if disconnect:
+        parts.append("link_down=1")
+    return ",".join(parts)
+
+
+@login_required
+def lxc_networks(request, vmid):
+    """HTMX endpoint: return the LXC network interfaces partial."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    networks = []
+    error = None
+
+    try:
+        api = config.get_api_client()
+        raw_config = api.get_lxc_config(node, vmid)
+        for key in sorted(raw_config.keys()):
+            if key.startswith("net") and key[3:].isdigit():
+                parsed = _parse_ct_nic_full(key, raw_config[key])
+                if parsed:
+                    networks.append(parsed)
+    except ProxmoxAPIError as exc:
+        logger.error("lxc_networks vmid=%d: %s", vmid, exc)
+        error = exc.message
+
+    return render(request, "lxc/partials/lxc_networks.html", {
+        "vmid": vmid,
+        "networks": networks,
+        "net_error": request.GET.get("error") or error,
+        "net_success": request.GET.get("success"),
+    })
+
+
+@login_required
+@require_POST
+def lxc_nic_toggle(request, vmid, interface):
+    """Toggle an LXC NIC's link state (connect/disconnect)."""
+    config = ProxmoxConfig.get_config()
+    node = config.default_node
+    action = request.POST.get("action", "")
+
+    if action not in ("connect", "disconnect"):
+        return redirect(f"/lxc/{vmid}/networks/?error=Invalid action.")
+
+    try:
+        api = config.get_api_client()
+        raw_config = api.get_lxc_config(node, vmid)
+        raw_nic = raw_config.get(interface)
+        if not raw_nic:
+            return redirect(f"/lxc/{vmid}/networks/?error=Interface {interface} not found.")
+
+        new_nic = _toggle_lxc_nic_link(raw_nic, disconnect=(action == "disconnect"))
+        api.update_lxc_config(node, vmid, **{interface: new_nic})
+        time.sleep(1)
+        verb = "disconnected" if action == "disconnect" else "connected"
+        return redirect(f"/lxc/{vmid}/networks/?success={interface} {verb}.")
+    except ProxmoxAPIError as exc:
+        logger.error("lxc_nic_toggle vmid=%d %s: %s", vmid, interface, exc)
+        return redirect(f"/lxc/{vmid}/networks/?error={exc.message}")
 
 
 @login_required

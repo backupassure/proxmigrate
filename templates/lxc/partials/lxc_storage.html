@@ -1,0 +1,163 @@
+{# LXC mountpoint management partial — swapped via HTMX on add / resize / detach #}
+<div id="lxc-storage-table">
+
+  {% if mp_error %}
+    <div class="notification is-warning is-light" style="margin-bottom:1rem;padding:0.75rem 1rem;font-size:0.85rem;">
+      <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;"></i> {{ mp_error }}
+    </div>
+  {% endif %}
+
+  {% if mp_success %}
+    <div class="notification is-success is-light" style="margin-bottom:1rem;padding:0.75rem 1rem;font-size:0.85rem;">
+      <i class="fas fa-check-circle" style="margin-right:0.4rem;"></i> {{ mp_success }}
+    </div>
+  {% endif %}
+
+  {# -- Existing mountpoints table -- #}
+  {% if mounts %}
+  <table class="table is-fullwidth is-narrow" style="margin:0;font-size:0.875rem;">
+    <thead>
+      <tr style="background:var(--bg-header, #f5f7fa);">
+        <th style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:600;padding:0.75rem 1.5rem;">Mount</th>
+        <th style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:600;">Path</th>
+        <th style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:600;">Storage</th>
+        <th style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:600;">Size</th>
+        <th style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:600;">Options</th>
+        <th style="font-size:0.75rem;color:var(--text-muted, #7a7a7a);font-weight:600;text-align:right;padding-right:1.5rem;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for mp in mounts %}
+      <tr>
+        <td style="font-family:monospace;font-size:0.82rem;padding-left:1.5rem;font-weight:600;">{{ mp.interface }}</td>
+        <td style="font-family:monospace;font-size:0.82rem;">{{ mp.mp|default:"—" }}</td>
+        <td>{{ mp.storage }}</td>
+        <td><strong>{{ mp.size }}</strong></td>
+        <td style="font-size:0.78rem;color:var(--text-muted, #7a7a7a);">{{ mp.options_display|default:"—" }}</td>
+        <td style="text-align:right;padding-right:1.5rem;white-space:nowrap;">
+          <button class="button is-small is-info is-light" style="font-weight:600;"
+                  onclick="openLxcResizeModal('{{ mp.interface }}', '{{ mp.size }}')"
+                  title="Increase size">
+            <span class="icon is-small"><i class="fas fa-expand-arrows-alt"></i></span>
+            <span>Resize</span>
+          </button>
+          {% if not mp.is_rootfs %}
+          <button class="button is-small is-danger is-light" style="font-weight:600;"
+                  hx-post="{% url 'lxc_mountpoint_detach' vmid %}"
+                  hx-target="#lxc-storage-table"
+                  hx-swap="outerHTML"
+                  hx-vals='{"disk": "{{ mp.interface }}"}'
+                  hx-confirm="Detach {{ mp.interface }}? This will remove the mountpoint and destroy the underlying volume."
+                  title="Detach mountpoint">
+            <span class="icon is-small"><i class="fas fa-eject"></i></span>
+            <span>Detach</span>
+          </button>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div style="padding:1.5rem;color:var(--text-muted, #7a7a7a);font-size:0.875rem;">No storage information available.</div>
+  {% endif %}
+
+  {# -- Add mountpoint form -- #}
+  {% if storage_pools %}
+  <div style="border-top:1px solid var(--border-color, #e8ecf0);padding:1rem 1.5rem;margin-top:0;">
+    <div style="font-size:0.8rem;font-weight:600;color:var(--text-muted, #7a7a7a);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">
+      <i class="fas fa-plus-circle" style="margin-right:0.3rem;"></i> Add Mountpoint
+    </div>
+    <form method="post" action="{% url 'lxc_mountpoint_add' vmid %}"
+          hx-post="{% url 'lxc_mountpoint_add' vmid %}"
+          hx-target="#lxc-storage-table"
+          hx-swap="outerHTML">
+      {% csrf_token %}
+      <div style="display:flex;align-items:flex-end;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+        <div style="flex:1;min-width:140px;">
+          <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted, #7a7a7a);display:block;margin-bottom:0.25rem;">Storage</label>
+          <div class="select is-small is-fullwidth">
+            <select name="storage" required>
+              {% for s in storage_pools %}
+                <option value="{{ s.storage }}">{{ s.storage }} ({{ s.type }}{% if s.avail %}, {{ s.avail|filesizeformat }} free{% endif %})</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div style="min-width:90px;max-width:110px;">
+          <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted, #7a7a7a);display:block;margin-bottom:0.25rem;">Size (GB)</label>
+          <input class="input is-small" type="number" name="size" min="1" value="8" required style="width:100%;">
+        </div>
+        <div style="flex:1;min-width:160px;">
+          <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted, #7a7a7a);display:block;margin-bottom:0.25rem;">Mount Path (in container)</label>
+          <input class="input is-small" type="text" name="mp" placeholder="/data" required style="width:100%;">
+        </div>
+        <label style="font-size:0.8rem;color:var(--text-semi, #555);display:flex;align-items:center;gap:0.3rem;cursor:pointer;">
+          <input type="checkbox" name="backup" value="1" checked> Include in Backup
+        </label>
+        <button type="submit" class="button is-small is-primary" style="font-weight:600;">
+          <span class="icon is-small"><i class="fas fa-plus"></i></span>
+          <span>Add Mountpoint</span>
+        </button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+  {# -- Resize modal -- #}
+  <div class="modal" id="lxc-resize-mp-modal">
+    <div class="modal-background" onclick="closeLxcResizeModal()"></div>
+    <div class="modal-card" style="max-width:420px;border-radius:12px;">
+      <header class="modal-card-head" style="background:var(--link-color, #3273dc);border-radius:12px 12px 0 0;">
+        <p class="modal-card-title" style="color:#fff;font-size:1rem;font-weight:600;">
+          <i class="fas fa-expand-arrows-alt"></i>&nbsp; Resize Mountpoint
+        </p>
+        <button class="delete" onclick="closeLxcResizeModal()"></button>
+      </header>
+      <form method="post" action="{% url 'lxc_mountpoint_resize' vmid %}"
+            hx-post="{% url 'lxc_mountpoint_resize' vmid %}"
+            hx-target="#lxc-storage-table"
+            hx-swap="outerHTML"
+            hx-on::before-request="document.getElementById('lxc-resize-submit-btn').classList.add('is-loading');document.getElementById('lxc-resize-submit-btn').disabled=true;document.getElementById('lxc-resize-cancel-btn').disabled=true;">
+        {% csrf_token %}
+        <input type="hidden" name="disk" id="lxc-resize-mp-name" value="">
+        <section class="modal-card-body">
+          <p style="margin-bottom:1rem;font-size:0.9rem;">
+            Increase <strong id="lxc-resize-mp-label"></strong> (currently <span id="lxc-resize-mp-current"></span>)
+          </p>
+          <div class="field">
+            <label class="label" style="font-size:0.85rem;">Add (GB)</label>
+            <div class="control">
+              <input class="input" type="number" name="add_gb" min="1" value="10" required>
+            </div>
+            <p class="help">Mountpoints can only be grown, never shrunk.</p>
+          </div>
+        </section>
+        <footer class="modal-card-foot" style="justify-content:flex-end;gap:0.75rem;">
+          <button type="button" class="button is-light" onclick="closeLxcResizeModal()" id="lxc-resize-cancel-btn">Cancel</button>
+          <button type="submit" class="button is-primary" style="font-weight:600;" id="lxc-resize-submit-btn">
+            <span class="icon is-small"><i class="fas fa-expand-arrows-alt"></i></span>
+            <span>Resize</span>
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function openLxcResizeModal(mpName, currentSize) {
+    document.getElementById('lxc-resize-mp-name').value = mpName;
+    document.getElementById('lxc-resize-mp-label').textContent = mpName;
+    document.getElementById('lxc-resize-mp-current').textContent = currentSize;
+    document.getElementById('lxc-resize-mp-modal').classList.add('is-active');
+  }
+  function closeLxcResizeModal() {
+    document.getElementById('lxc-resize-mp-modal').classList.remove('is-active');
+    var btn = document.getElementById('lxc-resize-submit-btn');
+    if (btn) { btn.classList.remove('is-loading'); btn.disabled = false; }
+    var cancelBtn = document.getElementById('lxc-resize-cancel-btn');
+    if (cancelBtn) cancelBtn.disabled = false;
+  }
+</script>

@@ -13,6 +13,16 @@ urlpatterns = [
     path("<int:vmid>/detail-status/", views.lxc_detail_status, name="lxc_detail_status"),
     path("<int:vmid>/action/<str:action>/", views.lxc_action, name="lxc_action"),
     path("<int:vmid>/delete/", views.lxc_delete, name="lxc_delete"),
+    # Settings editors
+    path("<int:vmid>/settings/", views.lxc_update_settings, name="lxc_update_settings"),
+    # Mountpoint management
+    path("<int:vmid>/mountpoints/", views.lxc_mountpoints, name="lxc_mountpoints"),
+    path("<int:vmid>/mountpoints/add/", views.lxc_mountpoint_add, name="lxc_mountpoint_add"),
+    path("<int:vmid>/mountpoints/resize/", views.lxc_mountpoint_resize, name="lxc_mountpoint_resize"),
+    path("<int:vmid>/mountpoints/detach/", views.lxc_mountpoint_detach, name="lxc_mountpoint_detach"),
+    # Network management
+    path("<int:vmid>/networks/", views.lxc_networks, name="lxc_networks"),
+    path("<int:vmid>/nic/<str:interface>/toggle/", views.lxc_nic_toggle, name="lxc_nic_toggle"),
     path("<int:vmid>/status/", views.lxc_row_status, name="lxc_row_status"),
     path("<int:vmid>/ip/", views.lxc_ip, name="lxc_ip"),
     # Creation wizard
