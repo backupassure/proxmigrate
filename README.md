@@ -8,6 +8,12 @@ A free, open-source, self-hosted web UI for Proxmox VE — built for administrat
 
 Made by **[ForgedIO](https://github.com/ForgedIO)**.
 
+### Join the community — vibe coders welcome
+
+[![Join our Discord](https://img.shields.io/badge/Discord-Join%20our%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/ew35Jp8DTW)
+
+Come hang out, ask questions, share what you're building, and help shape where ProxOrchestrator goes next. Whether you're a seasoned homelab admin, a Proxmox newbie, or a vibe coder just exploring — **you're welcome here.** No gatekeeping.
+
 ![ProxOrchestrator Dashboard](docs/screenshots/dashboard.png)
 
 ---
