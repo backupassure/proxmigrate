@@ -628,7 +628,7 @@ else
     fi
 fi
 
-ADMIN_EMAIL="${ADMIN_USER}@localhost"
+ADMIN_EMAIL=""
 
 sudo -u "${APP_USER}" \
     DJANGO_SUPERUSER_USERNAME="${ADMIN_USER}" \

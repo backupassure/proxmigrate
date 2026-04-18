@@ -556,6 +556,7 @@ def _auto_trigger_dns01_renewal(config, days_remaining):
             staff_emails = list(
                 User.objects.filter(is_staff=True)
                 .exclude(email="")
+                .exclude(email__iendswith="@localhost")
                 .values_list("email", flat=True)
             )
             if staff_emails:
@@ -596,6 +597,7 @@ def _send_expiry_alerts(config, days_remaining):
     staff_emails = list(
         User.objects.filter(is_staff=True)
         .exclude(email="")
+        .exclude(email__iendswith="@localhost")
         .values_list("email", flat=True)
     )
     if not staff_emails:

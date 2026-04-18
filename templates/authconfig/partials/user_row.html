@@ -10,7 +10,25 @@ Context: u (User), current_user (request.user)
       <span class="tag is-light" style="font-size: 0.65rem;margin-left: 0.3rem;">You</span>
     {% endif %}
   </td>
-  <td style="vertical-align: middle;font-size: 0.875rem;color: var(--text-semi);">{{ u.email|default:"—" }}</td>
+  <td style="vertical-align: middle;font-size: 0.875rem;color: var(--text-semi);">
+    <form hx-post="{% url 'user_update_email' u.id %}"
+          hx-target="#user-row-{{ u.id }}"
+          hx-swap="outerHTML"
+          style="display: flex;align-items: center;gap: 0.3rem;margin: 0;">
+      <input type="email" name="email" value="{{ u.email }}"
+             placeholder="—"
+             class="input is-small"
+             style="font-size: 0.82rem;padding: 0.15rem 0.4rem;height: auto;flex: 1;min-width: 0;"
+             oninput="this.form.querySelector('.email-save').style.display='inline-flex';"
+             title="Click to edit email">
+      <button type="submit"
+              class="button is-small is-light email-save"
+              style="display: none;font-size: 0.7rem;padding: 0 0.4rem;height: auto;"
+              title="Save email">
+        <i class="fas fa-check" style="color: var(--success-color);"></i>
+      </button>
+    </form>
+  </td>
   <td style="vertical-align: middle;">
     {% if u.profile.auth_source == 'ldap' %}
       <span class="auth-badge auth-badge-ldap">LDAP</span>

@@ -24,6 +24,7 @@ urlpatterns = [
     path("settings/certificates/", include("apps.certificates.urls")),
     path("accounts/", include("allauth.urls")),
     # User management actions (HTMX targets)
+    path("users/<int:user_id>/update-email/", authconfig_views.user_update_email, name="user_update_email"),
     path("users/<int:user_id>/toggle-admin/", authconfig_views.user_toggle_admin, name="user_toggle_admin"),
     path("users/<int:user_id>/toggle-active/", authconfig_views.user_toggle_active, name="user_toggle_active"),
     path("users/<int:user_id>/reset-password/", authconfig_views.user_reset_password, name="user_reset_password"),

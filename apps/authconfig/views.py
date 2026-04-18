@@ -3,6 +3,8 @@ import logging
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth import update_session_auth_hash
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
@@ -281,6 +283,27 @@ def user_create(request):
     logger.info("User %s created by %s", username, request.user)
     messages.success(request, f"User '{username}' created successfully.")
     return redirect("user_list")
+
+
+@_staff_required
+@require_POST
+def user_update_email(request, user_id):
+    """Staff sets or clears a user's email. Empty string is allowed (clears it)."""
+    user = get_object_or_404(User, pk=user_id)
+    email = request.POST.get("email", "").strip()
+
+    if email:
+        try:
+            validate_email(email)
+        except ValidationError:
+            return HttpResponse("Invalid email address.", status=422)
+        if email.lower().endswith("@localhost"):
+            return HttpResponse("Email cannot use the @localhost domain.", status=422)
+
+    user.email = email
+    user.save(update_fields=["email"])
+    logger.info("Email for %s set to %r by %s", user.username, email, request.user)
+    return _render_user_row(request, user)
 
 
 @_staff_required
