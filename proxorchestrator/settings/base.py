@@ -63,6 +63,9 @@ INSTALLED_APPS = [
     "apps.certificates",
     "apps.vmcreator",
     "apps.lxc",
+    "apps.clusters",
+    "apps.monitoring",
+    "apps.alerts",
     # Django Channels (WebSocket support)
     "channels",
 ]

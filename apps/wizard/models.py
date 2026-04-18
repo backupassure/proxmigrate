@@ -194,3 +194,41 @@ def _update_nginx_ws(sender, instance, **kwargs):
         reload_nginx()
     except Exception as exc:
         logger.warning("Could not update nginx WS config: %s", exc)
+
+
+@receiver(post_save, sender=ProxmoxConfig)
+def _mirror_to_default_cluster(sender, instance, **kwargs):
+    """Keep the Phase 3 Cluster row (slug='default') in sync with legacy ProxmoxConfig writes.
+
+    Callers that register additional clusters via the Phase 3 /clusters/add/ flow
+    operate on Cluster directly and never touch ProxmoxConfig.
+    """
+    try:
+        from apps.clusters.models import Cluster
+    except Exception:
+        return
+    mirrored = [
+        "host",
+        "ssh_port",
+        "api_port",
+        "api_token_id",
+        "api_token_secret",
+        "default_node",
+        "default_storage",
+        "default_bridge",
+        "proxmox_temp_dir",
+        "virtio_iso",
+        "upload_temp_dir",
+        "default_cores",
+        "default_memory_mb",
+        "vmid_min",
+        "vmid_max",
+        "is_configured",
+        "wizard_step",
+    ]
+    defaults = {f: getattr(instance, f) for f in mirrored}
+    defaults.setdefault("name", "Default Cluster")
+    try:
+        Cluster.objects.update_or_create(slug="default", defaults=defaults)
+    except Exception as exc:
+        logger.warning("Could not mirror ProxmoxConfig to default Cluster: %s", exc)
