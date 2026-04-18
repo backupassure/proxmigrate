@@ -49,6 +49,29 @@
         <div class="logo-subtitle" style="margin-top: 0;">by ForgedIO</div>
       </div>
     </div>
+    {% if all_clusters|length > 0 and user.is_staff %}
+      <div style="padding: 0.75rem 1.5rem 0.4rem;border-bottom: 1px solid var(--border-sidebar);">
+        <div class="nav-label" style="margin-bottom: 0.3rem;">Active cluster</div>
+        <form method="post" action="{% url 'cluster_switch' %}" style="margin: 0;">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <div style="display: flex;gap: 0.3rem;align-items: center;">
+            <div class="select is-small" style="flex: 1;">
+              <select name="cluster_id" onchange="this.form.submit()" style="width: 100%;font-size: 0.78rem;">
+                {% for c in all_clusters %}
+                  <option value="{{ c.id }}" {% if active_cluster and active_cluster.id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <a href="{% url 'cluster_list' %}"
+               title="Manage clusters"
+               style="color: var(--text-sidebar);opacity: 0.7;font-size: 0.8rem;">
+              <i class="fas fa-cog"></i>
+            </a>
+          </div>
+        </form>
+      </div>
+    {% endif %}
     <nav class="sidebar-nav">
       <div class="nav-label">Main</div>
       <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}">
@@ -89,6 +112,9 @@
       <div class="nav-label">Settings</div>
       <a href="{% url 'proxmox_settings' %}" class="{% if 'proxmox_settings' in request.resolver_match.url_name %}is-active{% endif %}">
         <i class="fas fa-server"></i> Proxmox
+      </a>
+      <a href="{% url 'cluster_list' %}" class="{% if 'cluster' in request.resolver_match.url_name %}is-active{% endif %}">
+        <i class="fas fa-network-wired"></i> Clusters
       </a>
       <a href="{% url 'auth_settings' %}" class="{% if 'auth' in request.resolver_match.url_name %}is-active{% endif %}">
         <i class="fas fa-shield-alt"></i> Authentication

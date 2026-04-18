@@ -86,6 +86,7 @@ MIDDLEWARE = [
     "apps.core.middleware.ForcePasswordChangeMiddleware",
     "apps.core.middleware.ForceMFASetupMiddleware",
     "apps.core.middleware.WizardRedirectMiddleware",
+    "apps.clusters.middleware.ActiveClusterMiddleware",
 ]
 
 # ---------------------------------------------------------------------------
@@ -112,6 +113,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.clusters.middleware.active_cluster",
             ],
         },
     },

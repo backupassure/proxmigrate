@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Edit cluster — ProxOrchestrator{% endblock %}
+{% block page_title %}Edit cluster: {{ cluster.name }}{% endblock %}
+
+{% block page_actions %}
+  <a class="button is-light is-small" href="{% url 'cluster_list' %}">
+    <span class="icon is-small"><i class="fas fa-arrow-left"></i></span>
+    <span>Back</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% elif message.tags == 'warning' %}is-warning{% else %}is-info{% endif %} is-light"
+         style="font-size: 0.875rem;margin-bottom: 1rem;border-radius: 8px;">
+      <button class="delete" onclick="this.parentElement.remove()"></button>
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="proxorchestrator-card" style="max-width: 680px;">
+  <div class="card-header">
+    <i class="fas fa-pen" style="color: var(--link-color);"></i> Cluster connection
+    {% if cluster.slug == "default" %}
+      <span class="tag is-light" style="font-size: 0.65rem;margin-left: 0.5rem;">Default — synced from wizard</span>
+    {% endif %}
+  </div>
+  <div style="padding: 1rem 1.25rem;">
+    <form method="post" action="{% url 'cluster_edit' cluster.id %}">
+      {% csrf_token %}
+      {% include "clusters/_form.html" with cluster=cluster errors=errors values=values %}
+      <div class="field is-grouped" style="margin-top: 1.25rem;">
+        <div class="control">
+          <button type="submit" class="button is-primary">
+            <span class="icon is-small"><i class="fas fa-save"></i></span>
+            <span>Save changes</span>
+          </button>
+        </div>
+        <div class="control">
+          <a href="{% url 'cluster_list' %}" class="button is-light">Cancel</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Add cluster — ProxOrchestrator{% endblock %}
+{% block page_title %}Add cluster{% endblock %}
+
+{% block page_actions %}
+  <a class="button is-light is-small" href="{% url 'cluster_list' %}">
+    <span class="icon is-small"><i class="fas fa-arrow-left"></i></span>
+    <span>Back</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+
+<div class="proxorchestrator-card" style="max-width: 680px;">
+  <div class="card-header">
+    <i class="fas fa-plus-circle" style="color: var(--link-color);"></i> Register a new Proxmox cluster
+  </div>
+  <div style="padding: 1rem 1.25rem;">
+    <form method="post" action="{% url 'cluster_add' %}">
+      {% csrf_token %}
+      {% include "clusters/_form.html" with cluster=None errors=errors values=values %}
+      <div class="field is-grouped" style="margin-top: 1.25rem;">
+        <div class="control">
+          <button type="submit" class="button is-primary">
+            <span class="icon is-small"><i class="fas fa-save"></i></span>
+            <span>Save cluster</span>
+          </button>
+        </div>
+        <div class="control">
+          <a href="{% url 'cluster_list' %}" class="button is-light">Cancel</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

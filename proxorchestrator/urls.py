@@ -22,6 +22,7 @@ urlpatterns = [
     path("settings/auth/", include("apps.authconfig.urls")),
     path("settings/email/", include("apps.emailconfig.urls")),
     path("settings/certificates/", include("apps.certificates.urls")),
+    path("clusters/", include("apps.clusters.urls")),
     path("accounts/", include("allauth.urls")),
     # User management actions (HTMX targets)
     path("users/<int:user_id>/update-email/", authconfig_views.user_update_email, name="user_update_email"),

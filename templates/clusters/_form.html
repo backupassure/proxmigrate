@@ -1,0 +1,82 @@
+{% comment %}
+Shared form fields for add.html and edit.html.
+Context: cluster (nullable), errors (dict), values (dict — always populated).
+{% endcomment %}
+
+<div class="field">
+  <label class="label" style="font-size: 0.875rem;font-weight: 600;">Display name</label>
+  <div class="control has-icons-left">
+    <input class="input" type="text" name="name"
+           placeholder="e.g. East Data Center"
+           value="{{ values.name }}"
+           required autocomplete="off">
+    <span class="icon is-left"><i class="fas fa-tag" style="color: var(--text-muted);"></i></span>
+  </div>
+  {% if errors.name %}<p class="help is-danger">{{ errors.name }}</p>{% endif %}
+</div>
+
+<div class="field">
+  <label class="label" style="font-size: 0.875rem;font-weight: 600;">Host or IP</label>
+  <div class="control has-icons-left">
+    <input class="input" type="text" name="host"
+           placeholder="proxmox.example.com or 192.168.1.100"
+           value="{{ values.host }}"
+           required autocomplete="off">
+    <span class="icon is-left"><i class="fas fa-server" style="color: var(--text-muted);"></i></span>
+  </div>
+  {% if errors.host %}<p class="help is-danger">{{ errors.host }}</p>{% endif %}
+</div>
+
+<div class="field is-grouped">
+  <div class="control" style="flex: 1;">
+    <label class="label" style="font-size: 0.875rem;font-weight: 600;">API port</label>
+    <input class="input" type="number" name="api_port"
+           value="{{ values.api_port }}"
+           min="1" max="65535">
+    {% if errors.api_port %}<p class="help is-danger">{{ errors.api_port }}</p>{% endif %}
+  </div>
+  <div class="control" style="flex: 1;">
+    <label class="label" style="font-size: 0.875rem;font-weight: 600;">SSH port</label>
+    <input class="input" type="number" name="ssh_port"
+           value="{{ values.ssh_port }}"
+           min="1" max="65535">
+    {% if errors.ssh_port %}<p class="help is-danger">{{ errors.ssh_port }}</p>{% endif %}
+  </div>
+</div>
+
+<div class="field">
+  <label class="label" style="font-size: 0.875rem;font-weight: 600;">API token ID</label>
+  <div class="control has-icons-left">
+    <input class="input" type="text" name="api_token_id"
+           placeholder="root@pam!proxorchestrator"
+           value="{{ values.api_token_id }}"
+           autocomplete="off">
+    <span class="icon is-left"><i class="fas fa-id-badge" style="color: var(--text-muted);"></i></span>
+  </div>
+  <p class="help">Format: <code>user@realm!tokenname</code></p>
+  {% if errors.api_token_id %}<p class="help is-danger">{{ errors.api_token_id }}</p>{% endif %}
+</div>
+
+<div class="field">
+  <label class="label" style="font-size: 0.875rem;font-weight: 600;">API token secret</label>
+  <div class="control has-icons-left">
+    <input class="input" type="password" name="api_token_secret"
+           placeholder="{% if cluster %}Leave blank to keep the existing secret{% else %}Token UUID{% endif %}"
+           autocomplete="new-password">
+    <span class="icon is-left"><i class="fas fa-key" style="color: var(--text-muted);"></i></span>
+  </div>
+  {% if errors.api_token_secret %}<p class="help is-danger">{{ errors.api_token_secret }}</p>{% endif %}
+</div>
+
+<div class="field" style="margin-top: 1rem;">
+  <button type="button" class="button is-light is-small"
+          hx-post="{% url 'cluster_test' %}"
+          hx-include="closest form"
+          hx-target="#cluster-test-result"
+          hx-swap="innerHTML">
+    <span class="icon is-small"><i class="fas fa-plug"></i></span>
+    <span>Test connection</span>
+  </button>
+  {% if cluster %}<input type="hidden" name="cluster_id" value="{{ cluster.id }}">{% endif %}
+  <div id="cluster-test-result" style="margin-top: 0.6rem;"></div>
+</div>

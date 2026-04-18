@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Clusters — ProxOrchestrator{% endblock %}
+{% block page_title %}Clusters{% endblock %}
+
+{% block page_actions %}
+  <a class="button is-primary is-small" href="{% url 'cluster_add' %}">
+    <span class="icon is-small"><i class="fas fa-plus"></i></span>
+    <span>Add cluster</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% elif message.tags == 'warning' %}is-warning{% else %}is-info{% endif %} is-light"
+         style="font-size: 0.875rem;margin-bottom: 1rem;border-radius: 8px;">
+      <button class="delete" onclick="this.parentElement.remove()"></button>
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="proxorchestrator-card">
+  <div class="card-header">
+    <i class="fas fa-network-wired" style="color: var(--link-color);"></i> Registered clusters
+    <span style="margin-left: 0.5rem;font-size: 0.8rem;color: var(--text-muted);font-weight: 400;">({{ clusters|length }})</span>
+  </div>
+  <div style="overflow-x: auto;">
+    {% if clusters %}
+    <table class="table vm-table is-fullwidth" style="margin: 0;">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Host</th>
+          <th>API port</th>
+          <th>SSH port</th>
+          <th>Token ID</th>
+          <th>Status</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in clusters %}
+          <tr>
+            <td style="vertical-align: middle;font-weight: 600;">
+              {{ c.name }}
+              {% if c.slug == "default" %}
+                <span class="tag is-light" style="font-size: 0.65rem;margin-left: 0.3rem;">Default</span>
+              {% endif %}
+              {% if active_cluster and active_cluster.id == c.id %}
+                <span class="tag is-success is-light" style="font-size: 0.65rem;margin-left: 0.3rem;">Active</span>
+              {% endif %}
+            </td>
+            <td style="vertical-align: middle;">{{ c.host }}</td>
+            <td style="vertical-align: middle;">{{ c.api_port }}</td>
+            <td style="vertical-align: middle;">{{ c.ssh_port }}</td>
+            <td style="vertical-align: middle;font-family: monospace;font-size: 0.82rem;">{{ c.api_token_id|default:"—" }}</td>
+            <td style="vertical-align: middle;">
+              {% if c.is_configured %}
+                <span class="status-badge vm-status-running" style="font-size: 0.65rem;">Configured</span>
+              {% else %}
+                <span class="status-badge vm-status-stopped" style="font-size: 0.65rem;">Incomplete</span>
+              {% endif %}
+            </td>
+            <td style="vertical-align: middle;">
+              <div class="vm-actions" style="justify-content: flex-end;">
+                <a class="button is-small is-light" href="{% url 'cluster_edit' c.id %}" title="Edit">
+                  <i class="fas fa-pen" style="color: var(--link-color);"></i>
+                </a>
+                {% if c.slug != "default" %}
+                  <form method="post" action="{% url 'cluster_delete' c.id %}" style="display: inline;"
+                        onsubmit="return confirm('Delete cluster {{ c.name|escapejs }}? This cannot be undone.');">
+                    {% csrf_token %}
+                    <button type="submit" class="button is-small is-light" title="Delete">
+                      <i class="fas fa-trash" style="color: var(--danger-color);"></i>
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-network-wired"></i></div>
+        <h3>No clusters registered</h3>
+        <p>Run the Proxmox setup wizard to configure the first cluster, then add additional clusters here.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="proxorchestrator-card" style="margin-top: 1rem;">
+  <div class="card-header">
+    <i class="fas fa-info-circle" style="color: var(--link-color);"></i> About clusters
+  </div>
+  <div style="padding: 0.85rem 1rem;font-size: 0.875rem;color: var(--text-semi);line-height: 1.55;">
+    The <strong>Default</strong> cluster is the one configured by the first-run wizard and edited from
+    <a href="{% url 'proxmox_settings' %}">Proxmox Settings</a>. Additional clusters registered here
+    share ProxOrchestrator's single SSH key pair and run alongside the default.
+  </div>
+</div>
+
+{% endblock %}
